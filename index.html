@@ -88,11 +88,14 @@
     margin:34px -30px 8px;background:var(--acid);color:#000;overflow:hidden;
     transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;
     font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;
-    white-space:nowrap
+    white-space:nowrap;display:flex
   }
-  .marq div{display:inline-block;padding:8px 0;animation:mq 22s linear infinite}
+  /* две одинаковые дорожки едут друг за другом — стык не виден, лента бесконечная */
+  .marq .track{flex:none;display:flex;align-items:center;padding:8px 0;animation:mq 60s linear infinite;will-change:transform}
   .marq span{padding:0 18px}
-  @keyframes mq{to{transform:translateX(-50%)}}
+  .marq i{font-style:normal}
+  @keyframes mq{to{transform:translateX(-100%)}}
+  @media (prefers-reduced-motion:reduce){.marq .track{animation:none}}
 
   /* ---------- steps as stickers ---------- */
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:36px 0 8px}
@@ -249,9 +252,7 @@
   </section>
 </div>
 
-<div class="marq" aria-hidden="true"><div>
-  <span>Лучшая сцена</span>✦<span>Любой банк</span>✦<span>СБП</span>✦<span>Голосуй рублём</span>✦<span>Театр RAT</span>✦<span>Лучшая сцена</span>✦<span>Любой банк</span>✦<span>СБП</span>✦<span>Голосуй рублём</span>✦<span>Театр RAT</span>✦
-</div></div>
+<div class="marq" aria-hidden="true"><div class="track"></div><div class="track"></div></div>
 
 <main class="wrap">
   <div class="steps">
@@ -355,6 +356,16 @@ const ACTORS = [
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join("");
+
+/* бегущая лента: заполняем две дорожки одинаковым текстом, скорость — от ширины */
+(() => {
+  const items = ["Лучшая сцена", "Любой банк", "СБП", "Голосуй рублём", "Театр RAT"];
+  const html = items.map(t => `<span>${t}</span><i>✦</i>`).join("").repeat(4);
+  const tracks = document.querySelectorAll(".marq .track");
+  tracks.forEach(t => t.innerHTML = html);
+  const fit = () => { const w = tracks[0].getBoundingClientRect().width; tracks.forEach(t => t.style.animationDuration = (w / 80) + "s"); };
+  fit(); if (document.fonts) document.fonts.ready.then(fit);
+})();
 
 const grid = document.getElementById("grid");
 let current = ACTORS;
