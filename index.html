@@ -404,8 +404,8 @@ grid.innerHTML = ACTORS.map((a, i) => {
 /* Данные: с сервера (админка), а если сервера нет — из настроек выше */
 (async () => {
   let d = { show: SHOW, actors: ACTORS };
-  // 1) сервер с админкой (server.js), 2) статический хостинг — файл data/data.json
-  for (const url of ["/api/data", "data/data.json?t=" + Date.now()]) {
+  // 1) сервер server.js, 2) файл data/data.json (GitHub Pages, любая статика), 3) PHP-хостинг
+  for (const url of ["/api/data", "data/data.json?t=" + Date.now(), "api.php?a=data"]) {
     try {
       const r = await fetch(url, { cache: "no-store" });
       if (!r.ok) continue;

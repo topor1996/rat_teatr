@@ -65,6 +65,7 @@
       <div id="pwFields">
         <label>Пароль</label>
         <input type="password" id="pw" autocomplete="current-password">
+        <p class="hint" id="pwHint" hidden style="margin-top:6px">Пароль задаётся в файле config.php на хостинге.</p>
       </div>
       <div id="ghFields" hidden>
         <p class="hint" style="margin:0 0 6px">Сайт работает на GitHub Pages. Админка сохраняет данные прямо в репозиторий, для этого нужен токен GitHub.</p>
@@ -160,7 +161,7 @@ let dirty = false;
 const api = async (url, opt = {}) => {
   const r = await fetch(url, { headers: opt.body && !(opt.body instanceof FormData) ? { "Content-Type": "application/json" } : {}, ...opt });
   const j = await r.json().catch(() => ({}));
-  if (r.status === 401 && url !== "/api/login") { showLogin(); throw new Error("Сессия истекла, войдите снова"); }
+  if (r.status === 401 && !url.includes("login")) { showLogin(); throw new Error("Сессия истекла, войдите снова"); }
   if (!r.ok) throw new Error(j.error || "Ошибка " + r.status);
   return j;
 };
@@ -233,12 +234,29 @@ const githubBackend = {
   photoUrl(p) { return p; },
 };
 
+/* ===== Бэкенд 3: PHP-хостинг (api.php рядом с admin.html) ===== */
+const phpBackend = {
+  name: "php",
+  async me() { return (await api("api.php?a=me")).authed; },
+  async login(creds) { await api("api.php?a=login", { method: "POST", body: JSON.stringify({ password: creds.password }) }); },
+  async logout() { await api("api.php?a=logout", { method: "POST" }); },
+  async load() { return api("api.php?a=data"); },
+  async save(d) { return (await api("api.php?a=data", { method: "POST", body: JSON.stringify(d) })).data; },
+  async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("api.php?a=upload", { method: "POST", body: fd })).photo; },
+  photoUrl(p) { return p; },
+};
+
 let backend = serverBackend;
-async function detectBackend() {
+async function isJsonApi(url) {
   try {
-    const r = await fetch("/api/me", { cache: "no-store" });
-    if (r.ok && (r.headers.get("content-type") || "").includes("json")) { backend = serverBackend; return; }
-  } catch {}
+    const r = await fetch(url, { cache: "no-store" });
+    if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return false;
+    const j = await r.json(); return typeof j.authed === "boolean";
+  } catch { return false; }
+}
+async function detectBackend() {
+  if (await isJsonApi("/api/me")) { backend = serverBackend; return; }
+  if (await isJsonApi("api.php?a=me")) { backend = phpBackend; return; }
   backend = githubBackend;
   // подсказать репозиторий из адреса вида username.github.io/repo/
   const m = location.hostname.match(/^([\w-]+)\.github\.io$/);
@@ -249,6 +267,7 @@ function showLogin() {
   $("#loginView").hidden = false; $("#editor").hidden = true; $("#saveBar").hidden = true;
   const gh = backend.name === "github";
   $("#pwFields").hidden = gh; $("#ghFields").hidden = !gh;
+  $("#pwHint").hidden = backend.name !== "php";
   (gh ? $("#ghRepo") : $("#pw")).focus();
 }
 function showEditor() { $("#loginView").hidden = true; $("#editor").hidden = false; $("#saveBar").hidden = false; }
