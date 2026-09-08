@@ -1,0 +1,3 @@
+# /admin → admin.html (Apache-хостинг, InfinityFree)
+RewriteEngine On
+RewriteRule ^admin/?$ admin.html [L]
