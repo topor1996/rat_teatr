@@ -5,9 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Театр RAT</title>
 <meta name="description" content="Театр RAT — актёрская шоу-лаборатория. Афиша, спектакли, труппа, билеты.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rubik+Spray+Paint&family=Oswald:wght@400;500;600;700&family=PT+Mono&display=swap" rel="stylesheet">
+<link href="fonts/fonts.css" rel="stylesheet">
 <style>
   :root{--black:#0a0a0a;--ink:#111;--paper:#f1eee4;--paper-2:#e6e2d6;--acid:#c9ff3d;--red:#ff3b2f;--muted:#5a574f;--tape:rgba(255,236,150,.55);--line:rgba(255,255,255,.12)}
   *{box-sizing:border-box}
@@ -220,6 +218,7 @@
   <section id="contacts">
     <h2 class="sec">Кон<em>такты</em></h2>
     <div class="contacts" id="contactsList"></div>
+    <p class="sec-sub" id="metaNote" hidden style="margin-top:14px;font-size:11px">* Instagram принадлежит компании Meta Platforms Inc., признанной экстремистской организацией; её деятельность запрещена на территории Российской Федерации.</p>
   </section>
 
   <a class="golos" href="golos" style="text-decoration:none">
@@ -324,11 +323,12 @@ function render(d) {
   document.getElementById("venue").textContent = th.venue || "";
   document.getElementById("address").textContent = th.address || "";
   const links = [
-    th.instagram && ["Instagram", th.instagram], th.telegram && ["Telegram", th.telegram], th.vk && ["VK", th.vk],
+    th.telegram && ["Telegram", th.telegram], th.vk && ["VK", th.vk], th.instagram && ["Instagram*", th.instagram],
     th.email && ["Почта", "mailto:" + th.email], th.phone && ["Телефон", "tel:" + th.phone.replace(/[^\d+]/g, "")],
     th.ticketsUrl && ["Билеты", th.ticketsUrl],
   ].filter(Boolean);
   document.getElementById("contactsList").innerHTML = links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join("") || `<div class="empty">Контакты скоро появятся.</div>`;
+  document.getElementById("metaNote").hidden = !th.instagram;
 }
 
 (async () => {
