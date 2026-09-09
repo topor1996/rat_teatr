@@ -39,26 +39,31 @@ function writeData(data) {
 const str = (v, max = 500) => String(v ?? "").trim().slice(0, max);
 const url = v => /^https?:\/\/\S+$/.test(str(v)) ? str(v) : "";
 const img = v => /^photos\/[\w.-]+$/.test(str(v)) ? str(v) : "";
+const media = v => /^photos\/[\w.-]+$/.test(str(v)) ? str(v) : "";
 function sanitize(input) {
   const show = input.show || {}, th = input.theatre || {};
   const arr = v => (Array.isArray(v) ? v : []);
+  const BADGES = ["premiere", "last", "few", "soldout"];
   const actors = arr(input.actors).slice(0, 50).map(a => ({
-    name: str(a.name, 100), role: str(a.role, 100), scene: str(a.scene, 400), bio: str(a.bio, 600),
+    name: str(a.name, 100), role: str(a.role, 100), scene: str(a.scene, 400), bio: str(a.bio, 600), roles: str(a.roles, 300),
     photo: img(a.photo), sbp: url(a.sbp), phone: str(a.phone, 30), bank: str(a.bank, 60),
   })).filter(a => a.name);
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
-    title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 1500),
-    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), ticketUrl: url(p.ticketUrl),
+    title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
+    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
-    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), note: str(e.note, 120),
+    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
+  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
+  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), playId: str(g.playId, 40) })).filter(g => g.photo);
   return {
-    theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 2000), venue: str(th.venue, 120), address: str(th.address, 200),
-               instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl) },
-    plays, events,
+    theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
+               instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),
+               heroVideo: media(th.heroVideo), heroPoster: img(th.heroPoster) },
+    plays, events, reviews, gallery,
     show: { theatre: str(show.theatre, 100), title: str(show.title, 100), dates: str(show.dates, 100) },
     actors,
   };
@@ -93,12 +98,12 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: PHOTOS_DIR,
     filename: (req, file, cb) => {
-      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[file.mimetype] || ".jpg";
+      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov" }[file.mimetype] || ".jpg";
       cb(null, `${Date.now()}-${crypto.randomBytes(3).toString("hex")}${ext}`);
     },
   }),
-  limits: { fileSize: 8 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => cb(null, /^image\/(jpeg|png|webp)$/.test(file.mimetype)),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => cb(null, /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime))$/.test(file.mimetype)),
 });
 
 // ---------- приложение ----------
@@ -109,6 +114,11 @@ app.use(express.json({ limit: "1mb" }));
 app.get("/", (req, res) => res.sendFile(path.join(ROOT, "index.html")));
 app.get("/admin", (req, res) => res.sendFile(path.join(ROOT, "admin.html")));
 app.get("/golos", (req, res) => res.sendFile(path.join(ROOT, "golos.html")));
+app.use("/assets", express.static(path.join(ROOT, "assets"), { maxAge: "1d" }));
+app.use("/fonts", express.static(path.join(ROOT, "fonts"), { maxAge: "30d" }));
+app.use("/vendor", express.static(path.join(ROOT, "vendor"), { maxAge: "30d" }));
+app.get("/play.html", (req, res) => res.sendFile(path.join(ROOT, "play.html")));
+app.get("/data/data.json", (req, res) => { res.set("Cache-Control", "no-store"); res.json(readData()); });
 app.use("/photos", express.static(PHOTOS_DIR, { maxAge: "1d" }));
 
 app.get("/api/data", (req, res) => {

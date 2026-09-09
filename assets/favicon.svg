@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0a0a0a"/>
+  <g fill="none" stroke="#c9ff3d" stroke-width="3.5" stroke-linecap="round">
+    <circle cx="20" cy="20" r="7"/><circle cx="44" cy="20" r="7"/>
+    <path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20"/>
+    <path d="M10 40l16 1M10 46l16-1M54 40l-16 1M54 46l-16-1" stroke-width="2.5"/>
+  </g>
+  <circle cx="32" cy="41" r="2.5" fill="#c9ff3d"/>
+  <text x="32" y="36" text-anchor="middle" font-family="Impact,Arial Black,sans-serif" font-size="12" fill="#c9ff3d" letter-spacing="1">RAT</text>
+</svg>

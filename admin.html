@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Админка — Театр RAT</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
 <link href="fonts/fonts.css" rel="stylesheet">
 <style>
@@ -54,6 +55,9 @@
   .save .status.ok{color:var(--ok)} .save .status.err{color:var(--red)}
   .login{max-width:360px;margin:12vh auto 0}
   .login .err{color:var(--red);font-size:12px;margin-top:8px;min-height:16px}
+  .checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px}
+  .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);margin:0;cursor:pointer}
+  .chk input{width:auto;accent-color:var(--acid)}
   [hidden]{display:none!important}
   .empty{color:var(--muted);text-align:center;padding:24px}
   .help{font-size:12px;color:var(--muted);margin:0 0 14px}
@@ -100,6 +104,8 @@
       <button data-tab="events" class="on">Афиша</button>
       <button data-tab="plays">Спектакли</button>
       <button data-tab="actors">Актёры</button>
+      <button data-tab="reviews">Отзывы</button>
+      <button data-tab="gallery">Бэкстейдж</button>
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
     </div>
@@ -128,6 +134,20 @@
       </div>
     </div>
 
+    <!-- Отзывы -->
+    <div class="tab" id="tab-reviews">
+      <p class="help"><b>Отзывы зрителей и прессы.</b> Показываются на главной в разделе «Говорят» и на странице спектакля, если отзыв к нему привязан.</p>
+      <div id="list-reviews"></div>
+      <button class="btn ghost" data-add="reviews">+ Добавить отзыв</button>
+    </div>
+
+    <!-- Бэкстейдж -->
+    <div class="tab" id="tab-gallery">
+      <p class="help"><b>Стена в гримёрке.</b> Можно выбрать сразу много фото — каждое станет отдельной карточкой. Фото сжимаются автоматически. Если привязать к спектаклю, попадёт и на его страницу.</p>
+      <label class="btn ghost" style="margin-bottom:14px">+ Загрузить фото<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-multi="gallery" style="display:none"></label>
+      <div id="list-gallery"></div>
+    </div>
+
     <!-- О театре -->
     <div class="tab" id="tab-theatre">
       <div class="panel">
@@ -141,6 +161,16 @@
         <div class="row">
           <div><label>Где играем</label><input data-th="venue"></div>
           <div><label>Адрес</label><input data-th="address"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Видео или фото в шапке главной</h2>
+        <p class="help">Короткий ролик без звука, 5–10 секунд, MP4 до 10 МБ (лучше 720p). Он крутится по кругу за заголовком с зерном поверх. Фото-заставка показывается, пока видео грузится, и вместо видео на слабом интернете.</p>
+        <div class="row">
+          <div><label>Видео</label><div class="photo" id="heroVideoBox" style="width:100%;aspect-ratio:16/9">Нет видео</div>
+            <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить видео<input type="file" accept="video/mp4,video/webm,video/quicktime" data-th-file="heroVideo"></label><button class="btn ghost sm" data-th-clear="heroVideo" style="justify-content:center">Убрать</button></div></div>
+          <div><label>Фото-заставка</label><div class="photo" id="heroPosterBox" style="width:100%;aspect-ratio:16/9">Нет фото</div>
+            <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить фото<input type="file" accept="image/jpeg,image/png,image/webp" data-th-file="heroPoster"></label><button class="btn ghost sm" data-th-clear="heroPoster" style="justify-content:center">Убрать</button></div></div>
         </div>
       </div>
       <div class="panel">
@@ -250,8 +280,8 @@ const githubBackend = {
     const j = await this.gh("data/data.json", { method: "PUT", body: JSON.stringify(body) }); ghSha = j.content.sha; return d;
   },
   async upload(file) {
-    const c = ghCfg(); const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[file.type] || ".jpg";
-    if (file.size > 8 * 1024 * 1024) throw new Error("Файл больше 8 МБ");
+    const c = ghCfg(); const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov" }[file.type] || ".jpg";
+    if (file.size > 10 * 1024 * 1024) throw new Error("Файл больше 10 МБ");
     const path = `photos/${Date.now()}-${Math.random().toString(16).slice(2, 8)}${ext}`;
     await this.gh(path, { method: "PUT", body: JSON.stringify({ message: "Фото из админки", content: await fileToB64(file), branch: c.branch }) });
     return path;
@@ -286,7 +316,9 @@ const SECTIONS = {
         <div><label>Цена</label><input data-f="price" value="${esc(e.price)}" placeholder="от 1500 ₽"></div>
       </div>
       <label>Ссылка на билеты для этого показа</label><input data-f="ticketUrl" value="${esc(e.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">
-      <label>Пометка (премьера, последний показ, название события)</label><input data-f="note" value="${esc(e.note || "")}">`,
+      <label>Пометка (название события, если «другое»)</label><input data-f="note" value="${esc(e.note || "")}">
+      <label>Стикеры на афише</label>
+      <div class="checks">${Object.entries(BADGES).map(([k, v]) => `<label class="chk"><input type="checkbox" data-badge="${k}" ${(e.badges || []).includes(k) ? "checked" : ""}> ${v}</label>`).join("")}</div>`,
   },
   plays: {
     img: "poster", label: p => p.title || "Новый спектакль",
@@ -302,6 +334,7 @@ const SECTIONS = {
         <div><label>Возраст</label><input data-f="age" value="${esc(p.age)}" placeholder="18+"></div>
         <div><label>Идентификатор</label><input data-f="id" value="${esc(p.id)}"></div>
       </div>
+      <label>Кто играет (строкой, для страницы спектакля)</label><input data-f="cast" value="${esc(p.cast || "")}" placeholder="Иван Петров, Мария Соколова, ...">
       <label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">`,
   },
   actors: {
@@ -312,6 +345,7 @@ const SECTIONS = {
         <div><label>Имя и фамилия</label><input data-f="name" value="${esc(a.name)}"></div>
         <div><label>О себе (на главной, в труппе)</label><input data-f="bio" value="${esc(a.bio || "")}" placeholder="Актёр, режиссёр, автор текстов"></div>
       </div>
+      <label>Роли (на обороте карточки в труппе)</label><input data-f="roles" value="${esc(a.roles || "")}" placeholder="Гамлет («Мёртвая волна»), Диджей («ПОХ»)">
       <div class="row">
         <div><label>Сцена / роль (для голосования)</label><input data-f="role" value="${esc(a.role)}" placeholder="Сцена 1 · Гамлет"></div>
         <div><label>Банк, к которому привязан номер</label><input data-f="bank" value="${esc(a.bank)}" placeholder="Сбербанк"></div>
@@ -320,7 +354,29 @@ const SECTIONS = {
       <label>Ссылка СБП (qr.nspk.ru)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/..."><div class="hint" data-hint="sbp"></div>
       <label>Телефон для СБП (запасной способ)</label><input data-f="phone" value="${esc(a.phone)}" placeholder="+7 900 000-00-00">`,
   },
+  reviews: {
+    img: null, label: r => (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
+    blank: () => ({ text: "", author: "", source: "", url: "", playId: "" }),
+    form: r => `
+      <label>Текст отзыва</label><textarea data-f="text">${esc(r.text)}</textarea>
+      <div class="row3">
+        <div><label>Автор</label><input data-f="author" value="${esc(r.author)}" placeholder="Анна, зритель"></div>
+        <div><label>Источник</label><input data-f="source" value="${esc(r.source)}" placeholder="Афиша Daily"></div>
+        <div><label>Спектакль</label><select data-f="playId"><option value="" ${!r.playId ? "selected" : ""}>— ко всем —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === r.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
+      </div>
+      <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://...">`,
+  },
+  gallery: {
+    img: "photo", label: g => g.caption || "Фото",
+    blank: () => ({ photo: "", caption: "", playId: "" }),
+    form: g => `
+      <div class="row">
+        <div><label>Подпись</label><input data-f="caption" value="${esc(g.caption)}" placeholder="Гримёрка перед «ПОХ»"></div>
+        <div><label>Спектакль</label><select data-f="playId"><option value="" ${!g.playId ? "selected" : ""}>— общий бэкстейдж —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === g.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
+      </div>`,
+  },
 };
+const BADGES = { premiere: "Премьера", last: "Последний показ", few: "Мало билетов", soldout: "Sold out" };
 const playTitle = id => data.plays.find(p => p.id === id)?.title || "";
 
 function showLogin() {
@@ -362,6 +418,9 @@ function renderList(key) {
 }
 function renderStatic() {
   document.querySelectorAll("[data-th]").forEach(i => i.value = data.theatre[i.dataset.th] || "");
+  const v = data.theatre.heroVideo, pst = data.theatre.heroPoster;
+  $("#heroVideoBox").innerHTML = v ? `<video src="${previews[v] || backend.photoUrl(v)}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>` : "Нет видео";
+  $("#heroPosterBox").innerHTML = pst ? `<img src="${previews[pst] || backend.photoUrl(pst) + "?" + Date.now()}" alt="">` : "Нет фото";
   document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
 }
 function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
@@ -386,9 +445,12 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   const t = e.target;
+  if (t.dataset.badge) { const el = t.closest(".entry"); const ev = data.events[el.dataset.i]; ev.badges = Object.keys(BADGES).filter(k => el.querySelector(`[data-badge=${k}]`).checked); markDirty(); return; }
   if (t.tagName === "SELECT" && t.dataset.f) { const el = t.closest(".entry"); const item = data[el.dataset.key][el.dataset.i]; item[t.dataset.f] = t.value; el.querySelector(".title").textContent = SECTIONS[el.dataset.key].label(item); markDirty(); }
 });
 document.addEventListener("click", e => {
+  const clr = e.target.closest("[data-th-clear]");
+  if (clr) { data.theatre[clr.dataset.thClear] = ""; renderStatic(); markDirty(); return; }
   const add = e.target.closest("[data-add]");
   if (add) { const key = add.dataset.add; data[key].push(SECTIONS[key].blank()); markDirty(); renderList(key); const last = $("#list-" + key).lastElementChild; last.scrollIntoView({ behavior: "smooth" }); last.querySelector("input:not([type=file])")?.focus(); return; }
   const b = e.target.closest("[data-act]"); if (!b) return;
@@ -399,12 +461,44 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
   markDirty(); renderList(key);
 });
+/* сжатие фото перед загрузкой: до 1600px по длинной стороне, WebP (или JPEG, если браузер не умеет WebP) */
+async function compressImage(file) {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const max = 1600, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    let blob = await new Promise(r => c.toBlob(r, "image/webp", 0.82));
+    if (!blob || blob.type !== "image/webp") blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + (blob.type === "image/webp" ? ".webp" : ".jpg"), { type: blob.type });
+  } catch { return file; }
+}
+async function uploadFile(file) { return backend.upload(await compressImage(file)); }
+
 document.addEventListener("change", async e => {
-  const t = e.target; if (!t.dataset.file || !t.files[0]) return;
+  const t = e.target;
+  if (t.dataset.thFile && t.files[0]) {
+    const file = t.files[0]; setStatus(file.type.startsWith("video") ? "Загружаю видео…" : "Загружаю фото…");
+    try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); data.theatre[t.dataset.thFile] = path; renderStatic(); markDirty(); setStatus("Загружено — не забудьте сохранить"); }
+    catch (err) { setStatus(err.message, "err"); }
+    t.value = ""; return;
+  }
+  if (t.dataset.multi && t.files.length) {
+    const files = [...t.files]; let n = 0;
+    for (const file of files) {
+      setStatus(`Загружаю фото ${++n} из ${files.length}…`);
+      try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); data[t.dataset.multi].push({ photo: path, caption: "", playId: "" }); }
+      catch (err) { setStatus(err.message, "err"); break; }
+    }
+    markDirty(); renderList(t.dataset.multi); setStatus(`Загружено: ${n}. Не забудьте сохранить`); t.value = ""; return;
+  }
+  if (!t.dataset.file || !t.files[0]) return;
   const el = t.closest(".entry"); const key = el.dataset.key, i = +el.dataset.i; const file = t.files[0];
   setStatus("Загружаю фото…");
   try {
-    const photo = await backend.upload(file);
+    const photo = await uploadFile(file);
     if (backend.name === "github") previews[photo] = URL.createObjectURL(file);
     data[key][i][t.dataset.file] = photo; el.querySelector(".photo").innerHTML = photoHtml(photo); markDirty();
     setStatus("Фото загружено — не забудьте сохранить");
@@ -433,7 +527,7 @@ $("#loginForm").onsubmit = async e => {
 $("#logout").onclick = async () => { await backend.logout(); showLogin(); };
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; return d; }
+function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; d.reviews ||= []; d.gallery ||= []; return d; }
 async function load() {
   if (!(await backend.me())) return showLogin();
   data = normalize(await backend.load());

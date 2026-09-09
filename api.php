@@ -37,37 +37,51 @@ function readData(string $file): array {
 function str($v, int $max = 500): string { return mb_substr(trim((string)($v ?? '')), 0, $max); }
 function url($v): string { $v = str($v, 500); return preg_match('~^https?://\S+$~', $v) ? $v : ''; }
 function img($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
+function media($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
 function sanitize(array $in): array {
   $show = is_array($in['show'] ?? null) ? $in['show'] : [];
   $th = is_array($in['theatre'] ?? null) ? $in['theatre'] : [];
-  $actors = []; $plays = []; $events = [];
-  foreach (array_slice(is_array($in['actors'] ?? null) ? $in['actors'] : [], 0, 50) as $a) {
+  $lst = fn($k, $max) => array_slice(is_array($in[$k] ?? null) ? $in[$k] : [], 0, $max);
+  $actors = []; $plays = []; $events = []; $reviews = []; $gallery = [];
+  foreach ($lst('actors', 50) as $a) {
     if (!is_array($a)) continue;
-    $item = ['name' => str($a['name'] ?? '', 100), 'role' => str($a['role'] ?? '', 100), 'scene' => str($a['scene'] ?? '', 400), 'bio' => str($a['bio'] ?? '', 600),
+    $item = ['name' => str($a['name'] ?? '', 100), 'role' => str($a['role'] ?? '', 100), 'scene' => str($a['scene'] ?? '', 400), 'bio' => str($a['bio'] ?? '', 600), 'roles' => str($a['roles'] ?? '', 300),
              'photo' => img($a['photo'] ?? ''), 'sbp' => url($a['sbp'] ?? ''), 'phone' => str($a['phone'] ?? '', 30), 'bank' => str($a['bank'] ?? '', 60)];
     if ($item['name'] !== '') $actors[] = $item;
   }
-  foreach (array_slice(is_array($in['plays'] ?? null) ? $in['plays'] : [], 0, 50) as $p) {
+  foreach ($lst('plays', 50) as $p) {
     if (!is_array($p)) continue;
     $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
-    $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 1500),
-             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'ticketUrl' => url($p['ticketUrl'] ?? '')];
+    $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 3000),
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? '')];
     if ($item['title'] !== '') $plays[] = $item;
   }
-  foreach (array_slice(is_array($in['events'] ?? null) ? $in['events'] : [], 0, 200) as $e) {
+  $BADGES = ['premiere', 'last', 'few', 'soldout'];
+  foreach ($lst('events', 200) as $e) {
     if (!is_array($e)) continue;
     $date = str($e['date'] ?? '', 10);
     if (!preg_match('~^\d{4}-\d{2}-\d{2}$~', $date)) continue;
+    $badges = array_values(array_filter(is_array($e['badges'] ?? null) ? $e['badges'] : [], fn($b) => in_array($b, $BADGES, true)));
     $events[] = ['date' => $date, 'time' => str($e['time'] ?? '', 5), 'playId' => str($e['playId'] ?? '', 40), 'venue' => str($e['venue'] ?? '', 120),
-                 'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'note' => str($e['note'] ?? '', 120)];
+                 'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'note' => str($e['note'] ?? '', 120), 'badges' => $badges];
   }
   usort($events, fn($x, $y) => strcmp($x['date'] . $x['time'], $y['date'] . $y['time']));
+  foreach ($lst('reviews', 100) as $r) {
+    if (!is_array($r)) continue;
+    $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40)];
+    if ($item['text'] !== '') $reviews[] = $item;
+  }
+  foreach ($lst('gallery', 200) as $g) {
+    if (!is_array($g)) continue;
+    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'playId' => str($g['playId'] ?? '', 40)];
+    if ($item['photo'] !== '') $gallery[] = $item;
+  }
   return [
-    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 2000), 'venue' => str($th['venue'] ?? '', 120),
+    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'venue' => str($th['venue'] ?? '', 120),
                   'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
-                  'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? '')],
-    'plays' => $plays,
-    'events' => $events,
+                  'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? ''),
+                  'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? '')],
+    'plays' => $plays, 'events' => $events, 'reviews' => $reviews, 'gallery' => $gallery,
     'show' => ['theatre' => str($show['theatre'] ?? '', 100), 'title' => str($show['title'] ?? '', 100), 'dates' => str($show['dates'] ?? '', 100)],
     'actors' => $actors,
   ];
@@ -111,19 +125,25 @@ switch ($a) {
     out(['ok' => true, 'data' => $data]);
 
   case 'upload':
+    // фото (jpg/png/webp до 8 МБ) и видео для шапки (mp4/webm до 10 МБ)
     if ($method !== 'POST') fail('POST only', 405);
     requireAuth();
     $f = $_FILES['photo'] ?? null;
     if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
       $err = (int)($f['error'] ?? 0);
-      fail(in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'Файл слишком большой для этого хостинга' : 'Нужен файл JPG, PNG или WebP до 8 МБ');
+      fail(in_array($err, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true) ? 'Файл слишком большой для этого хостинга (лимит около 10 МБ)' : 'Не удалось получить файл');
     }
-    if ($f['size'] > 8 * 1024 * 1024) fail('Файл больше 8 МБ');
     $info = @getimagesize($f['tmp_name']);
     $ext = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'][$info['mime'] ?? ''] ?? null;
-    if (!$ext) fail('Нужен файл JPG, PNG или WebP');
+    if ($ext) { if ($f['size'] > 8 * 1024 * 1024) fail('Фото больше 8 МБ'); }
+    else {
+      $mime = function_exists('mime_content_type') ? (string)@mime_content_type($f['tmp_name']) : '';
+      $ext = ['video/mp4' => '.mp4', 'video/webm' => '.webm', 'video/quicktime' => '.mov'][$mime] ?? null;
+      if (!$ext) fail('Нужен файл JPG, PNG, WebP или видео MP4/WebM');
+      if ($f['size'] > 10 * 1024 * 1024) fail('Видео больше 10 МБ — сожмите его (5–10 секунд, 720p)');
+    }
     $name = time() . '-' . bin2hex(random_bytes(3)) . $ext;
-    if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить фото — проверьте права на папку photos', 500);
+    if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить файл — проверьте права на папку photos', 500);
     out(['ok' => true, 'photo' => 'photos/' . $name]);
 
   default:

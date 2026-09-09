@@ -5,146 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Театр RAT</title>
 <meta name="description" content="Театр RAT — актёрская шоу-лаборатория. Афиша, спектакли, труппа, билеты.">
+<!--OG-->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Театр RAT">
+<meta property="og:description" content="Актёрская шоу-лаборатория. Афиша, спектакли, билеты.">
+<meta property="og:image" content="https://rat-theater.rf.gd/assets/og-cover.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="ru_RU">
+<meta name="twitter:card" content="summary_large_image">
+<!--/OG-->
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link href="fonts/fonts.css" rel="stylesheet">
-<style>
-  :root{--black:#0a0a0a;--ink:#111;--paper:#f1eee4;--paper-2:#e6e2d6;--acid:#c9ff3d;--red:#ff3b2f;--muted:#5a574f;--tape:rgba(255,236,150,.55);--line:rgba(255,255,255,.12)}
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%}
-  body{background:var(--black);color:#f4f2ea;font-family:"PT Mono",ui-monospace,Menlo,monospace;line-height:1.5;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
-  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.14;mix-blend-mode:screen;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
-  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(700px 500px at 110% -10%, rgba(201,255,61,.16), transparent 60%),radial-gradient(600px 400px at -10% 100%, rgba(255,59,47,.14), transparent 60%)}
-  .wrap{max-width:1040px;margin:0 auto;padding:0 18px;position:relative;z-index:1}
-  a{color:inherit}
-  .oswald{font-family:"Oswald",Impact,sans-serif}
-  .spray{font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif}
-  h2.sec{font-family:"Oswald",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(36px,7vw,64px);line-height:.95;margin:0 0 6px;letter-spacing:-.01em}
-  h2.sec em{font-style:normal;font-family:"Rubik Spray Paint",Impact,sans-serif;font-weight:400;color:var(--acid);display:inline-block;transform:rotate(-2deg)}
-  .sec-sub{color:#9c978a;font-size:13px;margin:0 0 22px}
-  section{padding:56px 0 20px;scroll-margin-top:70px}
-
-  /* ---------- nav ---------- */
-  nav{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-  nav .wrap{display:flex;align-items:center;gap:14px;padding-top:6px;padding-bottom:6px}
-  .stamp{display:inline-flex;align-items:center;gap:8px;padding:5px 9px;border:2px solid #fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;transform:rotate(-2deg);text-decoration:none;white-space:nowrap}
-  .stamp .rat{width:20px;height:20px}
-  nav ul{list-style:none;margin:0 0 0 auto;padding:6px 0;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  nav ul::-webkit-scrollbar{display:none}
-  nav li a{display:block;padding:7px 10px;font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap;color:#ddd}
-  nav li a:hover{color:var(--acid)}
-  nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(-1.5deg)}
-  @media (max-width:640px){nav .wrap{flex-wrap:wrap}nav ul{margin-left:0;width:100%}}
-
-  /* ---------- hero ---------- */
-  .hero{padding:44px 0 10px;position:relative}
-  .hero h1{margin:0;line-height:.86;text-transform:uppercase;font-family:"Oswald",Impact,sans-serif;font-weight:700;font-size:clamp(70px,19vw,190px);letter-spacing:-.01em}
-  .hero h1 .a{display:block;color:#fff}
-  .hero h1 .b{display:block;font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif;font-weight:400;color:var(--acid);font-size:clamp(90px,24vw,240px);letter-spacing:.02em;transform:rotate(-2.5deg) translateX(2%);transform-origin:left;margin-top:4px;filter:drop-shadow(0 6px 0 rgba(0,0,0,.6))}
-  .hero .tag{margin:26px 0 0;max-width:600px;font-size:15px;color:#cfcbbd}
-  .next{display:inline-flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:22px;padding:12px 16px;background:var(--paper);color:var(--ink);transform:rotate(-1deg);box-shadow:0 12px 30px rgba(0,0,0,.5);position:relative}
-  .next .tape{position:absolute;width:70px;height:20px;background:var(--tape);left:18px;top:-10px;transform:rotate(-4deg)}
-  .next .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
-  .next .what{font-family:"Oswald",sans-serif;font-weight:700;font-size:20px;text-transform:uppercase;line-height:1.1}
-  .next .when{font-size:13px}
-
-  /* ---------- marquee ---------- */
-  .marq{margin:0 -30px;background:var(--acid);color:#000;overflow:hidden;transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;white-space:nowrap;display:flex}
-  .marq-outer{overflow:hidden;padding:14px 0;margin:26px 0 0}
-  .marq .track{flex:none;display:flex;align-items:center;padding:8px 0;animation:mq 60s linear infinite;will-change:transform}
-  .marq span{padding:0 18px}
-  .marq i{font-style:normal}
-  @keyframes mq{to{transform:translateX(-100%)}}
-  @media (prefers-reduced-motion:reduce){.marq .track{animation:none}}
-
-  /* ---------- buttons ---------- */
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:2.5px solid #000;cursor:pointer;text-decoration:none;font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;background:#000;color:var(--acid);transition:background .15s,color .15s,transform .1s;white-space:nowrap}
-  .btn:hover{background:var(--acid);color:#000}
-  .btn:active{transform:scale(.985)}
-  .btn.light{background:var(--acid);color:#000}
-  .btn.light:hover{background:#000;color:var(--acid)}
-  .btn.ghost{background:transparent;color:#000}
-  .btn.ghost:hover{background:#000;color:#fff}
-  .btn.disabled{pointer-events:none;opacity:.5}
-
-  /* ---------- afisha ---------- */
-  .afisha{display:flex;flex-direction:column;gap:14px}
-  .ev{display:grid;grid-template-columns:96px 1fr auto;gap:0 18px;align-items:center;background:var(--paper);color:var(--ink);padding:14px 18px 14px 14px;position:relative;box-shadow:0 12px 30px rgba(0,0,0,.45)}
-  .ev:nth-child(odd){transform:rotate(-.6deg)} .ev:nth-child(even){transform:rotate(.5deg)}
-  .ev .tape{position:absolute;width:70px;height:20px;background:var(--tape);right:14%;top:-9px;transform:rotate(3deg)}
-  .ev .d{text-align:center;border-right:2px dashed #999;padding-right:10px}
-  .ev .d b{display:block;font-family:"Rubik Spray Paint",Impact,sans-serif;font-weight:400;font-size:44px;line-height:.9;color:var(--red)}
-  .ev .d span{display:block;font-family:"Oswald",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
-  .ev .d small{display:block;font-size:11px;color:var(--muted)}
-  .ev .t{font-family:"Oswald",sans-serif;font-weight:700;font-size:24px;text-transform:uppercase;line-height:1;margin:0}
-  .ev .m{font-size:12px;color:var(--muted);margin-top:6px}
-  .ev .m b{color:#000;font-weight:400}
-  .ev .p{font-family:"Oswald",sans-serif;font-size:14px;margin-top:6px}
-  .ev .note{display:inline-block;background:var(--red);color:#fff;font-size:11px;padding:1px 6px;margin-left:6px;transform:rotate(-2deg)}
-  .ev .buy{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-  @media (max-width:640px){.ev{grid-template-columns:76px 1fr}.ev .buy{grid-column:1/-1;align-items:stretch;margin-top:12px}.ev .d b{font-size:36px}.ev .t{font-size:20px}}
-  .empty{padding:24px;border:2px dashed var(--line);color:#9c978a;text-align:center}
-
-  /* ---------- plays ---------- */
-  .plays{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:34px 22px;padding:0 6px}
-  .card{position:relative;transition:transform .25s ease}
-  .card:nth-child(2n+1){transform:rotate(-1.2deg)} .card:nth-child(2n){transform:rotate(.9deg)}
-  .card:hover{transform:rotate(0) translateY(-4px);z-index:2}
-  .paper{background:var(--paper);color:var(--ink);display:flex;flex-direction:column;height:100%;
-    clip-path:polygon(0 1.2%,3% 0,7% 1.4%,12% .3%,18% 1.6%,24% .2%,31% 1.3%,37% 0,44% 1.5%,51% .4%,58% 1.6%,64% .2%,71% 1.4%,78% 0,84% 1.5%,90% .3%,96% 1.3%,100% .4%,100% 98.8%,97% 100%,92% 98.6%,86% 99.8%,80% 98.5%,74% 99.9%,67% 98.7%,61% 100%,54% 98.6%,47% 99.7%,40% 98.5%,33% 99.9%,26% 98.7%,19% 100%,12% 98.6%,6% 99.8%,2% 98.7%,0 99.5%);
-    filter:drop-shadow(0 18px 30px rgba(0,0,0,.55))}
-  .card .tape{position:absolute;width:74px;height:22px;background:var(--tape);top:-9px;left:24%;transform:rotate(-6deg);z-index:3}
-  .card .tape.r{left:auto;right:16%;top:-7px;transform:rotate(5deg)}
-  .poster{position:relative;aspect-ratio:4/3;overflow:hidden;background:#1a1a1a;margin:12px 12px 0}
-  @supports not (aspect-ratio:1){.poster{height:0;padding-bottom:75%}.poster img,.poster.ph{position:absolute;inset:0;height:auto}.actor .ph{height:0;padding-bottom:100%}.actor .ph img,.actor .ph .in{position:absolute;inset:0;height:100%}}
-  .poster img{width:100%;height:100%;object-fit:cover;display:block}
-  .poster.ph{display:grid;place-items:center;background:repeating-linear-gradient(135deg,#151515 0 14px,#1d1d1d 14px 28px)}
-  .poster.ph .ttl{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(26px,5.5vw,44px);color:var(--acid);text-transform:uppercase;text-align:center;line-height:.95;padding:14px 40px 14px 14px;transform:rotate(-4deg);overflow-wrap:anywhere;word-break:break-word;max-width:100%}
-  .poster .age{position:absolute;z-index:2;top:10px;right:10px;background:var(--red);color:#fff;font-family:"Oswald",sans-serif;font-weight:700;font-size:13px;padding:2px 7px;transform:rotate(6deg)}
-  .body{padding:14px 16px 20px;display:flex;flex-direction:column;flex:1}
-  .title{margin:0;font-family:"Oswald",Impact,sans-serif;font-weight:700;font-size:32px;line-height:.95;text-transform:uppercase}
-  .genre{display:inline-block;margin:10px 0 0;padding:3px 8px;background:#000;color:var(--acid);font-family:"Oswald",sans-serif;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-1deg);align-self:flex-start}
-  .desc{color:var(--muted);font-size:13px;margin:12px 0 10px;flex:1}
-  .meta{font-size:12px;color:var(--muted);margin-bottom:12px}
-  .meta b{color:#000;font-weight:400}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .row .btn{flex:1}
-
-  /* ---------- troupe ---------- */
-  .troupe{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:26px 16px;padding:0 6px}
-  .actor{background:var(--paper);color:var(--ink);padding:10px 10px 14px;position:relative;box-shadow:0 12px 26px rgba(0,0,0,.45)}
-  .actor:nth-child(3n+1){transform:rotate(-1.5deg)} .actor:nth-child(3n+2){transform:rotate(1deg)} .actor:nth-child(3n+3){transform:rotate(-.5deg)}
-  .actor .tape{position:absolute;width:60px;height:18px;background:var(--tape);left:50%;top:-9px;transform:translateX(-50%) rotate(-3deg)}
-  .actor .ph{position:relative;aspect-ratio:1;overflow:hidden;background:#151515}
-  .actor .ph img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15)}
-  .actor .ph::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:multiply;opacity:.75;pointer-events:none}
-  .actor .ph .in{position:absolute;inset:0;display:grid;place-items:center;font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:56px;color:#fff;background:repeating-linear-gradient(135deg,#151515 0 14px,#1d1d1d 14px 28px)}
-  .actor .n{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;text-transform:uppercase;line-height:1;margin:12px 0 4px}
-  .actor .r{font-size:11px;color:var(--muted)}
-
-  /* ---------- about / contacts ---------- */
-  .about{display:grid;grid-template-columns:1.4fr 1fr;gap:22px;align-items:start}
-  @media (max-width:720px){.about{grid-template-columns:1fr}}
-  .about .txt{font-size:15px;color:#d9d5c7;white-space:pre-line}
-  .place{background:var(--paper);color:var(--ink);padding:16px 18px;transform:rotate(1deg);position:relative;box-shadow:0 12px 26px rgba(0,0,0,.45)}
-  .place .tape{position:absolute;width:70px;height:20px;background:var(--tape);left:20px;top:-10px;transform:rotate(-4deg)}
-  .place .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:4px}
-  .place .v{font-family:"Oswald",sans-serif;font-weight:600;font-size:18px;text-transform:uppercase;line-height:1.15}
-  .place .a{font-size:12px;margin-top:6px;color:var(--muted)}
-  .contacts{display:flex;flex-wrap:wrap;gap:10px}
-  .contacts a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--line);font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:#eee}
-  .contacts a:hover{border-color:var(--acid);color:var(--acid)}
-
-  /* ---------- golos banner ---------- */
-  .golos{margin:60px 0 0;background:var(--acid);color:#000;padding:26px 22px;transform:rotate(-1deg);display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;border:3px solid #000;box-shadow:0 18px 40px rgba(0,0,0,.5)}
-  .golos .big{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(30px,6vw,52px);line-height:.95;flex:1;min-width:220px}
-  .golos p{margin:6px 0 0;font-size:13px;max-width:460px}
-  .golos .btn{border-color:#000;background:#000;color:var(--acid)}
-
-  footer{padding:50px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
-  footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block;color:var(--acid)}
-  footer a{color:#cfcbbd}
-</style>
+<link href="assets/site.css" rel="stylesheet">
 </head>
 <body>
 
@@ -162,20 +36,24 @@
 
 <nav>
   <div class="wrap">
-    <a class="stamp" href="#"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <a class="stamp" href="./"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
     <ul>
       <li><a href="#afisha">Афиша</a></li>
       <li><a href="#plays">Спектакли</a></li>
       <li><a href="#troupe">Труппа</a></li>
+      <li><a href="#reviews">Отзывы</a></li>
+      <li><a href="#backstage">Бэкстейдж</a></li>
       <li><a href="#about">О театре</a></li>
       <li><a href="#contacts">Контакты</a></li>
       <li><a class="cta" href="golos">Голосуй рублём</a></li>
     </ul>
   </div>
 </nav>
+<div class="today" id="today" hidden></div>
 
 <div class="wrap">
   <section class="hero" style="padding-top:44px">
+    <div class="hero-media" id="heroMedia" hidden></div>
     <h1><span class="a">Театр</span><span class="b">RAT</span></h1>
     <p class="tag" id="tagline"></p>
     <div class="next" id="next" hidden>
@@ -190,25 +68,37 @@
 
 <main class="wrap">
   <section id="afisha">
-    <h2 class="sec">Афиша <em>ближайшее</em></h2>
+    <h2 class="sec">Афиша <em>ближайшее</em><span class="stamp-deco">RAT ✦ билеты</span></h2>
     <p class="sec-sub">Билеты продаёт площадка — оплата картой или через СБП на её сайте.</p>
     <div class="afisha" id="afishaList"></div>
   </section>
 
   <section id="plays">
-    <h2 class="sec">Спек<em>такли</em></h2>
+    <h2 class="sec">Спек<em>такли</em><span class="stamp-deco">репертуар</span></h2>
     <p class="sec-sub">Сочинены внутри театра. Играем на Лесной.</p>
     <div class="plays" id="playsList"></div>
   </section>
 
   <section id="troupe">
-    <h2 class="sec">Труп<em>па</em></h2>
-    <p class="sec-sub">Те самые люди со сцены.</p>
+    <h2 class="sec">Труп<em>па</em><span class="stamp-deco">те самые</span></h2>
+    <p class="sec-sub">Нажми на карточку — на обороте роли.</p>
     <div class="troupe" id="troupeList"></div>
   </section>
 
+  <section id="reviews" hidden>
+    <h2 class="sec">Гово<em>рят</em><span class="stamp-deco">зрители</span></h2>
+    <p class="sec-sub">Что пишут после спектаклей.</p>
+    <div class="reviews" id="reviewsList"></div>
+  </section>
+
+  <section id="backstage" hidden>
+    <h2 class="sec">Бэк<em>стейдж</em><span class="stamp-deco">гримёрка</span></h2>
+    <p class="sec-sub">Стена в гримёрке. Нажми, чтобы увеличить.</p>
+    <div class="wall" id="wall"></div>
+  </section>
+
   <section id="about">
-    <h2 class="sec">О теа<em>тре</em></h2>
+    <h2 class="sec">О теа<em>тре</em><span class="stamp-deco">с 2016</span></h2>
     <div class="about">
       <div class="txt" id="aboutText"></div>
       <div class="place"><span class="tape"></span><div class="lbl">Где играем</div><div class="v" id="venue"></div><div class="a" id="address"></div></div>
@@ -219,6 +109,8 @@
     <h2 class="sec">Кон<em>такты</em></h2>
     <div class="contacts" id="contactsList"></div>
     <p class="sec-sub" id="metaNote" hidden style="margin-top:14px;font-size:11px">* Instagram принадлежит компании Meta Platforms Inc., признанной экстремистской организацией; её деятельность запрещена на территории Российской Федерации.</p>
+    <div class="map" id="map" hidden></div>
+    <div id="shareBox" style="margin-top:26px"></div>
   </section>
 
   <a class="golos" href="golos" style="text-decoration:none">
@@ -227,6 +119,8 @@
     <span class="btn">Открыть</span>
   </a>
 </main>
+
+<div class="lightbox" id="lightbox"><img alt=""><div class="cap"></div></div>
 
 <footer>
   <div class="wrap">
@@ -237,114 +131,78 @@
   </div>
 </footer>
 
+<script src="assets/site.js"></script>
 <script>
-window.addEventListener("error", e => { const d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
-/* Запасные данные — используются только если сервер и data/data.json недоступны */
-const FALLBACK = { theatre: { name: "Театр RAT", tagline: "Актёрская шоу-лаборатория." }, plays: [], events: [], actors: [] };
-
-const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const initials = n => n.split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join("");
-const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
-const MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
-const DAYS = ["вс","пн","вт","ср","чт","пт","сб"];
-const parseDate = d => { const [y,m,dd] = d.split("-").map(Number); return new Date(y, m-1, dd); };
-const fmtLong = e => { const d = parseDate(e.date); return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${DAYS[d.getDay()]}${e.time ? " · " + e.time : ""}`; };
-
-/* бегущая лента */
-(() => {
-  const items = ["Театр RAT", "Афиша", "Мёртвая волна", "ПОХ", "Билеты", "Голосуй рублём"];
-  const html = items.map(t => `<span>${t}</span><i>✦</i>`).join("").repeat(4);
-  const tracks = document.querySelectorAll(".marq .track");
-  tracks.forEach(t => t.innerHTML = html);
-  const fit = () => { const w = tracks[0].getBoundingClientRect().width; tracks.forEach(t => t.style.animationDuration = (w / 80) + "s"); };
-  fit(); if (document.fonts) document.fonts.ready.then(fit);
-})();
+window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
+var FALLBACK = { theatre: { name: "Театр RAT", tagline: "Актёрская шоу-лаборатория." }, plays: [], events: [], actors: [] };
 
 function render(d) {
-  const th = d.theatre || {}, plays = d.plays || [], actors = d.actors || [];
-  const byId = Object.fromEntries(plays.map(p => [p.id, p]));
-  const today = new Date(); today.setHours(0,0,0,0);
-  const events = (d.events || []).filter(e => parseDate(e.date) >= today).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
-  const ticket = (e, p) => (e && e.ticketUrl) || (p && p.ticketUrl) || th.ticketsUrl || "";
-
+  var R = RAT, esc = R.esc, th = d.theatre, map = R.byId(d), events = R.upcoming(d);
   document.title = th.name || "Театр RAT";
   document.getElementById("navName").textContent = th.name || "Театр RAT";
-  document.getElementById("footName").textContent = `© ${new Date().getFullYear()} ${th.name || "Театр RAT"}`;
+  document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
   document.getElementById("tagline").textContent = th.tagline || "";
 
+  /* видео или фото в шапке */
+  var hm = document.getElementById("heroMedia");
+  if (th.heroVideo) { hm.innerHTML = '<video autoplay muted loop playsinline preload="metadata"' + (th.heroPoster ? ' poster="' + esc(th.heroPoster) + '"' : "") + '><source src="' + esc(th.heroVideo) + '"></video>'; hm.hidden = false; }
+  else if (th.heroPoster) { hm.innerHTML = '<img src="' + esc(th.heroPoster) + '" alt="">'; hm.hidden = false; }
+
   /* ближайший показ */
-  const next = events[0];
+  var next = events[0];
   if (next) {
-    const p = byId[next.playId];
+    var p = map[next.playId];
     document.getElementById("next").hidden = false;
     document.getElementById("nextWhat").textContent = p ? p.title : (next.note || "Спектакль");
-    document.getElementById("nextWhen").textContent = `${fmtLong(next)} · ${next.venue || th.venue || ""}`;
-    const b = document.getElementById("nextBtn"); const u = ticket(next, p);
-    b.href = u || "#afisha"; if (!u) { b.textContent = "Смотреть афишу"; b.removeAttribute("target"); }
+    document.getElementById("nextWhen").textContent = R.fmtLong(next) + " · " + (next.venue || th.venue || "");
+    var b = document.getElementById("nextBtn"), u = R.ticket(next, p, th);
+    if (R.hasBadge(next, "soldout")) { b.textContent = "Билетов нет"; b.href = "#afisha"; b.removeAttribute("target"); }
+    else { b.href = u || "#afisha"; if (!u) { b.textContent = "Смотреть афишу"; b.removeAttribute("target"); } }
   }
 
   /* афиша */
-  const af = document.getElementById("afishaList");
-  af.innerHTML = events.length ? events.map(e => {
-    const p = byId[e.playId]; const dt = parseDate(e.date); const u = ticket(e, p);
-    return `<div class="ev"><span class="tape"></span>
-      <div class="d"><b>${dt.getDate()}</b><span>${MONTHS_SHORT[dt.getMonth()]}</span><small>${DAYS[dt.getDay()]}${e.time ? " · " + esc(e.time) : ""}</small></div>
-      <div><h3 class="t">${esc(p ? p.title : (e.note || "Спектакль"))}${e.note && p ? `<span class="note">${esc(e.note)}</span>` : ""}</h3>
-        <div class="m"><b>${esc(e.venue || th.venue || "")}</b>${p && p.duration ? ` · ${esc(p.duration)}` : ""}${p && p.age ? ` · ${esc(p.age)}` : ""}</div>
-        ${e.price ? `<div class="p">${esc(e.price)}</div>` : ""}</div>
-      <div class="buy">${u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">Купить билет</a>` : `<span class="btn disabled">Скоро в продаже</span>`}</div>
-    </div>`;
-  }).join("") : `<div class="empty">Ближайшие даты скоро объявим. Следите в соцсетях.</div>`;
+  document.getElementById("afishaList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, map[e.playId], th); }).join("") : '<div class="empty">Ближайшие даты скоро объявим. Следите в соцсетях.</div>';
 
   /* спектакли */
-  const pl = document.getElementById("playsList");
-  pl.innerHTML = plays.length ? plays.map(p => {
-    const nextOf = events.find(e => e.playId === p.id); const u = ticket(nextOf, p);
-    return `<article class="card"><span class="tape"></span><span class="tape r"></span><div class="paper">
-      <div class="poster ${p.poster ? "" : "ph"}">${p.poster ? `<img src="${esc(p.poster)}" alt="${esc(p.title)}" loading="lazy">` : `<span class="ttl">${esc(p.title)}</span>`}${p.age ? `<span class="age">${esc(p.age)}</span>` : ""}</div>
-      <div class="body">
-        <h3 class="title">${esc(p.title)}</h3>
-        ${p.genre ? `<span class="genre">${esc(p.genre)}</span>` : ""}
-        <p class="desc">${esc(p.description)}</p>
-        <div class="meta">${p.duration ? `<b>${esc(p.duration)}</b>` : ""}${nextOf ? ` · ближайший показ <b>${fmtLong(nextOf)}</b>` : " · дат пока нет"}</div>
-        <div class="row">${u ? `<a class="btn" href="${esc(u)}" target="_blank" rel="noopener">Купить билет</a>` : ""}<a class="btn ghost" href="#afisha">Все даты</a></div>
-      </div></div></article>`;
-  }).join("") : `<div class="empty">Спектакли появятся здесь.</div>`;
+  document.getElementById("playsList").innerHTML = d.plays.length ? d.plays.map(function (p) {
+    var nextOf = events.filter(function (e) { return e.playId === p.id; })[0], u = R.ticket(nextOf, p, th), href = R.playUrl(p);
+    return '<article class="card rv"><span class="tape"></span><span class="tape r"></span><div class="paper">' +
+      '<a class="poster ' + (p.poster ? "" : "ph") + '" href="' + href + '">' + (p.poster ? '<img src="' + esc(p.poster) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<span class="ttl">' + esc(p.title) + "</span>") + (p.age ? '<span class="age">' + esc(p.age) + "</span>" : "") + "</a>" +
+      '<div class="body"><h3 class="title"><a href="' + href + '">' + esc(p.title) + "</a></h3>" + (p.genre ? '<span class="genre">' + esc(p.genre) + "</span>" : "") +
+      '<p class="desc">' + esc(p.description) + "</p>" +
+      '<div class="meta">' + (p.duration ? "<b>" + esc(p.duration) + "</b>" : "") + (nextOf ? " · ближайший показ <b>" + R.fmtLong(nextOf) + "</b>" : " · дат пока нет") + "</div>" +
+      '<div class="row">' + (u && !R.hasBadge(nextOf || {}, "soldout") ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener">Купить билет</a>' : "") + '<a class="btn ghost" href="' + href + '">Подробнее</a></div>' +
+      "</div></div></article>";
+  }).join("") : '<div class="empty">Спектакли появятся здесь.</div>';
 
   /* труппа */
-  const tr = document.getElementById("troupeList");
-  tr.innerHTML = actors.length ? actors.map(a => `<div class="actor"><span class="tape"></span>
-      <div class="ph">${a.photo ? `<img src="${esc(a.photo)}" alt="${esc(a.name)}" loading="lazy">` : `<div class="in">${esc(initials(a.name))}</div>`}</div>
-      <div class="n">${esc(a.name)}</div>${a.bio ? `<div class="r">${esc(a.bio)}</div>` : ""}</div>`).join("")
-    : `<div class="empty">Труппа скоро появится.</div>`;
+  document.getElementById("troupeList").innerHTML = d.actors.length ? d.actors.map(R.actorCard).join("") : '<div class="empty">Труппа скоро появится.</div>';
 
-  /* о театре, контакты */
+  /* отзывы, бэкстейдж */
+  if (d.reviews.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = d.reviews.map(R.reviewCard).join(""); }
+  if (d.gallery.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = d.gallery.map(R.shot).join(""); }
+
+  /* о театре, контакты, карта */
   document.getElementById("aboutText").textContent = th.about || "";
   document.getElementById("venue").textContent = th.venue || "";
   document.getElementById("address").textContent = th.address || "";
-  const links = [
-    th.telegram && ["Telegram", th.telegram], th.vk && ["VK", th.vk], th.instagram && ["Instagram*", th.instagram],
-    th.email && ["Почта", "mailto:" + th.email], th.phone && ["Телефон", "tel:" + th.phone.replace(/[^\d+]/g, "")],
-    th.ticketsUrl && ["Билеты", th.ticketsUrl],
-  ].filter(Boolean);
-  document.getElementById("contactsList").innerHTML = links.map(([t, u]) => `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>`).join("") || `<div class="empty">Контакты скоро появятся.</div>`;
+  var links = [th.telegram && ["Telegram", th.telegram], th.vk && ["VK", th.vk], th.instagram && ["Instagram*", th.instagram],
+    th.email && ["Почта", "mailto:" + th.email], th.phone && ["Телефон", "tel:" + th.phone.replace(/[^\d+]/g, "")], th.ticketsUrl && ["Билеты", th.ticketsUrl]].filter(Boolean);
+  document.getElementById("contactsList").innerHTML = links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + l[0] + "</a>"; }).join("") || '<div class="empty">Контакты скоро появятся.</div>';
   document.getElementById("metaNote").hidden = !th.instagram;
+  if (th.address) {
+    var m = document.getElementById("map"), q = encodeURIComponent(th.address);
+    m.innerHTML = '<div class="ph"><div><b>' + esc(th.venue || "Где играем") + "</b>" + esc(th.address) + '</div><div class="row"><button class="btn sm" id="mapLoad">Показать карту</button><a class="btn ghost onDark sm" href="https://yandex.ru/maps/?text=' + q + '" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a></div></div>';
+    m.hidden = false;
+    document.getElementById("mapLoad").onclick = function () { m.innerHTML = '<iframe title="Карта" src="https://yandex.ru/map-widget/v1/?text=' + q + '&z=16"></iframe>'; };
+  }
+  document.getElementById("shareBox").innerHTML = R.shareHtml(R.siteUrl(), th.name || "Театр RAT");
+
+  R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox();
 }
 
-(async () => {
-  let d = null; const log = [];
-  for (const url of ["data/data.json?t=" + Date.now(), "/api/data", "api.php?a=data"]) {
-    try {
-      const r = await fetch(url, { cache: "no-store", credentials: "same-origin" });
-      const ct = r.headers.get("content-type") || "";
-      if (!r.ok || ct.indexOf("json") < 0) { log.push(url + " → " + r.status + " " + ct.split(";")[0]); continue; }
-      const j = await r.json(); if (j && (j.theatre || j.actors)) { d = j; break; }
-      log.push(url + " → пустой ответ");
-    } catch (e) { log.push(url + " → " + e.message); }
-  }
-  if (!d) { d = FALLBACK; const g = document.getElementById("diag"); if (g) g.textContent = "Данные не загрузились, показана заглушка. Обновите страницу.\n" + log.join("\n"); }
-  try { render(d); } catch (e) { const g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; }
-})();
+RAT.marquee(["Театр RAT", "Афиша", "Спектакли", "Билеты", "Голосуй рублём"]);
+RAT.loadData(FALLBACK).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
 </script>
 </body>
 </html>

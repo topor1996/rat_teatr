@@ -1,6 +1,9 @@
-# Короткие адреса (Apache-хостинг, InfinityFree)
+# Короткие адреса и серверная подстановка превью (Apache-хостинг, InfinityFree)
+DirectoryIndex index.php index.html
 RewriteEngine On
 RewriteRule ^admin/$ /admin [R=301,L]
 RewriteRule ^admin$ admin.html [L]
 RewriteRule ^golos/$ /golos [R=301,L]
 RewriteRule ^golos$ golos.html [L]
+RewriteCond %{DOCUMENT_ROOT}/play.php -f
+RewriteRule ^play\.html$ play.php [L,QSA]

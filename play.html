@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Спектакль — Театр RAT</title>
+<meta name="description" content="Спектакль театра RAT: описание, даты, билеты.">
+<!--OG-->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Спектакль — Театр RAT">
+<meta property="og:description" content="Описание, даты, билеты.">
+<meta property="og:image" content="https://rat-theater.rf.gd/assets/og-cover.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:locale" content="ru_RU">
+<meta name="twitter:card" content="summary_large_image">
+<!--/OG-->
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link href="fonts/fonts.css" rel="stylesheet">
+<link href="assets/site.css" rel="stylesheet">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="rat" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/>
+    <circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/>
+    <path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="32" cy="41" r="2.5" fill="currentColor"/>
+    <path d="M10 40l16 1M10 46l16-1M54 40l-16 1M54 46l-16-1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="32" y="36" text-anchor="middle" font-family="Impact,sans-serif" font-size="12" fill="currentColor" letter-spacing="1">RAT</text>
+  </symbol>
+</svg>
+
+<nav>
+  <div class="wrap">
+    <a class="stamp" href="./"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <ul>
+      <li><a href="./#afisha">Афиша</a></li>
+      <li><a href="./#plays">Спектакли</a></li>
+      <li><a href="./#troupe">Труппа</a></li>
+      <li><a href="./#contacts">Контакты</a></li>
+      <li><a class="cta" href="golos">Голосуй рублём</a></li>
+    </ul>
+  </div>
+</nav>
+<div class="today" id="today" hidden></div>
+
+<main class="wrap">
+  <div id="notFound" class="empty" hidden style="margin-top:40px">Такого спектакля нет. <a href="./">На главную</a></div>
+  <section class="phero" id="phero" hidden>
+    <a class="poster" id="pPoster" href="#"></a>
+    <div>
+      <h1 id="pTitle"></h1>
+      <span class="genre" id="pGenre" hidden></span>
+      <div class="metaline" id="pMeta"></div>
+      <div class="lead" id="pDesc"></div>
+      <div class="cast" id="pCast" hidden></div>
+      <div class="row" id="pRow"></div>
+      <div id="pShare" style="margin-top:22px"></div>
+    </div>
+  </section>
+
+  <section id="dates" hidden>
+    <h2 class="sec">Да<em>ты</em><span class="stamp-deco">билеты</span></h2>
+    <p class="sec-sub">Билеты продаёт площадка — оплата картой или через СБП на её сайте.</p>
+    <div class="afisha" id="datesList"></div>
+  </section>
+
+  <section id="reviews" hidden>
+    <h2 class="sec">Гово<em>рят</em></h2>
+    <div class="reviews" id="reviewsList"></div>
+  </section>
+
+  <section id="backstage" hidden>
+    <h2 class="sec">Бэк<em>стейдж</em></h2>
+    <div class="wall" id="wall"></div>
+  </section>
+
+  <section id="others" hidden>
+    <h2 class="sec">Ещё <em>спектакли</em></h2>
+    <div class="plays" id="othersList"></div>
+  </section>
+
+  <a class="golos" href="golos" style="text-decoration:none">
+    <div class="big">Голосуй рублём</div>
+    <div><p>После спектакля зрители выбирают лучшую сцену и переводят актёру благодарность через СБП.</p></div>
+    <span class="btn">Открыть</span>
+  </a>
+</main>
+
+<div class="lightbox" id="lightbox"><img alt=""><div class="cap"></div></div>
+
+<footer>
+  <div class="wrap">
+    <div id="diag" style="color:#ff3b2f;font-size:11px;margin-bottom:10px;white-space:pre-wrap"></div>
+    <svg class="rat"><use href="#rat"/></svg>
+    <div id="footName">Театр RAT</div>
+    <div style="margin-top:6px"><a href="./">На главную</a> · <a href="golos">Голосуй рублём</a></div>
+  </div>
+</footer>
+
+<script src="assets/site.js"></script>
+<script>
+window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
+
+function render(d) {
+  var R = RAT, esc = R.esc, th = d.theatre, map = R.byId(d);
+  var id = new URLSearchParams(location.search).get("id") || "", p = map[id];
+  document.getElementById("navName").textContent = th.name || "Театр RAT";
+  document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
+  if (!p) { document.getElementById("notFound").hidden = false; document.title = "Спектакль не найден — " + (th.name || "Театр RAT"); return; }
+
+  document.title = p.title + " — " + (th.name || "Театр RAT");
+  var events = R.upcoming(d).filter(function (e) { return e.playId === p.id; });
+  var nextOf = events[0], u = R.ticket(nextOf, p, th), url = R.siteUrl() + R.playUrl(p);
+
+  document.getElementById("phero").hidden = false;
+  var po = document.getElementById("pPoster");
+  po.className = "poster " + (p.poster ? "" : "ph"); po.href = p.poster || "#";
+  po.innerHTML = (p.poster ? '<img src="' + esc(p.poster) + '" alt="' + esc(p.title) + '">' : '<span class="ttl">' + esc(p.title) + "</span>") + (p.age ? '<span class="age">' + esc(p.age) + "</span>" : "");
+  if (!p.poster) po.removeAttribute("href");
+  document.getElementById("pTitle").textContent = p.title;
+  var g = document.getElementById("pGenre"); if (p.genre) { g.textContent = p.genre; g.hidden = false; }
+  document.getElementById("pMeta").innerHTML = [p.duration && "<b>" + esc(p.duration) + "</b>", p.age && "<b>" + esc(p.age) + "</b>", (nextOf ? "ближайший показ <b>" + R.fmtLong(nextOf) + "</b>" : "дат пока нет")].filter(Boolean).join(" · ");
+  document.getElementById("pDesc").textContent = p.description || "";
+  if (p.cast) { var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + esc(p.cast); c.hidden = false; }
+  document.getElementById("pRow").innerHTML = (u && nextOf && !R.hasBadge(nextOf, "soldout") ? '<a class="btn light" href="' + esc(u) + '" target="_blank" rel="noopener">Купить билет</a>' : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>';
+  document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT"));
+
+  document.getElementById("dates").hidden = false;
+  document.getElementById("datesList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, p, th, { link: false }); }).join("") : '<div class="empty">Ближайших дат пока нет. Следите в соцсетях.</div>';
+
+  var revs = d.reviews.filter(function (r) { return !r.playId || r.playId === p.id; });
+  if (revs.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join(""); }
+  var shots = d.gallery.filter(function (x) { return x.playId === p.id; });
+  if (shots.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = shots.map(R.shot).join(""); }
+
+  var others = d.plays.filter(function (x) { return x.id !== p.id; });
+  if (others.length) {
+    document.getElementById("others").hidden = false;
+    document.getElementById("othersList").innerHTML = others.map(function (o) {
+      return '<article class="card rv"><span class="tape"></span><div class="paper"><a class="poster ' + (o.poster ? "" : "ph") + '" href="' + R.playUrl(o) + '">' + (o.poster ? '<img src="' + esc(o.poster) + '" alt="' + esc(o.title) + '" loading="lazy">' : '<span class="ttl">' + esc(o.title) + "</span>") + "</a>" +
+        '<div class="body"><h3 class="title"><a href="' + R.playUrl(o) + '">' + esc(o.title) + "</a></h3>" + (o.genre ? '<span class="genre">' + esc(o.genre) + "</span>" : "") + '<p class="desc">' + esc(o.description) + '</p><div class="row"><a class="btn ghost" href="' + R.playUrl(o) + '">Подробнее</a></div></div></div></article>';
+    }).join("");
+  }
+  R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox();
+}
+RAT.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [] }).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
+</script>
+</body>
+</html>
