@@ -80,9 +80,11 @@ function sanitize(array $in): array {
     'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'venue' => str($th['venue'] ?? '', 120),
                   'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
                   'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? ''),
-                  'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? '')],
+                  'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? ''), 'mapCoords' => str($th['mapCoords'] ?? '', 40), 'marquee' => str($th['marquee'] ?? '', 300)],
     'plays' => $plays, 'events' => $events, 'reviews' => $reviews, 'gallery' => $gallery,
-    'show' => ['theatre' => str($show['theatre'] ?? '', 100), 'title' => str($show['title'] ?? '', 100), 'dates' => str($show['dates'] ?? '', 100)],
+    'show' => ['theatre' => str($show['theatre'] ?? '', 100), 'title' => str($show['title'] ?? '', 100), 'dates' => str($show['dates'] ?? '', 100),
+               'heading1' => str($show['heading1'] ?? '', 40), 'heading2' => str($show['heading2'] ?? '', 40), 'lead' => str($show['lead'] ?? '', 400), 'marquee' => str($show['marquee'] ?? '', 300),
+               'thanks' => str($show['thanks'] ?? '', 80), 'thanksNote' => str($show['thanksNote'] ?? '', 200)],
     'actors' => $actors,
   ];
 }

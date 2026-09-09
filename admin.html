@@ -162,6 +162,10 @@
           <div><label>Где играем</label><input data-th="venue"></div>
           <div><label>Адрес</label><input data-th="address"></div>
         </div>
+        <div class="row">
+          <div><label>Координаты точки на карте (широта, долгота)</label><input data-th="mapCoords" placeholder="55.7820, 37.5935"><p class="hint">Открой место в Яндекс.Картах, правой кнопкой → «Что здесь?», скопируй числа. Без координат карта показывает поиск по адресу.</p></div>
+          <div><label>Бегущая строка на главной</label><input data-th="marquee" placeholder="Театр RAT, Афиша, Спектакли, Билеты, Голосуй рублём"><p class="hint">Фразы через запятую.</p></div>
+        </div>
       </div>
       <div class="panel">
         <h2>Видео или фото в шапке главной</h2>
@@ -197,6 +201,20 @@
           <div><label>Даты (в шапке)</label><input data-show="dates" placeholder="12 · 25 сентября"></div>
         </div>
         <label>Название спектакля</label><input data-show="title">
+      </div>
+      <div class="panel">
+        <h2>Тексты страницы</h2>
+        <p class="help">Пустое поле — остаётся текст по умолчанию.</p>
+        <div class="row">
+          <div><label>Заголовок, первая строка</label><input data-show="heading1" placeholder="Голосуй"></div>
+          <div><label>Заголовок, вторая строка (зелёная)</label><input data-show="heading2" placeholder="рублём"></div>
+        </div>
+        <label>Текст под заголовком</label><textarea data-show="lead" placeholder="За лучшую сцену спектакля. Выбери актёра, жми кнопку, переводи из любого банка через СБП. Сумма — любая."></textarea>
+        <label>Бегущая строка (фразы через запятую)</label><input data-show="marquee" placeholder="Лучшая сцена, Любой банк, СБП, Голосуй рублём, Театр RAT">
+        <div class="row">
+          <div><label>Надпись внизу</label><input data-show="thanks" placeholder="Спасибо, что пришли"></div>
+          <div><label>Подпись внизу</label><input data-show="thanksNote" placeholder="Перевод — добровольная благодарность. Любая сумма — это уже аплодисменты."></div>
+        </div>
       </div>
     </div>
   </div>

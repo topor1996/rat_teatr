@@ -190,11 +190,15 @@ function render(d) {
     th.email && ["Почта", "mailto:" + th.email], th.phone && ["Телефон", "tel:" + th.phone.replace(/[^\d+]/g, "")], th.ticketsUrl && ["Билеты", th.ticketsUrl]].filter(Boolean);
   document.getElementById("contactsList").innerHTML = links.map(function (l) { return '<a href="' + esc(l[1]) + '" target="_blank" rel="noopener">' + l[0] + "</a>"; }).join("") || '<div class="empty">Контакты скоро появятся.</div>';
   document.getElementById("metaNote").hidden = !th.instagram;
-  if (th.address) {
-    var m = document.getElementById("map"), q = encodeURIComponent(th.address);
-    m.innerHTML = '<div class="ph"><div><b>' + esc(th.venue || "Где играем") + "</b>" + esc(th.address) + '</div><div class="row"><button class="btn sm" id="mapLoad">Показать карту</button><a class="btn ghost onDark sm" href="https://yandex.ru/maps/?text=' + q + '" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a></div></div>';
+  if (th.address || th.mapCoords) {
+    var m = document.getElementById("map"), q = encodeURIComponent(th.address || "");
+    var c = String(th.mapCoords || "").split(/[,\s]+/).map(Number).filter(function (n) { return !isNaN(n); });
+    var pt = c.length === 2 ? c[1] + "," + c[0] : null; // виджету нужна долгота,широта
+    var widget = pt ? "https://yandex.ru/map-widget/v1/?ll=" + pt + "&z=17&pt=" + pt + ",pm2rdm" : "https://yandex.ru/map-widget/v1/?text=" + q + "&z=16";
+    var open = pt ? "https://yandex.ru/maps/?ll=" + pt + "&z=17&pt=" + pt + ",pm2rdm&text=" + q : "https://yandex.ru/maps/?text=" + q;
+    m.innerHTML = '<div class="ph"><div><b>' + esc(th.venue || "Где играем") + "</b>" + esc(th.address) + '</div><div class="row"><button class="btn sm" id="mapLoad">Показать карту</button><a class="btn ghost onDark sm" href="' + open + '" target="_blank" rel="noopener">Открыть в Яндекс.Картах</a></div></div>';
     m.hidden = false;
-    document.getElementById("mapLoad").onclick = function () { m.innerHTML = '<iframe title="Карта" src="https://yandex.ru/map-widget/v1/?text=' + q + '&z=16"></iframe>'; };
+    document.getElementById("mapLoad").onclick = function () { m.innerHTML = '<iframe title="Карта" src="' + widget + '"></iframe>'; };
   }
   document.getElementById("shareBox").innerHTML = R.shareHtml(R.siteUrl(), th.name || "Театр RAT");
 
@@ -205,7 +209,7 @@ function render(d) {
 }
 
 RAT.marquee(["Театр RAT", "Афиша", "Спектакли", "Билеты", "Голосуй рублём"]);
-RAT.loadData(FALLBACK).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
+RAT.loadData(FALLBACK).then(function (d) { try { if (d.theatre.marquee) RAT.marquee(String(d.theatre.marquee).split(/[,\n]/).map(function (x) { return x.trim(); }).filter(Boolean)); render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
 </script>
 </body>
 </html>

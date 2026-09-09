@@ -246,8 +246,8 @@
   </div>
 
   <section class="hero">
-    <h1><span class="a">Голосуй</span><span class="b">рублём</span></h1>
-    <p class="sub">За лучшую сцену спектакля. Выбери актёра, жми кнопку, переводи <b>из любого банка</b> через СБП. Сумма — любая.</p>
+    <h1><span class="a" id="h1a">Голосуй</span><span class="b" id="h1b">рублём</span></h1>
+    <p class="sub" id="lead">За лучшую сцену спектакля. Выбери актёра, жми кнопку, переводи <b>из любого банка</b> через СБП. Сумма — любая.</p>
     <div class="show" id="showLine"></div>
   </section>
 </div>
@@ -268,8 +268,8 @@
 <footer>
   <div class="wrap">
     <svg class="rat" style="color:var(--acid)"><use href="#rat"/></svg>
-    <div class="big">Спасибо, <em>что пришли</em></div>
-    <div>Перевод — добровольная благодарность. Любая сумма — это уже аплодисменты.</div>
+    <div class="big" id="thanks">Спасибо, <em>что пришли</em></div>
+    <div id="thanksNote">Перевод — добровольная благодарность. Любая сумма — это уже аплодисменты.</div>
   </div>
 </footer>
 
@@ -358,14 +358,15 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const initials = n => n.split(/\s+/).filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join("");
 
 /* бегущая лента: заполняем две дорожки одинаковым текстом, скорость — от ширины */
-(() => {
-  const items = ["Лучшая сцена", "Любой банк", "СБП", "Голосуй рублём", "Театр RAT"];
-  const html = items.map(t => `<span>${t}</span><i>✦</i>`).join("").repeat(4);
+function marquee(items) {
+  const html = items.map(t => `<span>${esc(t)}</span><i>✦</i>`).join("").repeat(4);
   const tracks = document.querySelectorAll(".marq .track");
   tracks.forEach(t => t.innerHTML = html);
   const fit = () => { const w = tracks[0].getBoundingClientRect().width; tracks.forEach(t => t.style.animationDuration = (w / 80) + "s"); };
   fit(); if (document.fonts) document.fonts.ready.then(fit);
-})();
+}
+const splitList = s => String(s || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
+marquee(["Лучшая сцена", "Любой банк", "СБП", "Голосуй рублём", "Театр RAT"]);
 
 const grid = document.getElementById("grid");
 let current = ACTORS;
@@ -373,6 +374,13 @@ let current = ACTORS;
 function render(SHOW, ACTORS) {
 current = ACTORS;
 document.getElementById("showLine").innerHTML = `Спектакль: <b>${esc(SHOW.title)}</b>`;
+document.getElementById("showLine").hidden = !SHOW.title;
+if (SHOW.heading1) document.getElementById("h1a").textContent = SHOW.heading1;
+if (SHOW.heading2) document.getElementById("h1b").textContent = SHOW.heading2;
+if (SHOW.lead) document.getElementById("lead").textContent = SHOW.lead;
+if (SHOW.thanks) document.getElementById("thanks").textContent = SHOW.thanks;
+if (SHOW.thanksNote) document.getElementById("thanksNote").textContent = SHOW.thanksNote;
+if (SHOW.marquee) marquee(splitList(SHOW.marquee));
 document.getElementById("dateLine").textContent = SHOW.dates || "";
 document.querySelectorAll(".stamp-name").forEach(el => el.textContent = SHOW.theatre || "Театр RAT");
 grid.innerHTML = ACTORS.map((a, i) => {
