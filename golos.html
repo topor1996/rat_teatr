@@ -21,7 +21,7 @@
     --tape:rgba(255,236,150,.55);
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%}
   body{
     background:var(--black);color:#f4f2ea;
     font-family:"PT Mono",ui-monospace,Menlo,monospace;
@@ -86,12 +86,13 @@
 
   /* ---------- marquee ---------- */
   .marq{
-    margin:34px -30px 8px;background:var(--acid);color:#000;overflow:hidden;
+    margin:0 -30px;background:var(--acid);color:#000;overflow:hidden;
     transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;
     font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;
     white-space:nowrap;display:flex
   }
   /* две одинаковые дорожки едут друг за другом — стык не виден, лента бесконечная */
+  .marq-outer{overflow:hidden;padding:14px 0;margin:20px 0 0}
   .marq .track{flex:none;display:flex;align-items:center;padding:8px 0;animation:mq 60s linear infinite;will-change:transform}
   .marq span{padding:0 18px}
   .marq i{font-style:normal}
@@ -253,7 +254,7 @@
   </section>
 </div>
 
-<div class="marq" aria-hidden="true"><div class="track"></div><div class="track"></div></div>
+<div class="marq-outer"><div class="marq" aria-hidden="true"><div class="track"></div><div class="track"></div></div></div>
 
 <main class="wrap">
   <div class="steps">
