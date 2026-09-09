@@ -316,7 +316,7 @@ function render(d) {
   const tr = document.getElementById("troupeList");
   tr.innerHTML = actors.length ? actors.map(a => `<div class="actor"><span class="tape"></span>
       <div class="ph">${a.photo ? `<img src="${esc(a.photo)}" alt="${esc(a.name)}" loading="lazy">` : `<div class="in">${esc(initials(a.name))}</div>`}</div>
-      <div class="n">${esc(a.name)}</div><div class="r">${esc(a.bio || a.role || "")}</div></div>`).join("")
+      <div class="n">${esc(a.name)}</div>${a.bio ? `<div class="r">${esc(a.bio)}</div>` : ""}</div>`).join("")
     : `<div class="empty">Труппа скоро появится.</div>`;
 
   /* о театре, контакты */
