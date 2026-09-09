@@ -16,6 +16,7 @@
 - `data/data.json` — все данные (театр, спектакли, показы, актёры), `photos/` — фото и постеры.
 - `api.php` + `config.php` — бэкенд для PHP-хостинга (InfinityFree), вход по паролю.
 - `.htaccess` — короткие адреса `/golos` и `/admin` на Apache; папки `golos/` и `admin/` делают то же на GitHub Pages.
+- `fonts/` и `vendor/` — шрифты и скрипт QR-кода лежат на своём хостинге, ничего не грузится с Google и CDN.
 - `server.js`, `Dockerfile` — вариант с Node.js для платного хостинга (не обязателен).
 - `qr-print.pdf`, `qr-site.png`, `qr-site.svg` — QR-код на `/golos` для печати на сиденья.
 
@@ -48,7 +49,7 @@
 1. Зарегистрироваться на infinityfree.com → Create Account → выбрать бесплатный поддомен (например `rat-teatr.rf.gd`) или указать свой домен. Подождать, пока аккаунт активируется (обычно минуты).
 2. Открыть `config.example.php`, сохранить копию как `config.php` и вписать свой пароль вместо `смените-меня`. Пока стоит значение по умолчанию, вход в админку закрыт.
 3. В панели InfinityFree открыть File Manager (или подключиться по FTP через FileZilla, данные FTP показаны в панели) и зайти в папку `htdocs`. Удалить оттуда стандартные файлы.
-4. Загрузить в `htdocs`: `index.html`, `golos.html`, `admin.html`, `api.php`, `config.php`, `.htaccess`, папку `data` с `data.json` и пустую папку `photos`.
+4. Загрузить в `htdocs`: `index.html`, `golos.html`, `admin.html`, `api.php`, `config.php`, `.htaccess`, папки `fonts`, `vendor`, `data` с `data.json` и пустую папку `photos`.
 5. Открыть `https://ваш-домен/admin.html`, ввести пароль.
 
 Сохранение работает сразу, без задержки. Фото складываются в папку `photos` на хостинге.
