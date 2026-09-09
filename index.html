@@ -198,6 +198,9 @@ function render(d) {
   }
   document.getElementById("shareBox").innerHTML = R.shareHtml(R.siteUrl(), th.name || "Театр RAT");
 
+  /* пустые разделы не показываем в меню */
+  document.querySelectorAll('nav li a[href^="#"]').forEach(function (a) { var sec = document.getElementById(a.getAttribute("href").slice(1)); if (sec && sec.hidden) a.parentNode.hidden = true; });
+
   R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox();
 }
 

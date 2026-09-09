@@ -533,7 +533,14 @@ async function load() {
   data = normalize(await backend.load());
   showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
 }
-detectBackend().then(load);
+/* страховка: если за 8 секунд ничего не показалось (например, хостинг не пустил запросы к api.php), показать форму входа с подсказкой */
+setTimeout(() => {
+  if ($("#loginView").hidden && $("#editor").hidden) {
+    backend = phpBackend; showLogin();
+    $("#loginErr").textContent = "Сервер не ответил на проверку. Обновите страницу через пару секунд — обычно помогает.";
+  }
+}, 8000);
+detectBackend().then(load).catch(err => { showLogin(); $("#loginErr").textContent = err.message; });
 </script>
 </body>
 </html>
