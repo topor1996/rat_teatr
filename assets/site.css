@@ -1,5 +1,5 @@
 /* ===== Театр RAT — общие стили главной и страниц спектаклей ===== */
-:root{--black:#0a0a0a;--ink:#111;--paper:#f1eee4;--paper-2:#e6e2d6;--acid:#7A1F3D;--cream:#f4f2ea;--spray:#7A1F3D;--spray-font:"Road Rage","Rubik Burned",Impact,sans-serif;--red:#ff3b2f;--muted:#5a574f;--tape:rgba(255,236,150,.55);--line:rgba(255,255,255,.12)}
+:root{--black:#0a0a0a;--ink:#111;--paper:#f1eee4;--paper-2:#e6e2d6;--acid:#c9ff3d;--red:#ff3b2f;--muted:#5a574f;--tape:rgba(255,236,150,.55);--line:rgba(255,255,255,.12)}
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%}
@@ -10,7 +10,7 @@ body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;back
 .wrap{max-width:1040px;margin:0 auto;padding:0 18px;position:relative;z-index:1}
 a{color:inherit}
 h2.sec{font-family:"Oswald",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(36px,7vw,64px);line-height:.95;margin:0 0 6px;letter-spacing:-.01em;position:relative}
-h2.sec em{font-style:normal;font-family:var(--spray-font);font-weight:400;color:var(--spray);display:inline-block;transform:rotate(-2deg);-webkit-text-stroke:.6px rgba(244,242,234,.22);padding-right:.08em}
+h2.sec em{font-style:normal;font-family:"Rubik Spray Paint",Impact,sans-serif;font-weight:400;color:var(--acid);display:inline-block;transform:rotate(-2deg)}
 h2.sec .stamp-deco{position:absolute;right:0;top:8px;font-family:"Oswald",sans-serif;font-weight:600;font-size:11px;letter-spacing:.2em;border:2px solid rgba(255,255,255,.35);color:rgba(255,255,255,.45);padding:4px 8px;transform:rotate(8deg);pointer-events:none}
 @media (max-width:640px){h2.sec .stamp-deco{display:none}}
 .sec-sub{color:#9c978a;font-size:13px;margin:0 0 22px}
@@ -35,8 +35,8 @@ nav .wrap{display:flex;align-items:center;gap:14px;padding-top:6px;padding-botto
 nav ul{list-style:none;margin:0 0 0 auto;padding:6px 0;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 nav ul::-webkit-scrollbar{display:none}
 nav li a{display:block;padding:7px 10px;font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap;color:#ddd}
-nav li a:hover{color:#fff;text-decoration:underline;text-decoration-color:var(--acid);text-decoration-thickness:2px;text-underline-offset:5px}
-nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform:rotate(-1.5deg)}
+nav li a:hover{color:var(--acid)}
+nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(-1.5deg)}
 @media (max-width:640px){nav .wrap{flex-wrap:wrap}nav ul{margin-left:0;width:100%}}
 
 /* ---------- «Сегодня играем» ---------- */
@@ -45,9 +45,9 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 .today .lbl{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:20px;line-height:1;transform:rotate(-2deg);display:inline-block;white-space:nowrap}
 .today .txt{font-size:13px;flex:1;min-width:200px}
 .today .txt b{font-family:"Oswald",sans-serif;font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:.04em}
-.today .btn{border-color:#000;background:#000;color:var(--cream);padding:9px 14px;font-size:14px}
-.today.live{background:var(--acid);color:var(--cream)}
-.today.live .btn{background:#000;color:var(--cream)}
+.today .btn{border-color:#000;background:#000;color:var(--acid);padding:9px 14px;font-size:14px}
+.today.live{background:var(--acid);color:#000}
+.today.live .btn{background:#000;color:var(--acid)}
 
 /* ---------- hero ---------- */
 .hero{padding:44px 0 10px;position:relative}
@@ -56,7 +56,7 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 .hero-media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.35),rgba(10,10,10,.55) 60%,var(--black))}
 .hero h1{margin:0;line-height:.86;text-transform:uppercase;font-family:"Oswald",Impact,sans-serif;font-weight:700;font-size:clamp(70px,19vw,190px);letter-spacing:-.01em}
 .hero h1 .a{display:block;color:#fff}
-.hero h1 .b{display:block;font-family:var(--spray-font);font-weight:400;color:var(--spray);-webkit-text-stroke:1px rgba(244,242,234,.22);padding-right:.1em;font-size:clamp(100px,27vw,270px);line-height:1;letter-spacing:.02em;transform:rotate(-2.5deg) translateX(2%);transform-origin:left;margin-top:4px;filter:drop-shadow(0 6px 0 rgba(0,0,0,.6))}
+.hero h1 .b{display:block;font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif;font-weight:400;color:var(--acid);font-size:clamp(90px,24vw,240px);letter-spacing:.02em;transform:rotate(-2.5deg) translateX(2%);transform-origin:left;margin-top:4px;filter:drop-shadow(0 6px 0 rgba(0,0,0,.6))}
 .hero .tag{margin:26px 0 0;max-width:600px;font-size:15px;color:#cfcbbd}
 .next{display:inline-flex;flex-wrap:wrap;align-items:center;gap:12px 18px;margin-top:22px;padding:12px 16px;background:var(--paper);color:var(--ink);transform:rotate(-1deg);box-shadow:0 12px 30px rgba(0,0,0,.5);position:relative}
 .next .tape{position:absolute;width:70px;height:20px;background:var(--tape);left:18px;top:-10px;transform:rotate(-4deg)}
@@ -66,7 +66,7 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 
 /* ---------- marquee ---------- */
 .marq-outer{overflow:hidden;padding:14px 0;margin:26px 0 0}
-.marq{margin:0 -30px;background:var(--acid);color:var(--cream);overflow:hidden;transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;white-space:nowrap;display:flex}
+.marq{margin:0 -30px;background:var(--acid);color:#000;overflow:hidden;transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;white-space:nowrap;display:flex}
 .marq .track{flex:none;display:flex;align-items:center;padding:8px 0;animation:mq 60s linear infinite;will-change:transform}
 .marq span{padding:0 18px}
 .marq i{font-style:normal}
@@ -74,11 +74,11 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 @media (prefers-reduced-motion:reduce){.marq .track{animation:none}}
 
 /* ---------- buttons ---------- */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:2.5px solid #000;cursor:pointer;text-decoration:none;font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;background:var(--acid);color:var(--cream);transition:background .15s,color .15s,transform .1s;white-space:nowrap}
-.btn:hover{background:var(--cream);color:#000}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:2.5px solid #000;cursor:pointer;text-decoration:none;font-family:"Oswald",sans-serif;font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;background:#000;color:var(--acid);transition:background .15s,color .15s,transform .1s;white-space:nowrap}
+.btn:hover{background:var(--acid);color:#000}
 .btn:active{transform:scale(.985)}
-.btn.light{background:#000;color:var(--cream)}
-.btn.light:hover{background:var(--cream);color:#000}
+.btn.light{background:var(--acid);color:#000}
+.btn.light:hover{background:#000;color:var(--acid)}
 .btn.ghost{background:transparent;color:#000}
 .btn.ghost:hover{background:#000;color:#fff}
 .btn.ghost.onDark{color:#fff;border-color:rgba(255,255,255,.5)}
@@ -112,7 +112,7 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 /* стикеры */
 .badges{position:absolute;top:-12px;left:14px;display:flex;gap:6px;z-index:2}
 .badge{font-family:"Oswald",sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--red);color:#fff;transform:rotate(-3deg);box-shadow:0 3px 8px rgba(0,0,0,.3)}
-.badge.premiere{background:var(--acid);color:var(--cream)}
+.badge.premiere{background:var(--acid);color:#000}
 .badge.last{background:#000;color:#fff}
 .badge.few{background:#ff9f1c;color:#000}
 .badge.soldout{background:#555;color:#fff;transform:rotate(3deg)}
@@ -131,13 +131,13 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 @supports not (aspect-ratio:1){.poster{height:0;padding-bottom:75%}.poster img,.poster.ph{position:absolute;inset:0;height:auto}}
 .poster img{width:100%;height:100%;object-fit:cover;display:block}
 .poster.ph{display:grid;place-items:center;background:repeating-linear-gradient(135deg,#151515 0 14px,#1d1d1d 14px 28px)}
-.poster.ph .ttl{font-family:var(--spray-font);font-size:clamp(26px,5.5vw,44px);color:var(--acid);-webkit-text-stroke:.6px rgba(244,242,234,.3);text-transform:uppercase;text-align:center;line-height:.95;padding:14px 40px 14px 14px;transform:rotate(-4deg);overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+.poster.ph .ttl{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(26px,5.5vw,44px);color:var(--acid);text-transform:uppercase;text-align:center;line-height:.95;padding:14px 40px 14px 14px;transform:rotate(-4deg);overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .poster .age{position:absolute;z-index:2;top:10px;right:10px;background:var(--red);color:#fff;font-family:"Oswald",sans-serif;font-weight:700;font-size:13px;padding:2px 7px;transform:rotate(6deg)}
 .body{padding:14px 16px 20px;display:flex;flex-direction:column;flex:1}
 .title{margin:0;font-family:"Oswald",Impact,sans-serif;font-weight:700;font-size:32px;line-height:.95;text-transform:uppercase}
 .title a{text-decoration:none}
 .title a:hover{color:var(--red)}
-.genre{display:inline-block;margin:10px 0 0;padding:3px 8px;background:var(--acid);color:var(--cream);font-family:"Oswald",sans-serif;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-1deg);align-self:flex-start}
+.genre{display:inline-block;margin:10px 0 0;padding:3px 8px;background:#000;color:var(--acid);font-family:"Oswald",sans-serif;font-weight:500;font-size:12px;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-1deg);align-self:flex-start}
 .desc{color:var(--muted);font-size:13px;margin:12px 0 10px;flex:1}
 .meta{font-size:12px;color:var(--muted);margin-bottom:12px}
 .meta b{color:#000;font-weight:400}
@@ -156,7 +156,7 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 .flip .ph{position:relative;aspect-ratio:1;overflow:hidden;background:#151515}
 @supports not (aspect-ratio:1){.flip .ph{height:0;padding-bottom:100%}.flip .ph img,.flip .ph .in{position:absolute;inset:0;height:100%}}
 .flip .ph img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15)}
-.flip .ph::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:color;opacity:.9;pointer-events:none}
+.flip .ph::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:multiply;opacity:.75;pointer-events:none}
 .flip .ph .in{position:absolute;inset:0;display:grid;place-items:center;font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:56px;color:#fff;background:repeating-linear-gradient(135deg,#151515 0 14px,#1d1d1d 14px 28px)}
 .flip .n{font-family:"Oswald",sans-serif;font-weight:700;font-size:19px;text-transform:uppercase;line-height:1;margin:12px 0 4px}
 .flip .r{font-size:11px;color:var(--muted)}
@@ -201,7 +201,7 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 .place .a{font-size:12px;margin-top:6px;color:var(--muted)}
 .contacts{display:flex;flex-wrap:wrap;gap:10px}
 .contacts a{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--line);font-family:"Oswald",sans-serif;font-weight:500;font-size:14px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:#eee}
-.contacts a:hover{border-color:var(--acid);color:#fff}
+.contacts a:hover{border-color:var(--acid);color:var(--acid)}
 .map{margin-top:22px;border:3px solid #000;box-shadow:0 12px 30px rgba(0,0,0,.5);transform:rotate(.5deg);background:#111}
 .map .ph{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:18px;font-size:13px;color:#cfcbbd}
 .map .ph b{display:block;color:#fff;font-family:"Oswald",sans-serif;font-size:16px;text-transform:uppercase;letter-spacing:.04em}
@@ -212,10 +212,10 @@ nav li a.cta{background:var(--acid);color:var(--cream);font-weight:700;transform
 .share .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#9c978a;margin-right:4px}
 
 /* ---------- golos banner / footer ---------- */
-.golos{margin:60px 0 0;background:var(--acid);color:var(--cream);padding:26px 22px;transform:rotate(-1deg);display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;border:3px solid #000;box-shadow:0 18px 40px rgba(0,0,0,.5)}
+.golos{margin:60px 0 0;background:var(--acid);color:#000;padding:26px 22px;transform:rotate(-1deg);display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;border:3px solid #000;box-shadow:0 18px 40px rgba(0,0,0,.5)}
 .golos .big{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(30px,6vw,52px);line-height:.95;flex:1;min-width:220px}
 .golos p{margin:6px 0 0;font-size:13px;max-width:460px}
-.golos .btn{border-color:#000;background:#000;color:var(--cream)}
+.golos .btn{border-color:#000;background:#000;color:var(--acid)}
 footer{padding:50px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
 footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block;color:var(--acid)}
 footer a{color:#cfcbbd}
@@ -233,4 +233,4 @@ footer a{color:#cfcbbd}
 .phero .row{margin-top:22px}
 .phero .row .btn{flex:none}
 .cast{font-size:14px;color:#cfcbbd;margin-top:14px}
-.cast b{color:#fff;font-weight:400}
+.cast b{color:var(--acid);font-weight:400}
