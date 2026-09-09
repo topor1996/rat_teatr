@@ -54,8 +54,9 @@
   .stamp{
     display:inline-flex;align-items:center;gap:8px;padding:6px 10px;
     border:2px solid #fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;
-    transform:rotate(-2deg);background:rgba(0,0,0,.4)
+    transform:rotate(-2deg);background:rgba(0,0,0,.4);text-decoration:none;color:inherit
   }
+  .stamp:hover{border-color:var(--acid);color:var(--acid)}
   .stamp .rat{width:22px;height:22px}
   .date{color:var(--acid);font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
 
@@ -241,7 +242,7 @@
 
 <div class="wrap">
   <div class="top">
-    <span class="stamp"><svg class="rat"><use href="#rat"/></svg> <span class="stamp-name">Театр RAT</span></span>
+    <a class="stamp" href="./" title="На главную"><svg class="rat"><use href="#rat"/></svg> <span class="stamp-name">Театр RAT</span></a>
     <span class="date" id="dateLine"></span>
   </div>
 
