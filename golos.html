@@ -13,6 +13,8 @@
     --paper:#f1eee4;
     --paper-2:#e6e2d6;
     --acid:#c9ff3d;
+    --spray:#7A1F3D;
+    --spray-font:"Road Rage","Lobster",Impact,sans-serif;
     --acid-2:#a8e020;
     --red:#ff3b2f;
     --muted:#5a574f;
@@ -67,8 +69,8 @@
   }
   .hero h1 .a{display:block;color:#fff}
   .hero h1 .b{
-    display:block;font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif;font-weight:400;
-    color:var(--acid);font-size:clamp(66px,17.5vw,170px);letter-spacing:.01em;
+    display:block;font-family:var(--spray-font);font-weight:400;
+    color:var(--spray);-webkit-text-stroke:1px rgba(244,242,234,.22);padding-right:.1em;font-size:clamp(58px,15vw,150px);letter-spacing:.01em;line-height:1.05;
     transform:rotate(-2.5deg) translateX(2%);transform-origin:left;margin-top:4px;
     filter:drop-shadow(0 6px 0 rgba(0,0,0,.6))
   }
@@ -215,7 +217,7 @@
     font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(34px,8vw,64px);color:#fff;line-height:1;
     margin-bottom:14px;transform:rotate(-2deg);display:inline-block
   }
-  footer .big em{font-style:normal;color:var(--acid)}
+  footer .big em{font-style:normal;color:var(--spray);font-family:var(--spray-font);-webkit-text-stroke:.6px rgba(244,242,234,.22)}
   footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block}
 </style>
 </head>

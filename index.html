@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Театр RAT</title>
-<meta name="description" content="Театр RAT — актёрская шоу-лаборатория. Афиша, спектакли, труппа, билеты.">
+<meta name="description" content="Театр RAT — актёрская шоу-лаборатория. Афиша, спектакли, команда, билеты.">
 <!--OG-->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Театр RAT">
@@ -40,7 +40,7 @@
     <ul>
       <li><a href="#afisha">Афиша</a></li>
       <li><a href="#plays">Спектакли</a></li>
-      <li><a href="#troupe">Труппа</a></li>
+      <li><a href="#troupe">Команда</a></li>
       <li><a href="#reviews">Отзывы</a></li>
       <li><a href="#backstage">Бэкстейдж</a></li>
       <li><a href="#about">О театре</a></li>
@@ -80,7 +80,7 @@
   </section>
 
   <section id="troupe">
-    <h2 class="sec">Труп<em>па</em><span class="stamp-deco">те самые</span></h2>
+    <h2 class="sec">Ко<em>манда</em><span class="stamp-deco">те самые</span></h2>
     <p class="sec-sub">Нажми на карточку — на обороте роли.</p>
     <div class="troupe" id="troupeList"></div>
   </section>
@@ -176,7 +176,7 @@ function render(d) {
   }).join("") : '<div class="empty">Спектакли появятся здесь.</div>';
 
   /* труппа */
-  document.getElementById("troupeList").innerHTML = d.actors.length ? d.actors.map(R.actorCard).join("") : '<div class="empty">Труппа скоро появится.</div>';
+  document.getElementById("troupeList").innerHTML = d.actors.length ? d.actors.map(R.actorCard).join("") : '<div class="empty">Команда скоро появится.</div>';
 
   /* отзывы, бэкстейдж */
   if (d.reviews.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = d.reviews.map(R.reviewCard).join(""); }

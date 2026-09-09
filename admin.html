@@ -126,7 +126,7 @@
 
     <!-- Актёры -->
     <div class="tab" id="tab-actors">
-      <p class="help"><b>Труппа и голосование.</b> Имя, фото и «О себе» показываются на главной в разделе «Труппа». Сцена, описание сцены, ссылка СБП и телефон — на странице голосования.</p>
+      <p class="help"><b>Команда и голосование.</b> Имя, фото и «О себе» показываются на главной в разделе «Команда». Сцена, описание сцены, ссылка СБП и телефон — на странице голосования.</p>
       <div id="list-actors"></div>
       <button class="btn ghost" data-add="actors">+ Добавить актёра</button>
       <div class="panel" style="margin-top:22px;font-size:12px;color:var(--muted)">
@@ -361,9 +361,9 @@ const SECTIONS = {
     form: a => `
       <div class="row">
         <div><label>Имя и фамилия</label><input data-f="name" value="${esc(a.name)}"></div>
-        <div><label>О себе (на главной, в труппе)</label><input data-f="bio" value="${esc(a.bio || "")}" placeholder="Актёр, режиссёр, автор текстов"></div>
+        <div><label>О себе (на главной, в команде)</label><input data-f="bio" value="${esc(a.bio || "")}" placeholder="Актёр, режиссёр, автор текстов"></div>
       </div>
-      <label>Роли (на обороте карточки в труппе)</label><input data-f="roles" value="${esc(a.roles || "")}" placeholder="Гамлет («Мёртвая волна»), Диджей («ПОХ»)">
+      <label>Роли (на обороте карточки в команде)</label><input data-f="roles" value="${esc(a.roles || "")}" placeholder="Гамлет («Мёртвая волна»), Диджей («ПОХ»)">
       <div class="row">
         <div><label>Сцена / роль (для голосования)</label><input data-f="role" value="${esc(a.role)}" placeholder="Сцена 1 · Гамлет"></div>
         <div><label>Банк, к которому привязан номер</label><input data-f="bank" value="${esc(a.bank)}" placeholder="Сбербанк"></div>
