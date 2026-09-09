@@ -3,33 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Админка — Голосуй рублём</title>
+<title>Админка — Театр RAT</title>
 <meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=PT+Mono&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"PT Mono",ui-monospace,Menlo,monospace;font-size:14px;line-height:1.45}
-  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 120px}
+  .wrap{max-width:960px;margin:0 auto;padding:20px 16px 120px}
   h1,h2,h3{font-family:"Oswald",Impact,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0}
-  h1{font-size:30px}
+  h1{font-size:28px}
   h1 em{font-style:normal;color:var(--acid)}
-  .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+  .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
   .bar .links{display:flex;gap:8px;flex-wrap:wrap}
   a{color:var(--acid)}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;cursor:pointer;margin-bottom:-1px}
+  .tabs button.on{color:var(--acid);border-color:var(--acid)}
+  .tab{display:none}.tab.on{display:block}
   .panel{background:var(--panel);border:1px solid var(--line);padding:16px;margin-bottom:16px;position:relative}
-  .panel h2{font-size:18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .panel h2{font-size:18px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
   label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:10px 0 4px}
-  input,textarea{width:100%;padding:10px;background:#0a0a0a;border:1px solid var(--line);color:var(--text);font:inherit;border-radius:0}
-  input:focus,textarea:focus{outline:none;border-color:var(--acid)}
+  input,textarea,select{width:100%;padding:10px;background:#0a0a0a;border:1px solid var(--line);color:var(--text);font:inherit;border-radius:0}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acid)}
   textarea{min-height:64px;resize:vertical}
-  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media (max-width:560px){.row{grid-template-columns:1fr}}
+  input[type=date]{color-scheme:dark}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
+  @media (max-width:560px){.row,.row3{grid-template-columns:1fr}}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
-  .hint.bad{color:var(--red)}
-  .hint.good{color:var(--ok)}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#000;
-       font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
+  .hint.bad{color:var(--red)} .hint.good{color:var(--ok)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
   .btn:hover{filter:brightness(1.08)}
   .btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
   .btn.ghost:hover{border-color:var(--text)}
@@ -37,8 +41,9 @@
   .btn.sm{padding:6px 10px;font-size:12px}
   .btn:disabled{opacity:.5;cursor:default}
   .tools{display:flex;gap:6px;flex-wrap:wrap}
-  .actor{display:grid;grid-template-columns:150px 1fr;gap:16px}
-  @media (max-width:560px){.actor{grid-template-columns:1fr}}
+  .item{display:grid;grid-template-columns:150px 1fr;gap:16px}
+  .item.noimg{grid-template-columns:1fr}
+  @media (max-width:560px){.item{grid-template-columns:1fr}}
   .photo{width:150px;aspect-ratio:4/3;background:#000;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden;color:var(--muted);font-size:11px;text-align:center}
   .photo img{width:100%;height:100%;object-fit:cover}
   .photo-tools{display:flex;flex-direction:column;gap:6px;margin-top:8px}
@@ -46,19 +51,18 @@
   .num{position:absolute;top:-10px;left:-10px;width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-family:"Oswald",sans-serif;font-weight:700}
   .save{position:fixed;left:0;right:0;bottom:0;background:#000;border-top:1px solid var(--line);padding:12px 16px;display:flex;justify-content:center;gap:12px;align-items:center;z-index:10}
   .save .status{color:var(--muted);font-size:12px}
-  .save .status.ok{color:var(--ok)}
-  .save .status.err{color:var(--red)}
+  .save .status.ok{color:var(--ok)} .save .status.err{color:var(--red)}
   .login{max-width:360px;margin:12vh auto 0}
   .login .err{color:var(--red);font-size:12px;margin-top:8px;min-height:16px}
   [hidden]{display:none!important}
-  .empty{color:var(--muted);text-align:center;padding:30px}
+  .empty{color:var(--muted);text-align:center;padding:24px}
+  .help{font-size:12px;color:var(--muted);margin:0 0 14px}
+  .help b{color:var(--text)}
 </style>
 </head>
 <body>
-
 <div class="wrap">
 
-  <!-- вход -->
   <div id="loginView" class="login panel" hidden>
     <h1>Вход в <em>админку</em></h1>
     <form id="loginForm">
@@ -82,34 +86,88 @@
     </form>
   </div>
 
-  <!-- редактор -->
   <div id="editor" hidden>
     <div class="bar">
-      <h1>Голосуй <em>рублём</em> · админка</h1>
+      <h1>Театр <em>RAT</em> · админка</h1>
       <div class="links">
-        <a class="btn ghost sm" href="./" target="_blank">Открыть сайт ↗</a>
+        <a class="btn ghost sm" href="./" target="_blank">Сайт ↗</a>
+        <a class="btn ghost sm" href="golos" target="_blank">Голосование ↗</a>
         <button class="btn ghost sm" id="logout">Выйти</button>
       </div>
     </div>
 
-    <div class="panel">
-      <h2>Спектакль</h2>
-      <div class="row">
-        <div><label>Театр</label><input id="s-theatre"></div>
-        <div><label>Даты (в шапке)</label><input id="s-dates" placeholder="12 · 25 сентября"></div>
-      </div>
-      <label>Название спектакля</label><input id="s-title">
+    <div class="tabs" id="tabs">
+      <button data-tab="events" class="on">Афиша</button>
+      <button data-tab="plays">Спектакли</button>
+      <button data-tab="actors">Актёры</button>
+      <button data-tab="theatre">О театре</button>
+      <button data-tab="show">Голосование</button>
     </div>
 
-    <div id="actors"></div>
-    <div class="empty" id="emptyHint" hidden>Актёров пока нет — добавьте первого.</div>
+    <!-- Афиша -->
+    <div class="tab on" id="tab-events">
+      <p class="help"><b>Показы.</b> Прошедшие даты на сайте скрываются сами. «Ссылка на билеты» — страница площадки, где продаются билеты на этот показ; если пусто, берётся ссылка спектакля, а потом общая ссылка из «О театре».</p>
+      <div id="list-events"></div>
+      <button class="btn ghost" data-add="events">+ Добавить показ</button>
+    </div>
 
-    <button class="btn ghost" id="add">+ Добавить актёра</button>
+    <!-- Спектакли -->
+    <div class="tab" id="tab-plays">
+      <p class="help"><b>Репертуар.</b> Постер лучше горизонтальный 4:3. Идентификатор нужен, чтобы привязывать показы, менять его после создания не стоит.</p>
+      <div id="list-plays"></div>
+      <button class="btn ghost" data-add="plays">+ Добавить спектакль</button>
+    </div>
 
-    <div class="panel" style="margin-top:22px;font-size:12px;color:var(--muted)">
-      <b style="color:var(--text)">Где взять ссылку СБП.</b> Актёр в своём банковском приложении открывает «Получить перевод по QR-коду», выбирает вкладку СБП и нажимает «Поделиться» — копирует ссылку вида <code>https://qr.nspk.ru/...</code>.
-      Сбер: профиль → «Получить перевод по QR» → СБП. Т-Банк: «Мой QR» → СБП. Альфа, ВТБ и другие — раздел «Переводы» → «По QR».
-      Ссылки вида <code>sberbank.com/...</code> работают только у клиентов Сбера, их сюда не нужно.
+    <!-- Актёры -->
+    <div class="tab" id="tab-actors">
+      <p class="help"><b>Труппа и голосование.</b> Имя, фото и «О себе» показываются на главной в разделе «Труппа». Сцена, описание сцены, ссылка СБП и телефон — на странице голосования.</p>
+      <div id="list-actors"></div>
+      <button class="btn ghost" data-add="actors">+ Добавить актёра</button>
+      <div class="panel" style="margin-top:22px;font-size:12px;color:var(--muted)">
+        <b style="color:var(--text)">Где взять ссылку СБП.</b> Актёр в своём банковском приложении открывает «Получить перевод по QR-коду», выбирает вкладку СБП и нажимает «Поделиться» — копирует ссылку вида <code>https://qr.nspk.ru/...</code>. Сбер: профиль → «Получить перевод по QR» → СБП. Т-Банк: «Мой QR» → СБП. Ссылки вида <code>sberbank.com/...</code> работают только у клиентов Сбера.
+      </div>
+    </div>
+
+    <!-- О театре -->
+    <div class="tab" id="tab-theatre">
+      <div class="panel">
+        <h2>Театр</h2>
+        <div class="row">
+          <div><label>Название</label><input data-th="name"></div>
+          <div><label>Общая ссылка на билеты</label><input data-th="ticketsUrl" placeholder="https://www.teatrdoc.ru/performances/"></div>
+        </div>
+        <label>Слоган (под заголовком на главной)</label><input data-th="tagline">
+        <label>О театре</label><textarea data-th="about" style="min-height:120px"></textarea>
+        <div class="row">
+          <div><label>Где играем</label><input data-th="venue"></div>
+          <div><label>Адрес</label><input data-th="address"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Контакты</h2>
+        <div class="row3">
+          <div><label>Instagram</label><input data-th="instagram" placeholder="https://instagram.com/..."></div>
+          <div><label>Telegram</label><input data-th="telegram" placeholder="https://t.me/..."></div>
+          <div><label>VK</label><input data-th="vk" placeholder="https://vk.com/..."></div>
+        </div>
+        <div class="row">
+          <div><label>Почта</label><input data-th="email"></div>
+          <div><label>Телефон</label><input data-th="phone"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Голосование -->
+    <div class="tab" id="tab-show">
+      <div class="panel">
+        <h2>Страница «Голосуй рублём»</h2>
+        <p class="help">Что показывается в шапке страницы голосования. Актёры и сцены редактируются на вкладке «Актёры».</p>
+        <div class="row">
+          <div><label>Театр</label><input data-show="theatre"></div>
+          <div><label>Даты (в шапке)</label><input data-show="dates" placeholder="12 · 25 сентября"></div>
+        </div>
+        <label>Название спектакля</label><input data-show="title">
+      </div>
     </div>
   </div>
 </div>
@@ -119,43 +177,10 @@
   <button class="btn" id="save">Сохранить</button>
 </div>
 
-<template id="actorTpl">
-  <div class="panel actor-panel">
-    <span class="num"></span>
-    <h2><span class="title">Актёр</span>
-      <span class="tools">
-        <button class="btn ghost sm" data-act="up" title="Выше">↑</button>
-        <button class="btn ghost sm" data-act="down" title="Ниже">↓</button>
-        <button class="btn danger sm" data-act="del">Удалить</button>
-      </span>
-    </h2>
-    <div class="actor">
-      <div>
-        <div class="photo"><span>Нет фото</span></div>
-        <div class="photo-tools">
-          <label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить фото<input type="file" accept="image/jpeg,image/png,image/webp" data-f="file"></label>
-          <button class="btn ghost sm" data-act="nophoto" style="justify-content:center">Убрать фото</button>
-        </div>
-      </div>
-      <div>
-        <div class="row">
-          <div><label>Имя и фамилия</label><input data-f="name"></div>
-          <div><label>Сцена / роль</label><input data-f="role" placeholder="Сцена 1 · Гамлет"></div>
-        </div>
-        <label>Описание сцены</label><textarea data-f="scene"></textarea>
-        <label>Ссылка СБП (qr.nspk.ru)</label><input data-f="sbp" placeholder="https://qr.nspk.ru/..."><div class="hint" data-hint="sbp"></div>
-        <div class="row">
-          <div><label>Телефон для СБП (запасной способ)</label><input data-f="phone" placeholder="+7 900 000-00-00"></div>
-          <div><label>Банк, к которому привязан номер</label><input data-f="bank" placeholder="Сбербанк"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script>
 const $ = s => document.querySelector(s);
-let data = { show: {}, actors: [] };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+let data = { theatre: {}, plays: [], events: [], show: {}, actors: [] };
 let dirty = false;
 
 const api = async (url, opt = {}) => {
@@ -170,30 +195,36 @@ const api = async (url, opt = {}) => {
 const serverBackend = {
   name: "server",
   async me() { return (await api("/api/me")).authed; },
-  async login(creds) { await api("/api/login", { method: "POST", body: JSON.stringify({ password: creds.password }) }); },
+  async login(c) { await api("/api/login", { method: "POST", body: JSON.stringify({ password: c.password }) }); },
   async logout() { await api("/api/logout", { method: "POST" }); },
   async load() { return api("/api/data"); },
   async save(d) { return (await api("/api/data", { method: "PUT", body: JSON.stringify(d) })).data; },
   async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("/api/upload", { method: "POST", body: fd })).photo; },
   photoUrl(p) { return "/" + p; },
 };
-
-/* ===== Бэкенд 2: GitHub Pages (данные и фото пишутся в репозиторий через GitHub API) ===== */
+/* ===== Бэкенд 2: PHP-хостинг ===== */
+const phpBackend = {
+  name: "php",
+  async me() { return (await api("api.php?a=me")).authed; },
+  async login(c) { await api("api.php?a=login", { method: "POST", body: JSON.stringify({ password: c.password }) }); },
+  async logout() { await api("api.php?a=logout", { method: "POST" }); },
+  async load() { return api("api.php?a=data"); },
+  async save(d) { return (await api("api.php?a=data", { method: "POST", body: JSON.stringify(d) })).data; },
+  async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("api.php?a=upload", { method: "POST", body: fd })).photo; },
+  photoUrl(p) { return p; },
+};
+/* ===== Бэкенд 3: GitHub Pages ===== */
 const GH_KEY = "rat_admin_github";
 const ghCfg = () => { try { return JSON.parse(localStorage.getItem(GH_KEY) || "null"); } catch { return null; } };
 const utf8ToB64 = str => { const b = new TextEncoder().encode(str); let s = ""; b.forEach(c => s += String.fromCharCode(c)); return btoa(s); };
 const b64ToUtf8 = b64 => { const s = atob(b64.replace(/\n/g, "")); return new TextDecoder().decode(Uint8Array.from(s, c => c.charCodeAt(0))); };
 const fileToB64 = file => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
-let ghSha = null; // sha текущего data/data.json — нужен GitHub для перезаписи
-
+let ghSha = null;
 const githubBackend = {
   name: "github",
   async gh(path, opt = {}) {
     const c = ghCfg(); if (!c) throw new Error("Нет настроек GitHub");
-    const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${path}`, {
-      ...opt,
-      headers: { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json", ...(opt.headers || {}) },
-    });
+    const r = await fetch(`https://api.github.com/repos/${c.repo}/contents/${path}`, { ...opt, headers: { Authorization: `Bearer ${c.token}`, Accept: "application/vnd.github+json", "Content-Type": "application/json", ...(opt.headers || {}) } });
     const j = await r.json().catch(() => ({}));
     if (r.status === 401 || r.status === 403) { localStorage.removeItem(GH_KEY); showLogin(); throw new Error("Токен не принят GitHub (" + r.status + "). Проверьте права Contents: Read and write"); }
     if (r.status === 404 && opt.method !== "PUT") return null;
@@ -201,186 +232,212 @@ const githubBackend = {
     return j;
   },
   async me() { return !!ghCfg(); },
-  async login(creds) {
-    const repo = creds.repo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
+  async login(c) {
+    const repo = c.repo.trim().replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "");
     if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error("Репозиторий в формате owner/repo");
-    localStorage.setItem(GH_KEY, JSON.stringify({ repo, branch: creds.branch.trim() || "main", token: creds.token.trim() }));
+    localStorage.setItem(GH_KEY, JSON.stringify({ repo, branch: c.branch.trim() || "main", token: c.token.trim() }));
     try { await this.load(); } catch (e) { localStorage.removeItem(GH_KEY); throw e; }
   },
   async logout() { localStorage.removeItem(GH_KEY); },
   async load() {
-    const c = ghCfg();
-    const j = await this.gh(`data/data.json?ref=${encodeURIComponent(c.branch)}`);
-    if (!j) { ghSha = null; return { show: {}, actors: [] }; }
-    ghSha = j.sha;
-    return JSON.parse(b64ToUtf8(j.content));
+    const c = ghCfg(); const j = await this.gh(`data/data.json?ref=${encodeURIComponent(c.branch)}`);
+    if (!j) { ghSha = null; return {}; }
+    ghSha = j.sha; return JSON.parse(b64ToUtf8(j.content));
   },
   async save(d) {
-    const c = ghCfg();
-    const body = { message: "Обновление карточек актёров из админки", content: utf8ToB64(JSON.stringify(d, null, 2)), branch: c.branch };
+    const c = ghCfg(); const body = { message: "Обновление сайта из админки", content: utf8ToB64(JSON.stringify(d, null, 2)), branch: c.branch };
     if (ghSha) body.sha = ghSha;
-    const j = await this.gh("data/data.json", { method: "PUT", body: JSON.stringify(body) });
-    ghSha = j.content.sha;
-    return d;
+    const j = await this.gh("data/data.json", { method: "PUT", body: JSON.stringify(body) }); ghSha = j.content.sha; return d;
   },
   async upload(file) {
-    const c = ghCfg();
-    const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[file.type] || ".jpg";
+    const c = ghCfg(); const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[file.type] || ".jpg";
     if (file.size > 8 * 1024 * 1024) throw new Error("Файл больше 8 МБ");
     const path = `photos/${Date.now()}-${Math.random().toString(16).slice(2, 8)}${ext}`;
-    await this.gh(path, { method: "PUT", body: JSON.stringify({ message: "Фото актёра из админки", content: await fileToB64(file), branch: c.branch }) });
+    await this.gh(path, { method: "PUT", body: JSON.stringify({ message: "Фото из админки", content: await fileToB64(file), branch: c.branch }) });
     return path;
   },
   photoUrl(p) { return p; },
 };
-
-/* ===== Бэкенд 3: PHP-хостинг (api.php рядом с admin.html) ===== */
-const phpBackend = {
-  name: "php",
-  async me() { return (await api("api.php?a=me")).authed; },
-  async login(creds) { await api("api.php?a=login", { method: "POST", body: JSON.stringify({ password: creds.password }) }); },
-  async logout() { await api("api.php?a=logout", { method: "POST" }); },
-  async load() { return api("api.php?a=data"); },
-  async save(d) { return (await api("api.php?a=data", { method: "POST", body: JSON.stringify(d) })).data; },
-  async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("api.php?a=upload", { method: "POST", body: fd })).photo; },
-  photoUrl(p) { return p; },
-};
-
 let backend = serverBackend;
 async function isJsonApi(url) {
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return false;
-    const j = await r.json(); return typeof j.authed === "boolean";
-  } catch { return false; }
+  try { const r = await fetch(url, { cache: "no-store" }); if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) return false; const j = await r.json(); return typeof j.authed === "boolean"; } catch { return false; }
 }
 async function detectBackend() {
   if (await isJsonApi("/api/me")) { backend = serverBackend; return; }
   if (await isJsonApi("api.php?a=me")) { backend = phpBackend; return; }
   backend = githubBackend;
-  // подсказать репозиторий из адреса вида username.github.io/repo/
   const m = location.hostname.match(/^([\w-]+)\.github\.io$/);
   if (m && !$("#ghRepo").value) $("#ghRepo").value = m[1] + "/" + (location.pathname.split("/")[1] || m[1] + ".github.io");
 }
 
+/* ===== описание списков ===== */
+const SECTIONS = {
+  events: {
+    img: null, label: e => (playTitle(e.playId) || "Показ") + (e.date ? " · " + e.date : ""),
+    blank: () => ({ date: "", time: "20:00", playId: data.plays[0]?.id || "", venue: data.theatre.venue || "", price: "", ticketUrl: "", note: "" }),
+    form: e => `
+      <div class="row3">
+        <div><label>Дата</label><input type="date" data-f="date" value="${esc(e.date)}"></div>
+        <div><label>Время</label><input data-f="time" value="${esc(e.time)}" placeholder="20:00"></div>
+        <div><label>Спектакль</label><select data-f="playId">${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === e.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}<option value="" ${!e.playId ? "selected" : ""}>— другое —</option></select></div>
+      </div>
+      <div class="row">
+        <div><label>Площадка</label><input data-f="venue" value="${esc(e.venue)}"></div>
+        <div><label>Цена</label><input data-f="price" value="${esc(e.price)}" placeholder="от 1500 ₽"></div>
+      </div>
+      <label>Ссылка на билеты для этого показа</label><input data-f="ticketUrl" value="${esc(e.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">
+      <label>Пометка (премьера, последний показ, название события)</label><input data-f="note" value="${esc(e.note || "")}">`,
+  },
+  plays: {
+    img: "poster", label: p => p.title || "Новый спектакль",
+    blank: () => ({ id: "play-" + Date.now().toString(36), title: "", genre: "", description: "", poster: "", duration: "", age: "18+", ticketUrl: "" }),
+    form: p => `
+      <div class="row">
+        <div><label>Название</label><input data-f="title" value="${esc(p.title)}"></div>
+        <div><label>Жанр / подзаголовок</label><input data-f="genre" value="${esc(p.genre)}" placeholder="Сказка о взрослых для взрослых"></div>
+      </div>
+      <label>Описание</label><textarea data-f="description">${esc(p.description)}</textarea>
+      <div class="row3">
+        <div><label>Длительность</label><input data-f="duration" value="${esc(p.duration)}" placeholder="1 час 30 минут"></div>
+        <div><label>Возраст</label><input data-f="age" value="${esc(p.age)}" placeholder="18+"></div>
+        <div><label>Идентификатор</label><input data-f="id" value="${esc(p.id)}"></div>
+      </div>
+      <label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">`,
+  },
+  actors: {
+    img: "photo", label: a => a.name || "Новый актёр",
+    blank: () => ({ name: "", role: `Сцена ${data.actors.length + 1}`, scene: "", bio: "", photo: "", sbp: "", phone: "", bank: "" }),
+    form: a => `
+      <div class="row">
+        <div><label>Имя и фамилия</label><input data-f="name" value="${esc(a.name)}"></div>
+        <div><label>О себе (на главной, в труппе)</label><input data-f="bio" value="${esc(a.bio || "")}" placeholder="Актёр, режиссёр, автор текстов"></div>
+      </div>
+      <div class="row">
+        <div><label>Сцена / роль (для голосования)</label><input data-f="role" value="${esc(a.role)}" placeholder="Сцена 1 · Гамлет"></div>
+        <div><label>Банк, к которому привязан номер</label><input data-f="bank" value="${esc(a.bank)}" placeholder="Сбербанк"></div>
+      </div>
+      <label>Описание сцены</label><textarea data-f="scene">${esc(a.scene)}</textarea>
+      <label>Ссылка СБП (qr.nspk.ru)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/..."><div class="hint" data-hint="sbp"></div>
+      <label>Телефон для СБП (запасной способ)</label><input data-f="phone" value="${esc(a.phone)}" placeholder="+7 900 000-00-00">`,
+  },
+};
+const playTitle = id => data.plays.find(p => p.id === id)?.title || "";
+
 function showLogin() {
   $("#loginView").hidden = false; $("#editor").hidden = true; $("#saveBar").hidden = true;
   const gh = backend.name === "github";
-  $("#pwFields").hidden = gh; $("#ghFields").hidden = !gh;
-  $("#pwHint").hidden = backend.name !== "php";
+  $("#pwFields").hidden = gh; $("#ghFields").hidden = !gh; $("#pwHint").hidden = backend.name !== "php";
   (gh ? $("#ghRepo") : $("#pw")).focus();
 }
 function showEditor() { $("#loginView").hidden = true; $("#editor").hidden = false; $("#saveBar").hidden = false; }
-
 function setStatus(text, cls = "") { const s = $("#status"); s.textContent = text; s.className = "status " + cls; }
 function markDirty() { dirty = true; setStatus("Изменения не сохранены"); }
 
-/* ---- рендер ---- */
-function render() {
-  $("#s-theatre").value = data.show.theatre || "";
-  $("#s-title").value = data.show.title || "";
-  $("#s-dates").value = data.show.dates || "";
-  const box = $("#actors"); box.innerHTML = "";
-  data.actors.forEach((a, i) => {
-    const el = $("#actorTpl").content.firstElementChild.cloneNode(true);
-    el.dataset.i = i;
-    el.querySelector(".num").textContent = i + 1;
-    el.querySelector(".title").textContent = a.name || "Новый актёр";
-    for (const f of ["name", "role", "scene", "sbp", "phone", "bank"]) el.querySelector(`[data-f=${f}]`).value = a[f] || "";
-    setPhoto(el, a.photo);
-    checkSbp(el, a.sbp);
-    box.appendChild(el);
-  });
-  $("#emptyHint").hidden = data.actors.length > 0;
-}
-const previews = {}; // photo path -> локальный превью (на GitHub Pages файл появляется не сразу)
-function setPhoto(el, photo) {
-  const p = el.querySelector(".photo");
-  const src = previews[photo] || (photo && backend.photoUrl(photo) + "?" + Date.now());
-  p.innerHTML = photo ? `<img src="${src}" alt="">` : "<span>Нет фото</span>";
-}
+const previews = {};
+function photoHtml(path) { const src = previews[path] || (path && backend.photoUrl(path) + "?" + Date.now()); return path ? `<img src="${src}" alt="">` : "<span>Нет фото</span>"; }
 function checkSbp(el, v) {
-  const h = el.querySelector("[data-hint=sbp]");
-  v = (v || "").trim();
-  if (!v) { h.textContent = "Пусто — кнопка перевода на сайте будет неактивна"; h.className = "hint bad"; }
+  const h = el.querySelector("[data-hint=sbp]"); if (!h) return; v = (v || "").trim();
+  if (!v) { h.textContent = "Пусто — кнопка перевода будет неактивна"; h.className = "hint bad"; }
   else if (/^https:\/\/qr\.nspk\.ru\//.test(v)) { h.textContent = "Ссылка СБП — ок"; h.className = "hint good"; }
   else if (/^https?:\/\//.test(v)) { h.textContent = "Это не qr.nspk.ru — может не открываться из других банков"; h.className = "hint bad"; }
   else { h.textContent = "Должна начинаться с https://"; h.className = "hint bad"; }
 }
 
-/* ---- события ---- */
-$("#s-theatre").oninput = e => { data.show.theatre = e.target.value; markDirty(); };
-$("#s-title").oninput = e => { data.show.title = e.target.value; markDirty(); };
-$("#s-dates").oninput = e => { data.show.dates = e.target.value; markDirty(); };
+function renderList(key) {
+  const sec = SECTIONS[key], list = data[key] || (data[key] = []);
+  const box = $("#list-" + key);
+  box.innerHTML = list.length ? list.map((item, i) => `
+    <div class="panel entry" data-key="${key}" data-i="${i}">
+      <span class="num">${i + 1}</span>
+      <h2><span class="title">${esc(sec.label(item))}</span>
+        <span class="tools"><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
+      <div class="item ${sec.img ? "" : "noimg"}">
+        ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img])}</div>
+          <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить<input type="file" accept="image/jpeg,image/png,image/webp" data-file="${sec.img}"></label>
+          <button class="btn ghost sm" data-act="noimg" style="justify-content:center">Убрать</button></div></div>` : ""}
+        <div>${sec.form(item)}</div>
+      </div>
+    </div>`).join("") : `<div class="empty">Пока пусто — добавьте первую запись.</div>`;
+  box.querySelectorAll(".entry").forEach(el => checkSbp(el, list[el.dataset.i].sbp));
+}
+function renderStatic() {
+  document.querySelectorAll("[data-th]").forEach(i => i.value = data.theatre[i.dataset.th] || "");
+  document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
+}
+function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
 
-$("#actors").addEventListener("input", e => {
-  const el = e.target.closest(".actor-panel"); if (!el) return;
-  const f = e.target.dataset.f; if (!f || f === "file") return;
-  data.actors[el.dataset.i][f] = e.target.value;
-  if (f === "name") el.querySelector(".title").textContent = e.target.value || "Новый актёр";
-  if (f === "sbp") checkSbp(el, e.target.value);
+/* ---- события ---- */
+$("#tabs").addEventListener("click", e => {
+  const b = e.target.closest("[data-tab]"); if (!b) return;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + b.dataset.tab));
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.th !== undefined) { data.theatre[t.dataset.th] = t.value; markDirty(); return; }
+  if (t.dataset.show !== undefined) { data.show[t.dataset.show] = t.value; markDirty(); return; }
+  const el = t.closest(".entry"); if (!el || !t.dataset.f) return;
+  const key = el.dataset.key, item = data[key][el.dataset.i];
+  item[t.dataset.f] = t.value;
+  el.querySelector(".title").textContent = SECTIONS[key].label(item);
+  if (t.dataset.f === "sbp") checkSbp(el, t.value);
+  if (key === "plays" && (t.dataset.f === "title" || t.dataset.f === "id")) renderList("events");
   markDirty();
 });
-
-$("#actors").addEventListener("click", e => {
-  const b = e.target.closest("[data-act]"); if (!b) return;
-  const el = b.closest(".actor-panel"); const i = +el.dataset.i;
-  const act = b.dataset.act;
-  if (act === "del") { if (!confirm(`Удалить «${data.actors[i].name || "актёра"}»?`)) return; data.actors.splice(i, 1); }
-  if (act === "up" && i > 0) [data.actors[i - 1], data.actors[i]] = [data.actors[i], data.actors[i - 1]];
-  if (act === "down" && i < data.actors.length - 1) [data.actors[i + 1], data.actors[i]] = [data.actors[i], data.actors[i + 1]];
-  if (act === "nophoto") data.actors[i].photo = "";
-  markDirty(); render();
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.tagName === "SELECT" && t.dataset.f) { const el = t.closest(".entry"); const item = data[el.dataset.key][el.dataset.i]; item[t.dataset.f] = t.value; el.querySelector(".title").textContent = SECTIONS[el.dataset.key].label(item); markDirty(); }
 });
-
-$("#actors").addEventListener("change", async e => {
-  if (e.target.dataset.f !== "file" || !e.target.files[0]) return;
-  const el = e.target.closest(".actor-panel"); const i = +el.dataset.i;
+document.addEventListener("click", e => {
+  const add = e.target.closest("[data-add]");
+  if (add) { const key = add.dataset.add; data[key].push(SECTIONS[key].blank()); markDirty(); renderList(key); const last = $("#list-" + key).lastElementChild; last.scrollIntoView({ behavior: "smooth" }); last.querySelector("input:not([type=file])")?.focus(); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const el = b.closest(".entry"); const key = el.dataset.key, i = +el.dataset.i, list = data[key], sec = SECTIONS[key];
+  if (b.dataset.act === "del") { if (!confirm(`Удалить «${sec.label(list[i])}»?`)) return; list.splice(i, 1); }
+  if (b.dataset.act === "up" && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
+  if (b.dataset.act === "down" && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
+  if (b.dataset.act === "noimg") list[i][sec.img] = "";
+  markDirty(); renderList(key);
+});
+document.addEventListener("change", async e => {
+  const t = e.target; if (!t.dataset.file || !t.files[0]) return;
+  const el = t.closest(".entry"); const key = el.dataset.key, i = +el.dataset.i; const file = t.files[0];
   setStatus("Загружаю фото…");
   try {
-    const file = e.target.files[0];
     const photo = await backend.upload(file);
     if (backend.name === "github") previews[photo] = URL.createObjectURL(file);
-    data.actors[i].photo = photo; setPhoto(el, photo); markDirty();
+    data[key][i][t.dataset.file] = photo; el.querySelector(".photo").innerHTML = photoHtml(photo); markDirty();
     setStatus("Фото загружено — не забудьте сохранить");
   } catch (err) { setStatus(err.message, "err"); }
-  e.target.value = "";
+  t.value = "";
 });
 
-$("#add").onclick = () => {
-  data.actors.push({ name: "", role: `Сцена ${data.actors.length + 1}`, scene: "", photo: "", sbp: "", phone: "", bank: "" });
-  markDirty(); render();
-  const last = $("#actors").lastElementChild; last.scrollIntoView({ behavior: "smooth" }); last.querySelector("[data-f=name]").focus();
-};
-
 $("#save").onclick = async () => {
-  const empty = data.actors.filter(a => !a.name.trim()).length;
-  if (empty && !confirm(`${empty} актёр(ов) без имени будут пропущены при сохранении. Продолжить?`)) return;
+  const problems = [];
+  if (data.actors.some(a => !a.name.trim())) problems.push("актёры без имени");
+  if (data.plays.some(p => !p.title.trim())) problems.push("спектакли без названия");
+  if (data.events.some(ev => !/^\d{4}-\d{2}-\d{2}$/.test(ev.date))) problems.push("показы без даты");
+  if (problems.length && !confirm(`Будут пропущены: ${problems.join(", ")}. Продолжить?`)) return;
   $("#save").disabled = true; setStatus("Сохраняю…");
   try {
-    data = await backend.save(data); dirty = false; render();
+    data = normalize(await backend.save(data)); dirty = false; renderAll();
     setStatus(backend.name === "github" ? "Сохранено ✓ GitHub Pages обновит сайт через 1–2 минуты" : "Сохранено ✓ Сайт обновлён", "ok");
   } catch (err) { setStatus(err.message, "err"); }
   $("#save").disabled = false;
 };
-
 $("#loginForm").onsubmit = async e => {
   e.preventDefault(); $("#loginErr").textContent = "";
-  try {
-    await backend.login({ password: $("#pw").value, repo: $("#ghRepo").value, branch: $("#ghBranch").value, token: $("#ghToken").value });
-    $("#pw").value = ""; $("#ghToken").value = "";
-    await load();
-  } catch (err) { $("#loginErr").textContent = err.message; }
+  try { await backend.login({ password: $("#pw").value, repo: $("#ghRepo").value, branch: $("#ghBranch").value, token: $("#ghToken").value }); $("#pw").value = ""; $("#ghToken").value = ""; await load(); }
+  catch (err) { $("#loginErr").textContent = err.message; }
 };
 $("#logout").onclick = async () => { await backend.logout(); showLogin(); };
-
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
+function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; return d; }
 async function load() {
   if (!(await backend.me())) return showLogin();
-  data = await backend.load();
-  data.show ||= {}; data.actors ||= [];
-  showEditor(); render(); dirty = false; setStatus("Всё сохранено");
+  data = normalize(await backend.load());
+  showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
 }
 detectBackend().then(load);
 </script>

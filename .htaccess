@@ -1,4 +1,6 @@
-# Короткий адрес админки: /admin → admin.html (Apache-хостинг, InfinityFree)
+# Короткие адреса (Apache-хостинг, InfinityFree)
 RewriteEngine On
 RewriteRule ^admin/$ /admin [R=301,L]
 RewriteRule ^admin$ admin.html [L]
+RewriteRule ^golos/$ /golos [R=301,L]
+RewriteRule ^golos$ golos.html [L]

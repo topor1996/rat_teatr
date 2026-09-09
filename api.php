@@ -35,28 +35,41 @@ function readData(string $file): array {
   return is_array($j) ? $j : ['show' => ['theatre' => '', 'title' => '', 'dates' => ''], 'actors' => []];
 }
 function str($v, int $max = 500): string { return mb_substr(trim((string)($v ?? '')), 0, $max); }
+function url($v): string { $v = str($v, 500); return preg_match('~^https?://\S+$~', $v) ? $v : ''; }
+function img($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
 function sanitize(array $in): array {
   $show = is_array($in['show'] ?? null) ? $in['show'] : [];
-  $actors = is_array($in['actors'] ?? null) ? array_slice($in['actors'], 0, 50) : [];
-  $outActors = [];
-  foreach ($actors as $a) {
+  $th = is_array($in['theatre'] ?? null) ? $in['theatre'] : [];
+  $actors = []; $plays = []; $events = [];
+  foreach (array_slice(is_array($in['actors'] ?? null) ? $in['actors'] : [], 0, 50) as $a) {
     if (!is_array($a)) continue;
-    $photo = str($a['photo'] ?? '');
-    $sbp = str($a['sbp'] ?? '');
-    $item = [
-      'name'  => str($a['name'] ?? '', 100),
-      'role'  => str($a['role'] ?? '', 100),
-      'scene' => str($a['scene'] ?? '', 400),
-      'photo' => preg_match('~^photos/[\w.-]+$~', $photo) ? $photo : '',
-      'sbp'   => preg_match('~^https?://\S+$~', $sbp) ? $sbp : '',
-      'phone' => str($a['phone'] ?? '', 30),
-      'bank'  => str($a['bank'] ?? '', 60),
-    ];
-    if ($item['name'] !== '') $outActors[] = $item;
+    $item = ['name' => str($a['name'] ?? '', 100), 'role' => str($a['role'] ?? '', 100), 'scene' => str($a['scene'] ?? '', 400), 'bio' => str($a['bio'] ?? '', 600),
+             'photo' => img($a['photo'] ?? ''), 'sbp' => url($a['sbp'] ?? ''), 'phone' => str($a['phone'] ?? '', 30), 'bank' => str($a['bank'] ?? '', 60)];
+    if ($item['name'] !== '') $actors[] = $item;
   }
+  foreach (array_slice(is_array($in['plays'] ?? null) ? $in['plays'] : [], 0, 50) as $p) {
+    if (!is_array($p)) continue;
+    $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
+    $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 1500),
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'ticketUrl' => url($p['ticketUrl'] ?? '')];
+    if ($item['title'] !== '') $plays[] = $item;
+  }
+  foreach (array_slice(is_array($in['events'] ?? null) ? $in['events'] : [], 0, 200) as $e) {
+    if (!is_array($e)) continue;
+    $date = str($e['date'] ?? '', 10);
+    if (!preg_match('~^\d{4}-\d{2}-\d{2}$~', $date)) continue;
+    $events[] = ['date' => $date, 'time' => str($e['time'] ?? '', 5), 'playId' => str($e['playId'] ?? '', 40), 'venue' => str($e['venue'] ?? '', 120),
+                 'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'note' => str($e['note'] ?? '', 120)];
+  }
+  usort($events, fn($x, $y) => strcmp($x['date'] . $x['time'], $y['date'] . $y['time']));
   return [
+    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 2000), 'venue' => str($th['venue'] ?? '', 120),
+                  'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
+                  'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? '')],
+    'plays' => $plays,
+    'events' => $events,
     'show' => ['theatre' => str($show['theatre'] ?? '', 100), 'title' => str($show['title'] ?? '', 100), 'dates' => str($show['dates'] ?? '', 100)],
-    'actors' => $outActors,
+    'actors' => $actors,
   ];
 }
 

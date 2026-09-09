@@ -37,20 +37,30 @@ function writeData(data) {
   fs.renameSync(tmp, DATA_FILE);
 }
 const str = (v, max = 500) => String(v ?? "").trim().slice(0, max);
+const url = v => /^https?:\/\/\S+$/.test(str(v)) ? str(v) : "";
+const img = v => /^photos\/[\w.-]+$/.test(str(v)) ? str(v) : "";
 function sanitize(input) {
-  const show = input.show || {};
-  const actors = Array.isArray(input.actors) ? input.actors.slice(0, 50) : [];
+  const show = input.show || {}, th = input.theatre || {};
+  const arr = v => (Array.isArray(v) ? v : []);
+  const actors = arr(input.actors).slice(0, 50).map(a => ({
+    name: str(a.name, 100), role: str(a.role, 100), scene: str(a.scene, 400), bio: str(a.bio, 600),
+    photo: img(a.photo), sbp: url(a.sbp), phone: str(a.phone, 30), bank: str(a.bank, 60),
+  })).filter(a => a.name);
+  const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
+    id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
+    title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 1500),
+    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), ticketUrl: url(p.ticketUrl),
+  })).filter(p => p.title);
+  const events = arr(input.events).slice(0, 200).map(e => ({
+    date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
+    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), note: str(e.note, 120),
+  })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
   return {
+    theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 2000), venue: str(th.venue, 120), address: str(th.address, 200),
+               instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl) },
+    plays, events,
     show: { theatre: str(show.theatre, 100), title: str(show.title, 100), dates: str(show.dates, 100) },
-    actors: actors.map(a => ({
-      name:  str(a.name, 100),
-      role:  str(a.role, 100),
-      scene: str(a.scene, 400),
-      photo: /^photos\/[\w.-]+$/.test(str(a.photo)) ? str(a.photo) : "",
-      sbp:   /^https?:\/\/\S+$/.test(str(a.sbp)) ? str(a.sbp) : "",
-      phone: str(a.phone, 30),
-      bank:  str(a.bank, 60),
-    })).filter(a => a.name),
+    actors,
   };
 }
 
@@ -98,6 +108,7 @@ app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (req, res) => res.sendFile(path.join(ROOT, "index.html")));
 app.get("/admin", (req, res) => res.sendFile(path.join(ROOT, "admin.html")));
+app.get("/golos", (req, res) => res.sendFile(path.join(ROOT, "golos.html")));
 app.use("/photos", express.static(PHOTOS_DIR, { maxAge: "1d" }));
 
 app.get("/api/data", (req, res) => {
