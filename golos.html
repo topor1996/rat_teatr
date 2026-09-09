@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
-<link href="fonts/fonts.css" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260910" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
     --ink:#111;
     --paper:#f1eee4;
     --paper-2:#e6e2d6;
-    --acid:#c9ff3d;
+    --acid:#7A1F3D;
+    --cream:#f4f2ea;
     --spray:#7A1F3D;
-    --spray-font:"Road Rage","Lobster",Impact,sans-serif;
-    --acid-2:#a8e020;
+    --spray-font:"Road Rage","Rubik Burned",Impact,sans-serif;
+    --acid-2:#5e1730;
     --red:#ff3b2f;
     --muted:#5a574f;
     --tape:rgba(255,236,150,.55);
@@ -56,9 +57,9 @@
     border:2px solid #fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;
     transform:rotate(-2deg);background:rgba(0,0,0,.4);text-decoration:none;color:inherit
   }
-  .stamp:hover{border-color:var(--acid);color:var(--acid)}
+  .stamp:hover{border-color:var(--acid);color:#fff}
   .stamp .rat{width:22px;height:22px}
-  .date{color:var(--acid);font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
+  .date{color:var(--cream);font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
 
   /* ---------- hero ---------- */
   .hero{padding:26px 0 10px;position:relative}
@@ -82,11 +83,11 @@
     display:inline-block;margin-top:18px;padding:6px 10px;
     border:1.5px dashed rgba(255,255,255,.5);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#cfcbbd
   }
-  .show b{color:var(--acid);font-weight:400}
+  .show b{color:#fff;font-weight:400}
 
   /* ---------- marquee ---------- */
   .marq{
-    margin:0 -30px;background:var(--acid);color:#000;overflow:hidden;
+    margin:0 -30px;background:var(--acid);color:var(--cream);overflow:hidden;
     transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;
     font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;
     white-space:nowrap;display:flex
@@ -139,7 +140,7 @@
     margin:12px 12px 0;
   }
   .photo img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(1) contrast(1.15)}
-  .photo::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:multiply;opacity:.75;pointer-events:none}
+  .photo::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:color;opacity:.9;pointer-events:none}
   .photo .initials{
     position:absolute;inset:0;display:grid;place-items:center;
     font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:96px;color:#fff;
@@ -159,7 +160,7 @@
     text-transform:uppercase;letter-spacing:-.005em
   }
   .role{
-    display:inline-block;margin:10px 0 0;padding:3px 8px;background:#000;color:var(--acid);
+    display:inline-block;margin:10px 0 0;padding:3px 8px;background:var(--acid);color:var(--cream);
     font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
     transform:rotate(-1deg);align-self:flex-start
   }
@@ -169,9 +170,9 @@
     display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
     padding:14px 14px;border:2.5px solid #000;cursor:pointer;text-decoration:none;
     font-family:"Oswald",sans-serif;font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;
-    background:#000;color:var(--acid);transition:background .15s,color .15s,transform .1s
+    background:var(--acid);color:var(--cream);transition:background .15s,color .15s,transform .1s
   }
-  .btn:hover{background:var(--acid);color:#000}
+  .btn:hover{background:var(--cream);color:#000}
   .btn:active{transform:scale(.985)}
   .btn:focus-visible,.copy:focus-visible,.close:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   .btn svg{width:22px;height:22px;flex:none}
@@ -191,7 +192,7 @@
     flex:none;padding:7px 8px;border:2px solid #000;background:#fff;color:#000;
     font:inherit;font-size:11px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em
   }
-  .copy.done{background:var(--acid)}
+  .copy.done{background:var(--acid);color:#fff}
 
   /* ---------- modal ---------- */
   .modal{position:fixed;inset:0;display:none;place-items:center;padding:18px;z-index:50;background:rgba(0,0,0,.82)}
@@ -208,7 +209,7 @@
   .qr img,.qr canvas{width:220px;height:220px}
   .sbp-badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
   .sheet .close{
-    width:100%;padding:12px;border:2.5px solid #000;background:#000;color:var(--acid);
+    width:100%;padding:12px;border:2.5px solid #000;background:var(--acid);color:var(--cream);
     font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer
   }
 

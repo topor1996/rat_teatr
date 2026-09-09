@@ -6,21 +6,21 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260910" rel="stylesheet">
 <style>
-  :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
+  :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#7A1F3D;--acid-text:#e07a9d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--text);font-family:"PT Mono",ui-monospace,Menlo,monospace;font-size:14px;line-height:1.45}
   .wrap{max-width:960px;margin:0 auto;padding:20px 16px 120px}
   h1,h2,h3{font-family:"Oswald",Impact,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0}
   h1{font-size:28px}
-  h1 em{font-style:normal;color:var(--acid)}
+  h1 em{font-style:normal;color:var(--acid-text)}
   .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
   .bar .links{display:flex;gap:8px;flex-wrap:wrap}
-  a{color:var(--acid)}
+  a{color:var(--acid-text)}
   .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line)}
   .tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;cursor:pointer;margin-bottom:-1px}
-  .tabs button.on{color:var(--acid);border-color:var(--acid)}
+  .tabs button.on{color:#fff;border-color:var(--acid)}
   .tab{display:none}.tab.on{display:block}
   .panel{background:var(--panel);border:1px solid var(--line);padding:16px;margin-bottom:16px;position:relative}
   .panel h2{font-size:18px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
@@ -34,7 +34,7 @@
   @media (max-width:560px){.row,.row3{grid-template-columns:1fr}}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
   .hint.bad{color:var(--red)} .hint.good{color:var(--ok)}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#fff;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
   .btn:hover{filter:brightness(1.08)}
   .btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
   .btn.ghost:hover{border-color:var(--text)}

@@ -7,3 +7,13 @@ RewriteRule ^golos/$ /golos [R=301,L]
 RewriteRule ^golos$ golos.html [L]
 RewriteCond %{DOCUMENT_ROOT}/play.php -f
 RewriteRule ^play\.html$ play.php [L,QSA]
+
+# Кэш: страницы всегда свежие, статика с версией в адресе кэшируется надолго
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(css|js|woff2|png|svg|jpg|jpeg|webp|mp4|webm)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+</IfModule>
