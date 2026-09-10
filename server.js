@@ -48,7 +48,7 @@ function sanitize(input) {
   const arr = v => (Array.isArray(v) ? v : []);
   const BADGES = ["premiere", "last", "few", "soldout"];
   const actors = arr(input.actors).slice(0, 50).map(a => ({
-    name: str(a.name, 100), role: str(a.role, 100), scene: str(a.scene, 400), bio: str(a.bio, 600), roles: str(a.roles, 300),
+    name: str(a.name, 100), golos: !("golos" in a) || !!a.golos, role: str(a.role, 100), scene: str(a.scene, 400), bio: str(a.bio, 600), roles: str(a.roles, 300),
     photo: img(a.photo), sbp: url(a.sbp), phone: str(a.phone, 30), bank: str(a.bank, 60),
   })).filter(a => a.name);
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({

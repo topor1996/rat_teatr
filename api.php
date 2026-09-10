@@ -68,7 +68,7 @@ function sanitize(array $in): array {
   $actors = []; $plays = []; $events = []; $reviews = []; $gallery = [];
   foreach ($lst('actors', 50) as $a) {
     if (!is_array($a)) continue;
-    $item = ['name' => str($a['name'] ?? '', 100), 'role' => str($a['role'] ?? '', 100), 'scene' => str($a['scene'] ?? '', 400), 'bio' => str($a['bio'] ?? '', 600), 'roles' => str($a['roles'] ?? '', 300),
+    $item = ['name' => str($a['name'] ?? '', 100), 'golos' => !array_key_exists('golos', $a) || !empty($a['golos']), 'role' => str($a['role'] ?? '', 100), 'scene' => str($a['scene'] ?? '', 400), 'bio' => str($a['bio'] ?? '', 600), 'roles' => str($a['roles'] ?? '', 300),
              'photo' => img($a['photo'] ?? ''), 'sbp' => url($a['sbp'] ?? ''), 'phone' => str($a['phone'] ?? '', 30), 'bank' => str($a['bank'] ?? '', 60)];
     if ($item['name'] !== '') $actors[] = $item;
   }

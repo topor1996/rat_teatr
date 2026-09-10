@@ -386,6 +386,8 @@ if (SHOW.thanksNote) document.getElementById("thanksNote").textContent = SHOW.th
 if (SHOW.marquee) marquee(splitList(SHOW.marquee));
 document.getElementById("dateLine").textContent = SHOW.dates || "";
 document.querySelectorAll(".stamp-name").forEach(el => el.textContent = SHOW.theatre || "Театр RAT");
+ACTORS = ACTORS.filter(a => a.golos !== false); // в админке у актёра галочка «показывать в голосовании»
+current = ACTORS;
 grid.innerHTML = ACTORS.map((a, i) => {
   const hasSbp = /^https?:\/\//.test(a.sbp || "");
   const photo = a.photo

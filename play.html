@@ -17,8 +17,8 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260913b" rel="stylesheet">
-<link href="assets/site.css?v=20260913b" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913c" rel="stylesheet">
+<link href="assets/site.css?v=20260913c" rel="stylesheet">
 </head>
 <body>
 
@@ -113,7 +113,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913b"></script>
+<script src="assets/site.js?v=20260913c"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
@@ -139,7 +139,8 @@ function render(d) {
   document.getElementById("pDesc").textContent = p.description || "";
   if (p.cast) { var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + esc(p.cast); c.hidden = false; }
   document.getElementById("pRow").innerHTML = (nextOf && !R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>';
-  document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT"));
+  document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT")).replace(/<\/div>$/, '<button class="btn light sm" data-story="1" type="button">Картинка «Я иду»</button></div>');
+  window.__storyCtx = { p: p, events: events, th: th };
 
   document.getElementById("dates").hidden = false;
   document.getElementById("datesList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, p, th, { link: false }); }).join("") : '<div class="empty">Ближайших дат пока нет. Следите в соцсетях.</div>';

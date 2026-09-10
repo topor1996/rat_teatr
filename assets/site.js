@@ -314,14 +314,91 @@ window.RAT = (function () {
       if (sall) sall.addEventListener("click", function () { var on = sl.classList.toggle("grid"); sall.textContent = on ? "Свернуть в ленту" : "Смотреть все фото"; if (!on) strip.scrollTo({ left: 0 }); });
     });
   }
+
+  /* ---------- картинка «Я иду на спектакль» для сторис (1080×1920) ---------- */
+  function loadImg(src) { return new Promise(function (res) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { res(null); }; i.src = src; }); }
+  function wrapText(ctx, text, maxW, maxLines) {
+    var words = String(text).split(/\s+/), lines = [], cur = "";
+    words.forEach(function (w) { var t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+    if (cur) lines.push(cur);
+    if (lines.length > maxLines) { lines = lines.slice(0, maxLines); lines[maxLines - 1] = lines[maxLines - 1].replace(/\s?\S*$/, "") + "…"; }
+    return lines;
+  }
+  function storyCard(p, ev, th) {
+    var W = 1080, H = 1920;
+    var fontsReady = document.fonts ? Promise.all([document.fonts.load('700 100px "Oswald"'), document.fonts.load('400 90px "Rubik Spray Paint"'), document.fonts.load('400 34px "PT Mono"')]).catch(function () {}) : Promise.resolve();
+    return Promise.all([fontsReady, p.poster ? loadImg(p.poster) : null]).then(function (r) {
+      var img = r[1], c = document.createElement("canvas"); c.width = W; c.height = H; var x = c.getContext("2d");
+      x.fillStyle = "#0a0a0a"; x.fillRect(0, 0, W, H);
+      var g = x.createRadialGradient(W, 0, 50, W, 0, 900); g.addColorStop(0, "rgba(201,255,61,.22)"); g.addColorStop(1, "rgba(201,255,61,0)"); x.fillStyle = g; x.fillRect(0, 0, W, H);
+      var n = x.getImageData(0, 0, W, H), d = n.data; for (var i = 0; i < d.length; i += 4) { if (Math.random() < 0.05) { d[i] += 14; d[i + 1] += 14; d[i + 2] += 14; } } x.putImageData(n, 0, 0);
+      x.save(); x.translate(90, 120); x.rotate(-0.04); x.strokeStyle = "#fff"; x.lineWidth = 5; x.strokeRect(0, 0, 340, 74); x.fillStyle = "#fff"; x.font = '600 32px "Oswald"'; x.textBaseline = "middle"; x.fillText((th.name || "ТЕАТР RAT").toUpperCase(), 26, 38); x.restore();
+      var pw = 900, ph = 900, px = (W - pw) / 2, py = 250;
+      x.save(); x.translate(px + pw / 2, py + ph / 2); x.rotate(-0.025); x.translate(-pw / 2, -ph / 2);
+      x.fillStyle = "#f1eee4"; x.shadowColor = "rgba(0,0,0,.6)"; x.shadowBlur = 40; x.shadowOffsetY = 20; x.fillRect(-16, -16, pw + 32, ph + 32); x.shadowColor = "transparent";
+      if (img) { var s = Math.max(pw / img.width, ph / img.height), sw = pw / s, sh = ph / s; x.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, pw, ph); }
+      else { x.fillStyle = "#151515"; x.fillRect(0, 0, pw, ph); x.fillStyle = "#c9ff3d"; x.font = '400 110px "Rubik Spray Paint"'; x.textAlign = "center"; x.textBaseline = "middle"; var tl = wrapText(x, p.title.toUpperCase(), pw - 80, 3); tl.forEach(function (l, i) { x.fillText(l, pw / 2, ph / 2 + (i - (tl.length - 1) / 2) * 120); }); x.textAlign = "left"; }
+      x.fillStyle = "rgba(255,236,150,.6)"; x.fillRect(pw / 2 - 90, -34, 180, 44);
+      x.restore();
+      var y = 1230; x.textBaseline = "alphabetic"; x.textAlign = "left";
+      x.fillStyle = "#cfcbbd"; x.font = '400 38px "PT Mono"'; x.fillText("Я иду на спектакль", 90, y); y += 40;
+      x.fillStyle = "#fff"; x.font = '700 104px "Oswald"'; wrapText(x, p.title.toUpperCase(), W - 180, 2).forEach(function (l) { y += 104; x.fillText(l, 90, y); });
+      if (ev) { y += 110; x.save(); x.translate(90, y); x.rotate(-0.03); x.fillStyle = "#c9ff3d"; x.font = '400 80px "Rubik Spray Paint"'; x.fillText(fmtLong(ev).replace(" · ", "  "), 0, 0); x.restore(); }
+      y += 70; x.fillStyle = "#cfcbbd"; x.font = '400 34px "PT Mono"'; wrapText(x, (ev && ev.venue) || th.venue || "", W - 180, 2).forEach(function (l) { x.fillText(l, 90, y); y += 44; });
+      x.save(); x.translate(0, H - 150); x.rotate(-0.03); x.fillStyle = "#c9ff3d"; x.fillRect(-60, 0, W + 120, 96); x.fillStyle = "#000"; x.font = '700 40px "Oswald"'; x.textBaseline = "middle";
+      var band = ((th.name || "Театр RAT") + "  ✦  " + siteUrl().replace(/^https?:\/\//, "") + "  ✦  Билеты на сайте  ✦  ").toUpperCase(); var bw = x.measureText(band).width, bx = -40; while (bx < W + 60) { x.fillText(band, bx, 48); bx += bw; }
+      x.restore();
+      return new Promise(function (res) { c.toBlob(function (b) { res(b); }, "image/jpeg", 0.9); });
+    });
+  }
+  function storyButton(p, events, th) {
+    if (!document.getElementById("story")) {
+      var m = document.createElement("div"); m.id = "story"; m.className = "story";
+      m.innerHTML = '<div class="sbox"><div class="shead"><b>Картинка для сторис</b><button class="sclose" type="button" aria-label="Закрыть">×</button></div><div class="sdate"></div><div class="spreview"><img alt="Превью"></div><div class="sbtns"><button class="btn share" type="button">Поделиться</button><a class="btn ghost dl" download="ya-idu.jpg">Скачать</a></div><p class="hint">Сохрани картинку и выложи в сторис. Формат 1080×1920.</p></div>';
+      document.body.appendChild(m);
+      m.addEventListener("click", function (e) { if (e.target === m || e.target.closest(".sclose")) m.classList.remove("open"); });
+    }
+    var modal = document.getElementById("story"), img = modal.querySelector("img"), dl = modal.querySelector(".dl"), share = modal.querySelector(".share"), sel = modal.querySelector(".sdate");
+    var file = null;
+    var build = function (ev) { img.removeAttribute("src"); storyCard(p, ev, th).then(function (b) { file = new File([b], "ya-idu-" + (p.id || "rat") + ".jpg", { type: "image/jpeg" }); img.src = URL.createObjectURL(b); dl.href = img.src; }); };
+    sel.innerHTML = events.length > 1 ? '<select>' + events.slice(0, 12).map(function (e, i) { return '<option value="' + i + '">' + esc(fmtLong(e)) + "</option>"; }).join("") + "</select>" : (events[0] ? '<span>' + esc(fmtLong(events[0])) + "</span>" : "");
+    var s = sel.querySelector("select"); if (s) s.onchange = function () { build(events[+s.value]); };
+    share.hidden = !(navigator.share && navigator.canShare);
+    share.onclick = function () { if (file && navigator.canShare && navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: p.title }).catch(function () {}); else if (dl.href) dl.click(); };
+    build(events[0] || null); modal.classList.add("open");
+  }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-story]"); if (b && window.__storyCtx) { e.preventDefault(); storyButton(window.__storyCtx.p, window.__storyCtx.events, window.__storyCtx.th); }
+  });
+
   function lightbox() {
     var lb = document.getElementById("lightbox"); if (!lb) return;
+    if (!lb.querySelector(".lnav")) lb.insertAdjacentHTML("beforeend", '<button class="lnav prev" type="button" aria-label="Назад">‹</button><button class="lnav next" type="button" aria-label="Вперёд">›</button><div class="lcount"></div><button class="lclose" type="button" aria-label="Закрыть">×</button>');
+    var img = lb.querySelector("img"), cap = lb.querySelector(".cap"), count = lb.querySelector(".lcount"), list = [], idx = 0;
+    var show = function (i) {
+      if (!list.length) return; idx = (i + list.length) % list.length; var s = list[idx];
+      img.src = s.dataset.src; cap.textContent = s.dataset.cap || ""; count.textContent = list.length > 1 ? (idx + 1) + " / " + list.length : "";
+      lb.classList.toggle("single", list.length < 2);
+      var n = list[(idx + 1) % list.length]; if (n && n !== s) { var pre = new Image(); pre.src = n.dataset.src; } /* следующее фото подгружаем заранее */
+    };
+    var close = function () { lb.classList.remove("open"); };
     document.addEventListener("click", function (e) {
       var s = e.target.closest && e.target.closest(".shot");
-      if (s) { lb.querySelector("img").src = s.dataset.src; lb.querySelector(".cap").textContent = s.dataset.cap || ""; lb.classList.add("open"); return; }
-      if (e.target === lb || e.target.closest("#lightbox")) lb.classList.remove("open");
+      if (s) { /* группа — все фото того же блока: слайдер, стена бэкстейджа, галерея */
+        var group = s.closest(".strip, .wall, .gallery, section, main") || document;
+        list = [].slice.call(group.querySelectorAll(".shot")); show(list.indexOf(s)); lb.classList.add("open"); return;
+      }
+      if (!lb.classList.contains("open")) return;
+      if (e.target.closest(".lnav.prev")) { show(idx - 1); return; }
+      if (e.target.closest(".lnav.next")) { show(idx + 1); return; }
+      if (e.target === lb || e.target.closest(".lclose") || e.target === img) close();
     });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape") lb.classList.remove("open"); });
+    document.addEventListener("keydown", function (e) {
+      if (!lb.classList.contains("open")) return;
+      if (e.key === "Escape") close(); else if (e.key === "ArrowLeft") show(idx - 1); else if (e.key === "ArrowRight") show(idx + 1);
+    });
+    var tx = null; lb.addEventListener("touchstart", function (e) { tx = e.touches[0].clientX; }, { passive: true });
+    lb.addEventListener("touchend", function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 50) show(idx + (dx < 0 ? 1 : -1)); }, { passive: true });
   }
 
   /* ---------- появление при прокрутке ---------- */
@@ -366,6 +443,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

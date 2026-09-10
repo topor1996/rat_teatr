@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913b" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913c" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -449,6 +449,9 @@ const SECTIONS = {
         <div><label>Имя и фамилия</label><input data-f="name" value="${esc(a.name)}"></div>
         <div><label>О себе (на главной, в команде)</label><input data-f="bio" value="${esc(a.bio || "")}" placeholder="Актёр, режиссёр, автор текстов"></div>
       </div>
+      <label class="chk draft" style="margin:10px 0 0;font-size:13px;color:var(--text)"><input type="checkbox" data-f="golos" ${a.golos === false ? "" : "checked"}> Показывать на странице «Голосуй рублём»</label>
+      <div class="row">
+      </div>
       <label>Роли (на обороте карточки в команде)</label><input data-f="roles" value="${esc(a.roles || "")}" placeholder="Гамлет («Мёртвая волна»), Диджей («ПОХ»)">
       <div class="row">
         <div><label>Сцена / роль (для голосования)</label><input data-f="role" value="${esc(a.role)}" placeholder="Сцена 1 · Гамлет"></div>
@@ -781,7 +784,7 @@ document.addEventListener("input", e => {
   if (t.dataset.show !== undefined) { data.show[t.dataset.show] = t.value; markDirty(); return; }
   const el = t.closest(".entry"); if (!el || !t.dataset.f) return;
   const key = el.dataset.key, item = data[key][el.dataset.i];
-  item[t.dataset.f] = t.value;
+  item[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
   el.querySelector(".title").textContent = SECTIONS[key].label(item);
   if (t.dataset.f === "sbp") checkSbp(el, t.value);
   if (key === "plays" && (t.dataset.f === "title" || t.dataset.f === "id")) renderList("events");
@@ -813,7 +816,7 @@ document.addEventListener("click", e => {
 async function compressImage(file) {
   if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
   try {
-    const bmp = await createImageBitmap(file);
+    let bmp; try { bmp = await createImageBitmap(file, { imageOrientation: "from-image" }); } catch { bmp = await createImageBitmap(file); } // поворот с телефона учитывается
     const max = 1600, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
     const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
     c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
