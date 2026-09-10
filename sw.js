@@ -1,9 +1,9 @@
 /* Service worker театра RAT: офлайн-афиша (PWA) и пуш-уведомления.
    Кэширует оболочку сайта и последние данные; пуш приходит без текста, воркер сам спрашивает у сервера, что показать. */
-var VERSION = "rat-20260913h";
+var VERSION = "rat-20260913i";
 var MEDIA = "rat-media";
-var SHELL = ["./", "index.html", "play.html", "golos.html", "404.html", "manifest.webmanifest", "assets/favicon.svg", "assets/icon-192.png",
-  "assets/site.css?v=20260913h", "assets/intro.css?v=20260913h", "assets/site.js?v=20260913h", "fonts/fonts.css?v=20260913h", "vendor/qrcode.min.js"];
+var SHELL = ["./", "index.html", "play.html", "golos.html", "404.html", "manifest.webmanifest", "assets/favicon.svg", "assets/icon-192.png", "assets/tv.webp",
+  "assets/site.css?v=20260913i", "assets/intro.css?v=20260913i", "assets/site.js?v=20260913i", "fonts/fonts.css?v=20260913i", "vendor/qrcode.min.js"];
 var SCOPE = new URL(self.registration.scope).pathname;
 
 self.addEventListener("install", function (e) {
@@ -78,7 +78,7 @@ self.addEventListener("push", function (e) {
     return (data ? Promise.resolve([data]) : pending()).then(function (msgs) {
       if (!msgs.length) msgs = [{ title: "Театр RAT", body: "Загляните в афишу — есть новости.", url: "./" }];
       return Promise.all(msgs.map(function (m, i) {
-        return self.registration.showNotification(m.title || "Театр RAT", { body: m.body || "", icon: "assets/icon-192.png", badge: "assets/badge-96.png", tag: m.tag || ("rat-" + i), renotify: true, lang: "ru", data: { url: m.url || "./" } });
+        return self.registration.showNotification(m.title || "Театр RAT", { body: m.body || "", icon: "assets/icon-192.png", "assets/tv.webp", badge: "assets/badge-96.png", tag: m.tag || ("rat-" + i), renotify: true, lang: "ru", data: { url: m.url || "./" } });
       }));
     });
   })());
