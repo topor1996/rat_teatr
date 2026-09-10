@@ -17,8 +17,13 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260913d" rel="stylesheet">
-<link href="assets/site.css?v=20260913d" rel="stylesheet">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Театр RAT">
+<link href="fonts/fonts.css?v=20260913e" rel="stylesheet">
+<link href="assets/site.css?v=20260913e" rel="stylesheet">
 </head>
 <body>
 
@@ -113,7 +118,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913d"></script>
+<script src="assets/site.js?v=20260913e"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
@@ -164,7 +169,7 @@ function render(d) {
         '<div class="body"><h3 class="title"><a href="' + R.playUrl(o) + '">' + esc(o.title) + "</a></h3>" + (o.genre ? '<span class="genre">' + esc(o.genre) + "</span>" : "") + '<p class="desc">' + esc(o.description) + '</p><div class="row"><a class="btn ghost" href="' + R.playUrl(o) + '">Подробнее</a></div></div></div></article>';
     }).join("");
   }
-  R.todayBar(d, "golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.hit("play:" + p.id);
+  R.todayBar(d, "golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.hit("play:" + p.id);
 }
 RAT.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [] }).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
 </script>

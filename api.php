@@ -10,6 +10,9 @@ $DATA_FILE = $DATA_DIR . '/data.json';
 $HISTORY_DIR = $DATA_DIR . '/history';
 $VISITS_FILE = $DATA_DIR . '/visits.json';
 $PW_FILE = $DATA_DIR . '/password.json'; // хэш пароля, заданного из админки (приоритетнее config.php)
+$PUSH_FILE = $DATA_DIR . '/push.json';       // подписки на пуш-уведомления
+$PUSH_KEYS = $DATA_DIR . '/push-keys.json';  // VAPID-ключи и секрет для cron (не публиковать)
+$WAIT_FILE = $DATA_DIR . '/waitlist.json';   // почта в листе ожидания
 $PHOTOS_DIR = $ROOT . '/photos';
 $DEFAULT_PASSWORD = 'смените-меня';
 
@@ -144,6 +147,121 @@ function afisha_events(array $show): array {
 
 function readJson(string $file, array $default): array { $j = is_file($file) ? json_decode((string)file_get_contents($file), true) : null; return is_array($j) ? $j + $default : $default; }
 function writeJson(string $file, array $v): void { $tmp = $file . '.tmp'; file_put_contents($tmp, json_encode($v, JSON_UNESCAPED_UNICODE)); rename($tmp, $file); }
+
+/* ---------- пуш-уведомления (Web Push, VAPID) и лист ожидания ----------
+   Пуш уходит без текста: браузер получает «тычок», service worker спрашивает push_msg, что показать.
+   Так не нужно шифровать полезную нагрузку — хватает подписи VAPID (ES256 через OpenSSL). */
+function b64u(string $s): string { return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+function pushKeys(): array {
+  global $PUSH_KEYS;
+  $k = is_file($PUSH_KEYS) ? json_decode((string)file_get_contents($PUSH_KEYS), true) : null;
+  if (is_array($k) && !empty($k['private'])) return $k;
+  $res = @openssl_pkey_new(['curve_name' => 'prime256v1', 'private_key_type' => OPENSSL_KEYTYPE_EC]);
+  if (!$res) fail('OpenSSL на хостинге без эллиптических кривых — уведомления недоступны', 500);
+  openssl_pkey_export($res, $pem); $d = openssl_pkey_get_details($res);
+  $pub = "\x04" . str_pad($d['ec']['x'], 32, "\0", STR_PAD_LEFT) . str_pad($d['ec']['y'], 32, "\0", STR_PAD_LEFT);
+  $k = ['private' => $pem, 'public' => b64u($pub), 'cron' => bin2hex(random_bytes(12)), 'created' => date('c')];
+  writeJson($PUSH_KEYS, $k);
+  return $k;
+}
+function der2raw(string $der): string { // подпись DER → r||s по 32 байта
+  $pos = 2; if ((ord($der[1]) & 0x80) !== 0) $pos += ord($der[1]) & 0x7f;
+  $out = '';
+  for ($i = 0; $i < 2; $i++) { $pos++; $len = ord($der[$pos++]); $int = ltrim(substr($der, $pos, $len), "\0"); $pos += $len; $out .= str_pad($int, 32, "\0", STR_PAD_LEFT); }
+  return $out;
+}
+function vapidJwt(string $aud, array $k, string $contact): string {
+  $data = b64u(json_encode(['typ' => 'JWT', 'alg' => 'ES256'])) . '.' . b64u(json_encode(['aud' => $aud, 'exp' => time() + 12 * 3600, 'sub' => $contact], JSON_UNESCAPED_SLASHES));
+  openssl_sign($data, $der, $k['private'], OPENSSL_ALGO_SHA256);
+  return $data . '.' . b64u(der2raw($der));
+}
+function pushPoke(string $endpoint, array $k, string $contact): int {
+  $u = parse_url($endpoint); $aud = ($u['scheme'] ?? 'https') . '://' . ($u['host'] ?? '');
+  $headers = ['Authorization: vapid t=' . vapidJwt($aud, $k, $contact) . ', k=' . $k['public'], 'TTL: 86400', 'Content-Length: 0', 'Urgency: normal'];
+  if (function_exists('curl_init')) {
+    $ch = curl_init($endpoint);
+    curl_setopt_array($ch, [CURLOPT_POST => true, CURLOPT_POSTFIELDS => '', CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 15, CURLOPT_SSL_VERIFYPEER => false, CURLOPT_HTTPHEADER => $headers]);
+    curl_exec($ch); $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE); curl_close($ch);
+    return $code;
+  }
+  $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", $headers), 'content' => '', 'timeout' => 15, 'ignore_errors' => true], 'ssl' => ['verify_peer' => false]]);
+  @file_get_contents($endpoint, false, $ctx);
+  return (int)(preg_match('~ (\d{3}) ~', $http_response_header[0] ?? '', $m) ? $m[1] : 0);
+}
+function pushDb(): array { global $PUSH_FILE; $j = is_file($PUSH_FILE) ? json_decode((string)file_get_contents($PUSH_FILE), true) : null; return is_array($j) ? $j + ['subs' => []] : ['subs' => []]; }
+function evKey(array $e): string { return ($e['date'] ?? '') . '_' . ($e['time'] ?? '') . '_' . ($e['playId'] ?? ''); }
+function siteBase(): string {
+  $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+  return $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/') . '/';
+}
+/* обход подписок: что пора отправить. Возвращает статистику. */
+function pushRun(): array {
+  global $DATA_FILE, $PUSH_FILE, $WAIT_FILE, $DATA_DIR;
+  $data = readData($DATA_FILE); $db = pushDb(); $k = pushKeys();
+  $contact = 'mailto:' . (($data['theatre']['email'] ?? '') ?: 'admin@example.com');
+  $plays = []; foreach ($data['plays'] ?? [] as $p) $plays[$p['id']] = $p;
+  $events = []; foreach ($data['events'] ?? [] as $e) if (empty($e['hidden'])) $events[evKey($e)] = $e;
+  $tz = new DateTimeZone('Europe/Moscow'); $now = new DateTime('now', $tz);
+  $months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  $when = function (array $e) use ($months) { [$y, $m, $d] = array_map('intval', explode('-', $e['date'])); return $d . ' ' . $months[$m - 1] . (($e['time'] ?? '') ? ' в ' . $e['time'] : ''); };
+  $title = function (array $e) use ($plays) { return $plays[$e['playId'] ?? '']['title'] ?? ($e['note'] ?: 'Спектакль'); };
+  $urlOf = function (array $e) use ($plays) { return isset($plays[$e['playId'] ?? '']) ? 'play.html?id=' . rawurlencode($e['playId']) : './'; };
+  $hoursTo = function (array $e) use ($tz, $now) { $dt = new DateTime($e['date'] . ' ' . (($e['time'] ?? '') ?: '19:00'), $tz); return ($dt->getTimestamp() - $now->getTimestamp()) / 3600; };
+  // остатки билетов нужны только если кто-то ждёт
+  $waiting = false; foreach ($db['subs'] as $s) if (!empty($s['wait'])) { $waiting = true; break; }
+  $mails = is_file($WAIT_FILE) ? (json_decode((string)file_get_contents($WAIT_FILE), true) ?: []) : [];
+  foreach ($mails as $m) if (empty($m['sent'])) { $waiting = true; break; }
+  $sessions = [];
+  if ($waiting) {
+    $partner = preg_replace('~\D~', '', (string)($data['theatre']['afishaPartnerId'] ?? ''));
+    if ($partner !== '') foreach (array_unique(array_filter(array_map(fn($p) => preg_replace('~\D~', '', (string)($p['afishaShowId'] ?? '')), $data['plays'] ?? []))) as $sid) {
+      $show = afisha_show($partner, $sid); if ($show) foreach (afisha_events($show) as $ev) $sessions[$ev['sessionId']] = $ev['count'];
+    }
+  }
+  $available = function (array $e) use ($sessions) { $sid = preg_replace('~\D~', '', (string)($e['afishaSessionId'] ?? '')); return $sid !== '' && isset($sessions[$sid]) && $sessions[$sid] > 0; };
+  $stat = ['sent' => 0, 'failed' => 0, 'removed' => 0, 'mailed' => 0];
+  foreach ($db['subs'] as $id => &$s) {
+    $queue = [];
+    foreach (($s['remind'] ?? []) as $key => $done) {
+      $e = $events[$key] ?? null;
+      if (!$e) { unset($s['remind'][$key]); continue; }
+      $h = $hoursTo($e);
+      if ($h < -3) { unset($s['remind'][$key]); continue; }
+      if (!$done && $h <= 26) { $queue[] = ['title' => ($e['date'] === $now->format('Y-m-d') ? 'Сегодня' : 'Завтра') . ': «' . $title($e) . '»', 'body' => $when($e) . ', ' . (($e['venue'] ?? '') ?: ($data['theatre']['venue'] ?? '')) . '. Ждём вас!', 'url' => $urlOf($e), 'tag' => 'remind-' . $key]; $s['remind'][$key] = 1; }
+    }
+    foreach (($s['wait'] ?? []) as $key => $done) {
+      $e = $events[$key] ?? null;
+      if (!$e || $hoursTo($e) < 0) { unset($s['wait'][$key]); continue; }
+      if (!$done && $available($e)) { $queue[] = ['title' => 'Появились билеты: «' . $title($e) . '»', 'body' => $when($e) . '. Успейте, пока снова не разобрали.', 'url' => $urlOf($e), 'tag' => 'wait-' . $key]; unset($s['wait'][$key]); }
+    }
+    if (!$queue) continue;
+    $s['pending'] = array_merge($s['pending'] ?? [], $queue);
+    $code = pushPoke($s['endpoint'], $k, $contact);
+    if ($code === 404 || $code === 410) { unset($db['subs'][$id]); $stat['removed']++; continue; }
+    if ($code >= 200 && $code < 300) { $stat['sent']++; $s['fails'] = 0; }
+    else { $stat['failed']++; $s['fails'] = ($s['fails'] ?? 0) + 1; if ($s['fails'] >= 5) { unset($db['subs'][$id]); $stat['removed']++; } }
+  }
+  unset($s);
+  // письма из листа ожидания
+  $changed = false;
+  foreach ($mails as &$m) {
+    if (!empty($m['sent'])) continue;
+    $e = $events[$m['key']] ?? null;
+    if (!$e || $hoursTo($e) < 0) { $m['sent'] = 'expired'; $changed = true; continue; }
+    if ($available($e)) {
+      $subject = '=?UTF-8?B?' . base64_encode('Появились билеты: «' . $title($e) . '»') . '?=';
+      $body = 'Здравствуйте! На «' . $title($e) . '» ' . $when($e) . ' снова есть билеты: ' . siteBase() . $urlOf($e) . "\n\nТеатр RAT";
+      $from = ($data['theatre']['email'] ?? '') ?: ('noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+      $ok = @mail($m['email'], $subject, $body, "From: {$from}\r\nContent-Type: text/plain; charset=UTF-8");
+      $m['sent'] = $ok ? date('c') : 'failed'; $changed = true; if ($ok) $stat['mailed']++;
+    }
+  }
+  unset($m);
+  if ($changed) writeJson($WAIT_FILE, $mails);
+  $db['lastRun'] = date('c'); $db['lastStat'] = $stat;
+  writeJson($PUSH_FILE, $db);
+  return $stat;
+}
 function snapshot(string $dataFile, string $dir): void {
   if (!is_file($dataFile)) return;
   @copy($dataFile, $dir . '/' . date('Y-m-d-His') . '-' . substr((string)microtime(true), -3) . '.json');
@@ -242,7 +360,7 @@ switch ($a) {
     foreach ([$DATA_DIR => 'data', $PHOTOS_DIR => 'photos'] as $dir => $name) {
       foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)) as $file) {
         $rel = $name . '/' . substr($file->getPathname(), strlen($dir) + 1);
-        if (in_array(basename($rel), ['password.txt', 'password.json'], true)) continue;
+        if (in_array(basename($rel), ['password.txt', 'password.json', 'push-keys.json', 'push.json', 'waitlist.json'], true)) continue;
         $zip->addFile($file->getPathname(), $rel);
       }
     }
@@ -301,6 +419,63 @@ switch ($a) {
     $name = time() . '-' . bin2hex(random_bytes(3)) . $ext;
     if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить файл — проверьте права на папку photos', 500);
     out(['ok' => true, 'photo' => 'photos/' . $name]);
+
+  case 'push_key':
+    // публичный VAPID-ключ для подписки в браузере (создаётся при первом обращении)
+    out(['ok' => true, 'key' => pushKeys()['public']]);
+
+  case 'push_sub':
+    // подписка браузера: kind = remind (за день до показа) | wait (сообщить, если появятся билеты) | renew (браузер обновил подписку)
+    if ($method !== 'POST') fail('POST only', 405);
+    $b = body(); $sub = is_array($b['sub'] ?? null) ? $b['sub'] : [];
+    $endpoint = str($sub['endpoint'] ?? '', 2000); $kind = str($b['kind'] ?? '', 10); $key = str($b['key'] ?? '', 80);
+    if (!preg_match('~^https://\S+$~', $endpoint)) fail('bad endpoint');
+    if (!preg_match('~^[\d\-:_\w]*$~u', $key)) fail('bad key');
+    $db = pushDb(); if (count($db['subs']) >= 5000) fail('Слишком много подписок', 429);
+    $id = sha1($endpoint);
+    if ($kind === 'renew' && !empty($b['old'])) { $oldId = sha1(str($b['old'], 2000)); if (isset($db['subs'][$oldId])) { $db['subs'][$id] = $db['subs'][$oldId]; unset($db['subs'][$oldId]); } }
+    $s = $db['subs'][$id] ?? ['created' => date('c'), 'remind' => [], 'wait' => [], 'pending' => []];
+    $s['endpoint'] = $endpoint; $s['keys'] = ['p256dh' => str($sub['keys']['p256dh'] ?? '', 200), 'auth' => str($sub['keys']['auth'] ?? '', 100)];
+    if ($kind === 'remind' && $key !== '') $s['remind'][$key] = 0;
+    if ($kind === 'wait' && $key !== '') $s['wait'][$key] = 0;
+    if ($kind === 'off' && $key !== '') { unset($s['remind'][$key], $s['wait'][$key]); }
+    $db['subs'][$id] = $s; writeJson($PUSH_FILE, $db);
+    out(['ok' => true, 'remind' => array_keys($s['remind']), 'wait' => array_keys($s['wait'])]);
+
+  case 'push_msg':
+    // service worker забирает тексты уведомлений для своей подписки
+    if ($method !== 'POST') fail('POST only', 405);
+    $endpoint = str(body()['endpoint'] ?? '', 2000); $db = pushDb(); $id = sha1($endpoint);
+    $msgs = $db['subs'][$id]['pending'] ?? [];
+    if ($msgs) { $db['subs'][$id]['pending'] = []; writeJson($PUSH_FILE, $db); }
+    out(['ok' => true, 'messages' => array_values($msgs)]);
+
+  case 'push_send':
+    // обход подписок: напоминания за день и «появились билеты». Дёргается внешним cron (cron-job.org) по секретному ключу или из админки
+    $k = pushKeys();
+    if (!authed() && !hash_equals($k['cron'], (string)($_GET['key'] ?? ''))) fail('unauthorized', 401);
+    out(['ok' => true] + pushRun());
+
+  case 'push_stats':
+    requireAuth();
+    $db = pushDb(); $k = pushKeys(); $remind = 0; $wait = 0;
+    foreach ($db['subs'] as $s) { $remind += count(array_filter($s['remind'] ?? [], fn($v) => !$v)); $wait += count($s['wait'] ?? []); }
+    $mails = is_file($WAIT_FILE) ? (json_decode((string)file_get_contents($WAIT_FILE), true) ?: []) : [];
+    out(['ok' => true, 'subs' => count($db['subs']), 'remind' => $remind, 'wait' => $wait, 'mails' => count(array_filter($mails, fn($m) => empty($m['sent']))),
+      'lastRun' => $db['lastRun'] ?? null, 'lastStat' => $db['lastStat'] ?? null, 'cronUrl' => siteBase() . 'api.php?a=push_send&key=' . $k['cron']]);
+
+  case 'waitlist':
+    // почта в лист ожидания на аншлаг
+    if ($method !== 'POST') fail('POST only', 405);
+    $b = body(); $email = str($b['email'] ?? '', 120); $key = str($b['key'] ?? '', 80);
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) fail('Проверьте адрес почты');
+    if (!preg_match('~^[\d\-:_\w]*$~u', $key) || $key === '') fail('bad key');
+    $mails = is_file($WAIT_FILE) ? (json_decode((string)file_get_contents($WAIT_FILE), true) ?: []) : [];
+    if (count($mails) >= 5000) fail('Лист ожидания переполнен', 429);
+    foreach ($mails as $m) if ($m['email'] === $email && $m['key'] === $key && empty($m['sent'])) out(['ok' => true]);
+    $mails[] = ['email' => $email, 'key' => $key, 'created' => date('c'), 'sent' => null];
+    writeJson($WAIT_FILE, $mails);
+    out(['ok' => true]);
 
   case 'afisha_status':
     // остатки мест и цены по всем сеансам сайта; кэш 10 минут в data/afisha-status.json

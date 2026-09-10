@@ -109,7 +109,13 @@ window.RAT = (function () {
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M2 20c6-2 10-3 14-2l-2-6c0-4 4-6 8-5 3 1 5 4 9 5h9c6 0 11 2 15 5 1 1 3 2 5 2 2 0 3-1 3-2-2-2-4-3-7-4-4-3-9-5-16-5h-8c-3-3-6-6-11-6-7 0-12 5-11 11l-8 5z" fill="#000"/><circle cx="46" cy="14" r="1.6" fill="#c9ff3d"/><path d="M30 8c-2-3-1-6 1-7 1 1 1 4 0 7z" fill="#000"/></svg>');
     var rat = box.querySelector(".marq-rat");
-    var run = function () { rat.classList.remove("run"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+    var run = function () { rat.classList.remove("run"); rat.classList.remove("dash"); rat.style.removeProperty("--x"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+    rat.addEventListener("click", function () {
+      if (!rat.classList.contains("run") || rat.classList.contains("dash")) return;
+      squeak();
+      try { var tx = new DOMMatrixReadOnly(getComputedStyle(rat).transform).m41; rat.style.setProperty("--x", tx.toFixed(0) + "px"); } catch (x) {}
+      rat.classList.add("dash");
+    });
     setTimeout(run, 6000 + Math.random() * 8000);
   }
   function afishaLoad() {
@@ -185,6 +191,7 @@ window.RAT = (function () {
   function eventRow(e, p, th, opts) {
     opts = opts || {};
     var dt = parseDate(e.date), u = ticket(e, p, th), sold = hasBadge(e, "soldout");
+    var soon = (dt - new Date(new Date().toDateString())) / 864e5 < 3; // меньше трёх дней до показа
     var badges = (e.badges || []).filter(function (b) { return BADGES[b]; }).map(function (b) { return '<span class="badge ' + b + '">' + BADGES[b] + "</span>"; }).join("");
     var titleHtml = p ? (opts.link === false ? esc(p.title) : '<a href="' + playUrl(p) + '">' + esc(p.title) + "</a>") : esc(e.note || "Спектакль");
     return '<div class="ev rv' + (sold ? " sold" : "") + '"><span class="tape"></span>' + (badges ? '<div class="badges">' + badges + "</div>" : "") +
@@ -192,8 +199,8 @@ window.RAT = (function () {
       '<div><h3 class="t">' + titleHtml + "</h3>" +
       '<div class="m"><b>' + esc(e.venue || th.venue || "") + "</b>" + (p && p.duration ? " · " + esc(p.duration) : "") + (p && p.age ? " · " + esc(p.age) : "") + (e.note && p ? " · " + esc(e.note) : "") + "</div>" +
       (e.price ? '<div class="p">' + esc(e.price) + "</div>" : "") + "</div>" +
-      '<div class="buy">' + (sold ? '<span class="btn disabled">Билетов нет</span>' : (buyBtn(e, p, th, "Купить билет") || '<span class="btn disabled">Скоро в продаже</span>')) +
-      '<a class="cal" href="' + icsHref(e, p, th) + '" download="' + esc((p ? p.title : "show") + "-" + e.date) + '.ics">+ в календарь</a></div></div>';
+      '<div class="buy">' + (sold ? waitBtn(e) : (buyBtn(e, p, th, "Купить билет", soon ? "soon" : "") || '<span class="btn disabled">Скоро в продаже</span>')) +
+      '<a class="cal" href="' + icsHref(e, p, th) + '" download="' + esc((p ? p.title : "show") + "-" + e.date) + '.ics">+ в календарь</a>' + (sold ? "" : remindBtn(e)) + "</div></div>";
   }
 
   /* ---------- «Сегодня играем» ---------- */
@@ -401,6 +408,156 @@ window.RAT = (function () {
     lb.addEventListener("touchend", function (e) { if (tx === null) return; var dx = e.changedTouches[0].clientX - tx; tx = null; if (Math.abs(dx) > 50) show(idx + (dx < 0 ? 1 : -1)); }, { passive: true });
   }
 
+  /* ================= эффекты ================= */
+  var reduced = function () { return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); };
+
+  /* глитч заголовков: текст оборачивается в .gt, сверху два клона-канала (.gl.r и .gl.c); тайминг задаёт CSS */
+  function glitch() {
+    if (reduced()) return;
+    document.querySelectorAll("h2.sec").forEach(function (h, i) {
+      if (h.querySelector(".gt")) return;
+      var gt = document.createElement("span"); gt.className = "gt";
+      Array.prototype.slice.call(h.childNodes).forEach(function (n) { if (!(n.nodeType === 1 && n.classList.contains("stamp-deco"))) gt.appendChild(n); });
+      h.insertBefore(gt, h.firstChild); h.classList.add("gx");
+      h.style.setProperty("--gd", (i * 1.9 + Math.random() * 4).toFixed(1) + "s");
+      h.insertAdjacentHTML("beforeend", '<span class="gl r" aria-hidden="true">' + gt.innerHTML + '</span><span class="gl c" aria-hidden="true">' + gt.innerHTML + "</span>");
+    });
+  }
+
+  /* след баллончика за курсором — только мышь, не на тач-экранах */
+  function spray() {
+    if (reduced() || !(window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches)) return;
+    var pool = [], n = 18, i = 0, last = 0;
+    for (var k = 0; k < n; k++) { var d = document.createElement("i"); d.className = "spray"; document.body.appendChild(d); pool.push(d); }
+    window.addEventListener("pointermove", function (e) {
+      if (e.pointerType && e.pointerType !== "mouse") return;
+      var now = performance.now(); if (now - last < 26) return; last = now;
+      var d = pool[i++ % n]; d.style.left = e.clientX + "px"; d.style.top = e.clientY + "px"; d.style.setProperty("--s", (5 + Math.random() * 9).toFixed(0) + "px");
+      d.classList.remove("on"); void d.offsetWidth; d.classList.add("on");
+    }, { passive: true });
+  }
+
+  /* живая лента: базовая скорость 80 px/с, прокрутка страницы разгоняет, в покое затухает */
+  function marqLive() {
+    var m = document.querySelector(".marq"); if (!m || reduced() || m.classList.contains("js")) return;
+    var tracks = m.querySelectorAll(".track"); if (tracks.length < 2 || !window.requestAnimationFrame) return;
+    var w = tracks[0].getBoundingClientRect().width; if (!w) return;
+    m.classList.add("js");
+    var x = 0, boost = 0, last = performance.now(), lastY = window.pageYOffset;
+    var measure = function () { var nw = tracks[0].getBoundingClientRect().width; if (nw) w = nw; };
+    window.addEventListener("resize", measure); if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(tracks[0]);
+    window.addEventListener("scroll", function () { var y = window.pageYOffset; boost = Math.min(boost + Math.abs(y - lastY) * 2.2, 1400); lastY = y; }, { passive: true });
+    var tick = function (now) {
+      var dt = Math.min((now - last) / 1000, .05); last = now;
+      x -= (80 + boost) * dt; boost *= Math.pow(.04, dt);
+      if (x <= -w) x += w;
+      var t = "translate3d(" + x.toFixed(2) + "px,0,0)"; tracks[0].style.transform = t; tracks[1].style.transform = t;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+
+  /* писк крысы: две короткие трели, синтез без файлов */
+  function squeak() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+      var ac = squeak.ac || (squeak.ac = new AC()); if (ac.state === "suspended") ac.resume();
+      [0, .13].forEach(function (off) {
+        var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + off;
+        o.type = "square"; o.frequency.setValueAtTime(2300, t); o.frequency.exponentialRampToValueAtTime(3900, t + .05); o.frequency.exponentialRampToValueAtTime(2500, t + .11);
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .12);
+        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .13);
+      });
+    } catch (x) {}
+  }
+
+  /* ---------- уведомления: «напомнить», лист ожидания, PWA ---------- */
+  var evKey = function (e) { return (e.date || "") + "_" + (e.time || "") + "_" + (e.playId || ""); };
+  var pushOk = function () { return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window; };
+  var pushState = function () { try { return JSON.parse(localStorage.getItem("rat_push") || "{}"); } catch (x) { return {}; } };
+  var pushMark = function (kind, key) { var s = pushState(); s[kind] = s[kind] || {}; s[kind][key] = 1; try { localStorage.setItem("rat_push", JSON.stringify(s)); } catch (x) {} };
+  var pushHas = function (kind, key) { var s = pushState(); return !!(s[kind] && s[kind][key]); };
+  function toast(msg, err) {
+    var t = document.querySelector(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.toggle("err", !!err); t.classList.add("on");
+    clearTimeout(toast.tm); toast.tm = setTimeout(function () { t.classList.remove("on"); }, 4200);
+  }
+  function apiJson(phpQ, nodePath, opts) {
+    var chk = function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || r.status); return j; }); };
+    return fetch("api.php?a=" + phpQ, opts).then(function (r) { if (r.status === 404 || (r.headers.get("content-type") || "").indexOf("json") < 0) throw 0; return chk(r); })
+      .catch(function (err) { if (err instanceof Error) throw err; return fetch("api/" + nodePath, opts).then(chk); });
+  }
+  var b64u8 = function (s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+  function swReady() { return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }); }
+  function pushSubscribe() {
+    if (!pushOk()) {
+      var ios = /iP(hone|ad)/.test(navigator.userAgent) && !navigator.standalone;
+      return Promise.reject(new Error(ios ? "На iPhone сначала добавьте сайт на экран «Домой»: Поделиться → На экран «Домой». Потом нажмите ещё раз." : "Этот браузер не умеет уведомления"));
+    }
+    return swReady().then(function (reg) {
+      return Notification.requestPermission().then(function (perm) {
+        if (perm !== "granted") throw new Error("Вы запретили уведомления в браузере");
+        return reg.pushManager.getSubscription().then(function (s) {
+          if (s) return s;
+          return apiJson("push_key", "push_key").then(function (k) { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u8(k.key) }); });
+        });
+      });
+    });
+  }
+  function pushWant(kind, key) {
+    return pushSubscribe().then(function (sub) {
+      return apiJson("push_sub", "push_sub", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sub: sub.toJSON(), kind: kind, key: key }) });
+    }).then(function () { pushMark(kind, key); });
+  }
+  function remindBtn(e) {
+    if (!("serviceWorker" in navigator)) return "";
+    var k = evKey(e), on = pushHas("remind", k);
+    return '<button type="button" class="cal rem' + (on ? " on" : "") + '" data-remind="' + esc(k) + '">' + (on ? "✓ напомню за день" : "🔔 напомнить за день") + "</button>";
+  }
+  function waitBtn(e) {
+    var k = evKey(e), on = pushHas("wait", k);
+    return '<button type="button" class="btn wait' + (on ? " on" : "") + '" data-wait="' + esc(k) + '">Билетов нет<small>' + (on ? "сообщу, если появятся ✓" : "сообщить, если появятся") + "</small></button>";
+  }
+  function waitDialog(key, btn) {
+    var box = document.createElement("div"); box.className = "wl";
+    box.innerHTML = '<div class="box"><button class="x" type="button" aria-label="Закрыть">×</button><h3>Если билеты появятся</h3><p>Иногда бронь снимают за день-два до показа. Скажем сразу, как только места вернутся в продажу.</p>' +
+      ('serviceWorker' in navigator ? '<button type="button" class="btn" data-wl-push>🔔 Сообщить в браузере</button>' : "") +
+      '<input type="email" placeholder="или на почту: you@mail.ru" autocomplete="email"><button type="button" class="btn" data-wl-mail>Написать на почту</button></div>';
+    document.body.appendChild(box);
+    var close = function () { box.remove(); };
+    box.addEventListener("click", function (ev) { if (ev.target === box || ev.target.closest(".x")) close(); });
+    var done = function () { pushMark("wait", key); if (btn) { btn.classList.add("on"); btn.querySelector("small").textContent = "сообщу, если появятся ✓"; } close(); toast("Договорились: сообщим, как только появятся билеты"); };
+    var pb = box.querySelector("[data-wl-push]"); if (pb) pb.onclick = function () { pb.disabled = true; pushWant("wait", key).then(done).catch(function (err) { pb.disabled = false; toast(err.message || "Не получилось", true); }); };
+    box.querySelector("[data-wl-mail]").onclick = function () {
+      var em = box.querySelector("input").value.trim(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast("Проверьте адрес почты", true); return; }
+      apiJson("waitlist", "waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, key: key }) }).then(done).catch(function (err) { toast(err.message || "Не получилось", true); });
+    };
+  }
+  function pushInit() {
+    document.addEventListener("click", function (ev) {
+      var r = ev.target.closest("[data-remind]");
+      if (r) {
+        if (r.classList.contains("on")) { toast("Уже напомним за день до показа"); return; }
+        r.disabled = true;
+        pushWant("remind", r.dataset.remind).then(function () { r.classList.add("on"); r.textContent = "✓ напомню за день"; toast("Напомним за день до показа"); })
+          .catch(function (err) { toast(err.message || "Не получилось включить напоминание", true); }).then(function () { r.disabled = false; });
+        return;
+      }
+      var w = ev.target.closest("[data-wait]"); if (w) waitDialog(w.dataset.wait, w);
+    });
+    // офлайн-афиша (PWA): регистрируем service worker сразу, кнопка «Установить» появится, если браузер разрешит
+    if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(function () {});
+    var deferred = null;
+    window.addEventListener("beforeinstallprompt", function (e) {
+      e.preventDefault(); deferred = e;
+      if (document.querySelector(".pwa-btn")) return;
+      var b = document.createElement("button"); b.type = "button"; b.className = "btn pwa-btn"; b.textContent = "📱 Установить как приложение"; document.body.appendChild(b);
+      b.onclick = function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { b.remove(); deferred = null; }); };
+    });
+  }
+  function fx() { glitch(); spray(); marqLive(); }
+
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
     var els = document.querySelectorAll(".rv:not(.in)");
@@ -443,6 +600,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

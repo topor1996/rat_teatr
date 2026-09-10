@@ -343,3 +343,95 @@ html.afisha-open body{position:fixed!important;width:100%!important}
 .sbtns{display:flex;gap:8px;margin-top:10px}
 .sbtns .btn{flex:1}
 .sbox .hint{font-size:11px;color:var(--muted);margin:10px 0 0}
+
+/* ================= эффекты: глитч, штампы, скотч, баллончик, шум, дрожь кнопки ================= */
+/* глитч заголовков: два клона заголовка (красный и голубой канал) на долю секунды рвутся полосками */
+h2.sec .gl{position:absolute;left:0;top:0;width:100%;pointer-events:none;opacity:0;white-space:inherit;user-select:none;will-change:transform,clip-path}
+h2.sec .gl em{color:inherit;transform:rotate(-2deg)}
+h2.sec .gl.r{color:#ff3b2f;animation:glR 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+h2.sec .gl.c{color:#4df0ff;animation:glC 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+h2.sec .gt{display:inline-block;animation:glB 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+@keyframes glR{0%,29.9%,32.5%,100%{opacity:0}30%{opacity:.9;transform:translate(-5px,1px);clip-path:inset(8% 0 62% 0)}30.5%{transform:translate(6px,-2px);clip-path:inset(45% 0 30% 0)}31%{transform:translate(-3px,0);clip-path:inset(70% 0 5% 0)}31.6%{transform:translate(4px,2px);clip-path:inset(20% 0 55% 0)}32.1%{transform:translate(-6px,0);clip-path:inset(55% 0 20% 0)}}
+@keyframes glC{0%,29.9%,32.5%,100%{opacity:0}30%{opacity:.9;transform:translate(5px,-1px);clip-path:inset(50% 0 22% 0)}30.5%{transform:translate(-6px,2px);clip-path:inset(10% 0 70% 0)}31%{transform:translate(3px,0);clip-path:inset(30% 0 40% 0)}31.6%{transform:translate(-4px,-2px);clip-path:inset(65% 0 10% 0)}32.1%{transform:translate(6px,0);clip-path:inset(15% 0 60% 0)}}
+@keyframes glB{0%,29.9%,32.5%,100%{transform:none}30%{transform:translate(2px,0)}30.5%{transform:translate(-2px,1px)}31.2%{transform:translate(1px,-1px)}32%{transform:translate(-1px,0)}}
+
+/* стикеры «шлёпаются» на карточку при появлении, карточка вздрагивает */
+.badge{--rot:-3deg;transform:rotate(var(--rot))}
+.badge.soldout{--rot:3deg}
+.rv .badge{opacity:0}
+.rv.in .badge{animation:slam .55s cubic-bezier(.2,1.5,.4,1) both}
+.rv.in .badge:nth-child(2){animation-delay:.15s} .rv.in .badge:nth-child(3){animation-delay:.3s}
+@keyframes slam{0%{opacity:0;transform:scale(2.6) rotate(calc(var(--rot) - 14deg))}55%{opacity:1;transform:scale(.94) rotate(var(--rot))}70%{transform:scale(1.05) rotate(var(--rot)) translate(1px,0)}82%{transform:scale(1) rotate(var(--rot)) translate(-1px,1px)}100%{opacity:1;transform:scale(1) rotate(var(--rot))}}
+.ev.rv.in:has(.badge){animation:thud .45s .28s}
+@keyframes thud{0%,100%{translate:0 0}25%{translate:1px 2px}50%{translate:-1px 1px}75%{translate:1px -1px}}
+/* скотч отклеивается при наведении */
+.tape{transition:transform .35s cubic-bezier(.3,1.6,.5,1),filter .35s}
+.card:hover .tape{transform:rotate(-15deg) translate(-3px,-5px);filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+.card:hover .tape.r{transform:rotate(13deg) translate(3px,-5px)}
+.ev:hover .tape{transform:rotate(11deg) translate(4px,-5px);filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+.shot:hover .tape{transform:translateX(-50%) rotate(-12deg) translateY(-4px);filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+.rev:hover .tape{transform:rotate(-13deg) translate(-3px,-4px);filter:drop-shadow(0 4px 3px rgba(0,0,0,.35))}
+.flip:hover .tape{transform:translateX(-50%) rotate(-11deg) translateY(-4px)}
+
+/* след баллончика за курсором (только мышь) */
+.spray{position:fixed;left:0;top:0;width:var(--s,8px);height:var(--s,8px);border-radius:50%;background:var(--acid);pointer-events:none;z-index:9999;opacity:0;transform:translate(-50%,-50%);mix-blend-mode:screen}
+.spray.on{animation:sprayFade .7s ease-out forwards}
+@keyframes sprayFade{0%{opacity:.6;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.2)}}
+
+/* лента управляется скриптом: разгоняется от прокрутки; крыса кликабельна и убегает */
+.marq.js .track{animation:none;transform:translate3d(0,0,0)}
+.marq-rat.run{pointer-events:auto;cursor:pointer}
+.marq-rat.dash{animation:ratDash .8s cubic-bezier(.5,0,1,1) forwards}
+@keyframes ratDash{from{opacity:1;transform:translateX(var(--x,0px)) rotate(-2deg)}to{opacity:1;transform:translateX(calc(100vw + 160px)) rotate(-6deg)}}
+.marq-rat.dash path:first-child{animation-duration:.08s}
+
+/* плёночное зерно и полоски поверх видео в шапке; «старый телевизор» на постерах при наведении */
+.hero-media::before{content:"";position:absolute;inset:-100% 0 0 -100%;width:300%;height:300%;z-index:1;pointer-events:none;opacity:.14;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain .6s steps(5) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-5%,-1%)}80%{transform:translate(4%,3%)}100%{transform:translate(0,0)}}
+.hero-media{background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0 1px,transparent 1px 3px)}
+.poster::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;opacity:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 4px);transition:opacity .2s}
+.card:hover .poster::before{opacity:1}
+.card:hover .poster img{animation:tv .5s steps(3) 1}
+@keyframes tv{0%{filter:brightness(1.6) contrast(1.4);transform:translateY(-2px)}33%{filter:brightness(.7) contrast(1.2);transform:translateY(3px) skewX(-2deg)}66%{filter:brightness(1.3) hue-rotate(20deg);transform:translateY(-1px)}100%{filter:none;transform:none}}
+
+/* кнопка «Купить билет» вздрагивает один раз, если до показа меньше трёх дней */
+.btn.soon{animation:nudge .7s ease-in-out 1s 1 both}
+.rv .btn.soon{animation-play-state:paused} .rv.in .btn.soon{animation-play-state:running}
+@keyframes nudge{0%,100%{transform:none}15%{transform:translateX(-3px) rotate(-1.5deg)}30%{transform:translateX(3px) rotate(1.5deg)}45%{transform:translateX(-2px)}60%{transform:translateX(2px)}75%{transform:translateX(-1px)}}
+
+/* уведомления: «напомнить», лист ожидания, всплывашка, кнопка «установить» */
+.cal.rem{background:none;border:0;padding:0;font:inherit;font-size:11px;color:var(--muted);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.cal.rem:hover{color:#000} .cal.rem.on{color:#000;text-decoration:none}
+.btn.wait{flex-direction:column;gap:0;line-height:1.1;cursor:pointer;opacity:1;background:#333;color:#ddd}
+.btn.wait small{font-family:"PT Mono",monospace;font-size:10px;letter-spacing:0;text-transform:none;color:var(--acid)}
+.btn.wait.on small{color:#9be;}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--acid);color:#000;padding:12px 16px;font-family:"Oswald",sans-serif;font-size:14px;letter-spacing:.04em;border:2.5px solid #000;box-shadow:0 8px 20px rgba(0,0,0,.5);z-index:10000;opacity:0;transition:opacity .25s,transform .25s;max-width:min(92vw,420px);text-align:center;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red);color:#fff}
+.wl{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:16px}
+.wl .box{background:var(--paper);color:var(--ink);padding:22px 20px;max-width:380px;width:100%;position:relative;transform:rotate(-1deg);box-shadow:0 20px 50px rgba(0,0,0,.6)}
+.wl h3{margin:0 0 6px;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:22px;line-height:1}
+.wl p{margin:0 0 14px;font-size:13px;color:var(--muted)}
+.wl .btn{width:100%;margin-bottom:10px}
+.wl input{width:100%;padding:11px 12px;border:2px solid #000;font:inherit;font-size:16px;background:#fff;color:#000;margin-bottom:10px;box-sizing:border-box}
+.wl .x{position:absolute;right:8px;top:6px;background:none;border:0;font-size:22px;cursor:pointer;color:#000}
+.pwa-btn{position:fixed;left:14px;bottom:14px;z-index:9998;padding:9px 12px;font-size:13px;transform:rotate(-2deg)}
+@media (max-width:640px){.pwa-btn{left:10px;bottom:10px}}
+
+/* без анимаций, если система просит спокойствия */
+@media (prefers-reduced-motion:reduce){
+  h2.sec .gl,.spray{display:none}
+  h2.sec .gt{animation:none!important}
+  .rv .badge{opacity:1} .rv.in .badge,.ev.rv.in:has(.badge),.card:hover .poster img,.btn.soon,.hero-media::before{animation:none!important}
+  .tape{transition:none}
+  .marq-rat.dash{animation:none}
+}
+
+/* переход между страницами: старая темнеет, новая опускается чёрной шторкой с рваным краем (View Transitions, где поддерживается) */
+@property --ty{syntax:"<percentage>";inherits:false;initial-value:-12%}
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:vtOut .32s ease-in both}
+::view-transition-new(root){animation:vtIn .42s cubic-bezier(.7,0,.3,1) both;--ty:-12%;clip-path:polygon(0 0,100% 0,100% calc(var(--ty) - 6%),94% calc(var(--ty) + 2%),88% calc(var(--ty) - 3%),81% calc(var(--ty) + 4%),74% calc(var(--ty) - 1%),66% calc(var(--ty) + 5%),58% calc(var(--ty) - 4%),50% calc(var(--ty) + 1%),42% calc(var(--ty) - 5%),34% calc(var(--ty) + 3%),26% calc(var(--ty) - 2%),18% calc(var(--ty) + 5%),10% calc(var(--ty) - 4%),4% calc(var(--ty) + 2%),0 calc(var(--ty) - 6%))}
+@keyframes vtOut{to{filter:brightness(.1)}}
+@keyframes vtIn{from{--ty:-12%}to{--ty:118%}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}

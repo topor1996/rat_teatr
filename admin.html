@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913d" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913e" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -167,6 +167,7 @@
       <button data-tab="show">Голосование</button>
       <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
+      <button data-tab="push">Уведомления</button>
       <button data-tab="history">История</button>
     </div>
 
@@ -269,6 +270,15 @@
         <h2>Посещения <span class="tools"><button class="btn ghost sm" id="visitsRefresh">Обновить</button></span></h2>
         <p class="help">Считается на нашем сервере без cookie и без сторонних сервисов: просмотры и уникальные посетители за день (по обезличенному хэшу, IP не хранится). «Голосование» — это в основном зрители с QR на сиденьях.</p>
         <div id="visitsBody" class="hint">Загружаю…</div>
+      </div>
+    </div>
+
+    <!-- Уведомления -->
+    <div class="tab" id="tab-push">
+      <div class="panel">
+        <h2>Пуш-уведомления <span class="tools"><button class="btn ghost sm" id="pushRefresh">Обновить</button><button class="btn sm" id="pushRun">Разослать сейчас</button></span></h2>
+        <p class="help">Зрители нажимают «🔔 напомнить за день» у показа или «сообщить, если появятся» на аншлаге. Сайт хранит только адрес подписки браузера, без имён и телефонов. Уведомления уходят, когда кто-то вызывает адрес рассылки ниже: поставьте его на бесплатный cron-job.org раз в час (метод GET), иначе напоминания уйдут только при нажатии «Разослать сейчас».</p>
+        <div id="pushBody" class="hint">Загружаю…</div>
       </div>
     </div>
 
@@ -708,6 +718,27 @@ $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-ta
 const PAGE_NAMES = { home: "Главная", golos: "Голосование" };
 const pageName = p => PAGE_NAMES[p] || (p.startsWith("play:") ? "Спектакль: " + ((data.plays.find(x => x.id === p.slice(5)) || {}).title || p.slice(5)) : p);
 const apiPath = (php, node) => backend.name === "php" ? php : node;
+async function loadPush() {
+  const box = $("#pushBody");
+  if (backend.name === "github") { box.textContent = "На GitHub Pages нет сервера — уведомления работают на InfinityFree и с server.js."; return; }
+  try {
+    const r = await api(apiPath("api.php?a=push_stats", "/api/push_stats"));
+    const st = r.lastStat ? ` (отправлено ${r.lastStat.sent}, ошибок ${r.lastStat.failed}, удалено ${r.lastStat.removed}, писем ${r.lastStat.mailed})` : "";
+    box.innerHTML = `<div class="row3" style="margin-bottom:12px">
+      <div><label>Подписанных браузеров</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.subs}</div></div>
+      <div><label>Ждут напоминания</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.remind}</div></div>
+      <div><label>Ждут билеты (пуш / почта)</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.wait} / ${r.mails}</div></div></div>
+      <label>Адрес рассылки для cron-job.org (секретный, не публикуйте)</label>
+      <input readonly value="${esc(r.cronUrl)}" onclick="this.select()">
+      <p class="help" style="margin-top:8px">Последний запуск: ${r.lastRun ? new Date(r.lastRun).toLocaleString("ru-RU") : "ещё не было"}${esc(st)}.<br>На iPhone уведомления приходят, только если сайт добавлен на экран «Домой». Письма из листа ожидания отправляет функция mail() хостинга — на InfinityFree она работает нестабильно, пуш надёжнее.</p>`;
+  } catch (err) { box.textContent = "Не удалось получить статистику: " + err.message; }
+}
+$("#pushRefresh").onclick = loadPush;
+$("#pushRun").onclick = async () => {
+  setStatus("Рассылаю…");
+  try { const r = await api(apiPath("api.php?a=push_send", "/api/push_send")); setStatus(`Готово: отправлено ${r.sent}, ошибок ${r.failed}, письмами ${r.mailed}`, "ok"); loadPush(); }
+  catch (err) { setStatus(err.message, "err"); }
+};
 async function loadVisits() {
   const box = $("#visitsBody");
   if (backend.name === "github") { box.textContent = "На GitHub Pages нет сервера — счётчик работает на InfinityFree и с server.js."; return; }
@@ -985,7 +1016,7 @@ async function load() {
   if (!(await backend.me())) return showLogin();
   data = normalize(await backend.load());
   showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
-  loadVisits(); loadHistory();
+  loadVisits(); loadHistory(); loadPush();
 }
 /* страховка: если за 8 секунд ничего не показалось (например, хостинг не пустил запросы к api.php), показать форму входа с подсказкой */
 setTimeout(() => {

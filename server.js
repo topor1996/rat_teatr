@@ -184,7 +184,7 @@ app.post("/api/restore", requireAuth, (req, res) => {
 });
 app.get("/api/backup", requireAuth, (req, res) => {
   // zip без сжатия (store), без внешних зависимостей
-  const files = []; const walk = (dir, base) => { for (const n of fs.readdirSync(dir)) { const p = path.join(dir, n); if (fs.statSync(p).isDirectory()) walk(p, base + n + "/"); else if (n !== "password.txt" && n !== "password.json") files.push([base + n, fs.readFileSync(p)]); } };
+  const files = []; const walk = (dir, base) => { for (const n of fs.readdirSync(dir)) { const p = path.join(dir, n); if (fs.statSync(p).isDirectory()) walk(p, base + n + "/"); else if (!["password.txt", "password.json", "push-keys.json", "push.json", "waitlist.json"].includes(n)) files.push([base + n, fs.readFileSync(p)]); } };
   walk(DATA_DIR, "data/"); walk(PHOTOS_DIR, "photos/");
   const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
   const crc32 = b => { let c = 0xFFFFFFFF; for (const x of b) c = crcTable[(c ^ x) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
@@ -258,6 +258,115 @@ app.get("/api/afisha_import", requireAuth, async (req, res) => {
     res.json({ ok: true, showId: String(show.id), name: String(show.name || ""), image: String(show.image || ""), age: Number(show.age_limit || 0), events: afishaEvents(show) });
   } catch (e) { res.status(400).json({ error: "Ошибка запроса к Афише: " + e.message }); }
 });
+
+/* ---------- пуш-уведомления (Web Push, VAPID) и лист ожидания — как в api.php ---------- */
+const PUSH_FILE = path.join(DATA_DIR, "push.json"), PUSH_KEYS = path.join(DATA_DIR, "push-keys.json"), WAIT_FILE = path.join(DATA_DIR, "waitlist.json");
+const b64u = b => Buffer.from(b).toString("base64url");
+const readAny = (f, d) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return d; } };
+function pushKeys() {
+  const k = readAny(PUSH_KEYS, null); if (k && k.private) return k;
+  const { privateKey, publicKey } = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+  const jwk = publicKey.export({ format: "jwk" });
+  const pub = Buffer.concat([Buffer.from([4]), Buffer.from(jwk.x, "base64url"), Buffer.from(jwk.y, "base64url")]);
+  const nk = { private: privateKey.export({ type: "pkcs8", format: "pem" }), public: b64u(pub), cron: crypto.randomBytes(12).toString("hex"), created: new Date().toISOString() };
+  writeJson(PUSH_KEYS, nk); return nk;
+}
+function vapidJwt(aud, k, contact) {
+  const data = b64u(JSON.stringify({ typ: "JWT", alg: "ES256" })) + "." + b64u(JSON.stringify({ aud, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: contact }));
+  return data + "." + b64u(crypto.sign("sha256", Buffer.from(data), { key: k.private, dsaEncoding: "ieee-p1363" }));
+}
+async function pushPoke(endpoint, k, contact) {
+  const u = new URL(endpoint);
+  try { const r = await fetch(endpoint, { method: "POST", headers: { Authorization: "vapid t=" + vapidJwt(u.origin, k, contact) + ", k=" + k.public, TTL: "86400", "Content-Length": "0", Urgency: "normal" } }); return r.status; }
+  catch { return 0; }
+}
+const pushDb = () => Object.assign({ subs: {} }, readAny(PUSH_FILE, {}));
+const evKey = e => (e.date || "") + "_" + (e.time || "") + "_" + (e.playId || "");
+const siteBase = req => (req.headers["x-forwarded-proto"] || req.protocol) + "://" + req.get("host") + "/";
+async function pushRun(base) {
+  const data = readData(), db = pushDb(), k = pushKeys(), contact = "mailto:" + (data.theatre?.email || "admin@example.com");
+  const plays = Object.fromEntries((data.plays || []).map(p => [p.id, p]));
+  const events = Object.fromEntries((data.events || []).filter(e => !e.hidden).map(e => [evKey(e), e]));
+  const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  const when = e => { const [, m, d] = e.date.split("-").map(Number); return d + " " + MONTHS[m - 1] + (e.time ? " в " + e.time : ""); };
+  const title = e => plays[e.playId]?.title || e.note || "Спектакль";
+  const urlOf = e => plays[e.playId] ? "play.html?id=" + encodeURIComponent(e.playId) : "./";
+  const hoursTo = e => (new Date(e.date + "T" + (e.time || "19:00") + ":00+03:00") - Date.now()) / 36e5;
+  const todayMsk = new Date(Date.now() + 3 * 36e5).toISOString().slice(0, 10);
+  const mails = readAny(WAIT_FILE, []);
+  const waiting = Object.values(db.subs).some(s => Object.keys(s.wait || {}).length) || mails.some(m => !m.sent);
+  const sessions = {};
+  if (waiting) { const partner = str(data.theatre?.afishaPartnerId, 20).replace(/\D/g, "");
+    if (partner) for (const sid of new Set((data.plays || []).map(p => str(p.afishaShowId, 40).replace(/\D/g, "")).filter(Boolean))) { try { const show = await afishaShow(partner, sid); if (show) for (const e of afishaEvents(show)) sessions[e.sessionId] = e.count; } catch {} } }
+  const available = e => { const sid = String(e.afishaSessionId || "").replace(/\D/g, ""); return sid && sessions[sid] > 0; };
+  const stat = { sent: 0, failed: 0, removed: 0, mailed: 0 };
+  for (const [id, s] of Object.entries(db.subs)) {
+    const queue = [];
+    for (const [key, done] of Object.entries(s.remind || {})) {
+      const e = events[key]; if (!e) { delete s.remind[key]; continue; }
+      const h = hoursTo(e); if (h < -3) { delete s.remind[key]; continue; }
+      if (!done && h <= 26) { queue.push({ title: (e.date === todayMsk ? "Сегодня" : "Завтра") + ": «" + title(e) + "»", body: when(e) + ", " + (e.venue || data.theatre?.venue || "") + ". Ждём вас!", url: urlOf(e), tag: "remind-" + key }); s.remind[key] = 1; }
+    }
+    for (const [key, done] of Object.entries(s.wait || {})) {
+      const e = events[key]; if (!e || hoursTo(e) < 0) { delete s.wait[key]; continue; }
+      if (!done && available(e)) { queue.push({ title: "Появились билеты: «" + title(e) + "»", body: when(e) + ". Успейте, пока снова не разобрали.", url: urlOf(e), tag: "wait-" + key }); delete s.wait[key]; }
+    }
+    if (!queue.length) continue;
+    s.pending = (s.pending || []).concat(queue);
+    const code = await pushPoke(s.endpoint, k, contact);
+    if (code === 404 || code === 410) { delete db.subs[id]; stat.removed++; continue; }
+    if (code >= 200 && code < 300) { stat.sent++; s.fails = 0; } else { stat.failed++; s.fails = (s.fails || 0) + 1; if (s.fails >= 5) { delete db.subs[id]; stat.removed++; } }
+  }
+  let changed = false;
+  for (const m of mails) {
+    if (m.sent) continue;
+    const e = events[m.key]; if (!e || hoursTo(e) < 0) { m.sent = "expired"; changed = true; continue; }
+    if (available(e)) { console.log("[waitlist] письмо для " + m.email + ": появились билеты на «" + title(e) + "» " + when(e) + " " + base + urlOf(e) + " (SMTP не настроен — только лог)"); m.sent = "logged"; changed = true; stat.mailed++; }
+  }
+  if (changed) writeJson(WAIT_FILE, mails);
+  db.lastRun = new Date().toISOString(); db.lastStat = stat; writeJson(PUSH_FILE, db);
+  return stat;
+}
+app.get("/api/push_key", (req, res) => res.json({ ok: true, key: pushKeys().public }));
+app.post("/api/push_sub", (req, res) => {
+  const b = req.body || {}, sub = b.sub || {}, endpoint = str(sub.endpoint, 2000), kind = str(b.kind, 10), key = str(b.key, 80);
+  if (!/^https:\/\/\S+$/.test(endpoint)) return res.status(400).json({ error: "bad endpoint" });
+  if (!/^[\d\-:_\w]*$/u.test(key)) return res.status(400).json({ error: "bad key" });
+  const db = pushDb(); if (Object.keys(db.subs).length >= 5000) return res.status(429).json({ error: "Слишком много подписок" });
+  const id = crypto.createHash("sha1").update(endpoint).digest("hex");
+  if (kind === "renew" && b.old) { const oldId = crypto.createHash("sha1").update(str(b.old, 2000)).digest("hex"); if (db.subs[oldId]) { db.subs[id] = db.subs[oldId]; delete db.subs[oldId]; } }
+  const s = db.subs[id] || { created: new Date().toISOString(), remind: {}, wait: {}, pending: [] };
+  s.endpoint = endpoint; s.keys = { p256dh: str(sub.keys?.p256dh, 200), auth: str(sub.keys?.auth, 100) };
+  if (kind === "remind" && key) s.remind[key] = 0;
+  if (kind === "wait" && key) s.wait[key] = 0;
+  if (kind === "off" && key) { delete s.remind[key]; delete s.wait[key]; }
+  db.subs[id] = s; writeJson(PUSH_FILE, db);
+  res.json({ ok: true, remind: Object.keys(s.remind), wait: Object.keys(s.wait) });
+});
+app.post("/api/push_msg", (req, res) => {
+  const db = pushDb(), id = crypto.createHash("sha1").update(str(req.body?.endpoint, 2000)).digest("hex");
+  const msgs = db.subs[id]?.pending || []; if (msgs.length) { db.subs[id].pending = []; writeJson(PUSH_FILE, db); }
+  res.json({ ok: true, messages: msgs });
+});
+app.all("/api/push_send", async (req, res) => {
+  const k = pushKeys();
+  if (!isAuthed(req) && !safeEqual(String(req.query.key || ""), k.cron)) return res.status(401).json({ error: "unauthorized" });
+  res.json({ ok: true, ...(await pushRun(siteBase(req))) });
+});
+app.get("/api/push_stats", requireAuth, (req, res) => {
+  const db = pushDb(), k = pushKeys(); let remind = 0, wait = 0;
+  for (const s of Object.values(db.subs)) { remind += Object.values(s.remind || {}).filter(v => !v).length; wait += Object.keys(s.wait || {}).length; }
+  res.json({ ok: true, subs: Object.keys(db.subs).length, remind, wait, mails: readAny(WAIT_FILE, []).filter(m => !m.sent).length, lastRun: db.lastRun || null, lastStat: db.lastStat || null, cronUrl: siteBase(req) + "api/push_send?key=" + k.cron });
+});
+app.post("/api/waitlist", (req, res) => {
+  const email = str(req.body?.email, 120), key = str(req.body?.key, 80);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ error: "Проверьте адрес почты" });
+  if (!key || !/^[\d\-:_\w]*$/u.test(key)) return res.status(400).json({ error: "bad key" });
+  const mails = readAny(WAIT_FILE, []); if (mails.length >= 5000) return res.status(429).json({ error: "Лист ожидания переполнен" });
+  if (!mails.some(m => m.email === email && m.key === key && !m.sent)) { mails.push({ email, key, created: new Date().toISOString(), sent: null }); writeJson(WAIT_FILE, mails); }
+  res.json({ ok: true });
+});
+
 app.get("/sitemap.xml", (req, res) => {
   const d = readData(); const base = `${req.protocol}://${req.get("host")}`;
   const urls = ["/", "/golos", ...(d.plays || []).map(p => "/play.html?id=" + encodeURIComponent(p.id))];

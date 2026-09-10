@@ -37,6 +37,14 @@ function rat_render(string $file, ?string $playId = null): void {
     $url = $base;
   }
   $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
+  // og:video: Telegram и VK показывают ролик прямо в превью. На странице спектакля — первое видео из медиа, на главной — видео шапки
+  $video = null;
+  if ($play) { foreach ($play['media'] ?? [] as $m) if (($m['type'] ?? '') === 'video' && empty($m['hidden']) && !empty($m['src'])) { $video = $m['src']; break; } }
+  elseif (!empty($th['heroVideo'])) $video = $th['heroVideo'];
+  if ($video) {
+    $ext = strtolower(pathinfo($video, PATHINFO_EXTENSION)); $mime = $ext === 'webm' ? 'video/webm' : ($ext === 'mov' ? 'video/quicktime' : 'video/mp4');
+    $og .= "\n<meta property=\"og:video\" content=\"{$e($base . $video)}\">\n<meta property=\"og:video:secure_url\" content=\"{$e($base . $video)}\">\n<meta property=\"og:video:type\" content=\"{$mime}\">\n<meta property=\"og:video:width\" content=\"1280\">\n<meta property=\"og:video:height\" content=\"720\">";
+  }
   $html = preg_replace('~<!--OG-->.*?<!--/OG-->~s', $og, $html, 1);
   $html = preg_replace('~<meta name="description" content="[^"]*">\\s*~', '', $html, 1);
   $html = preg_replace('~<title>.*?</title>~s', '<title>' . $e($title) . '</title>', $html, 1);

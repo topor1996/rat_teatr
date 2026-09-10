@@ -1,5 +1,6 @@
 # Короткие адреса и серверная подстановка превью (Apache-хостинг, InfinityFree)
 DirectoryIndex index.php index.html
+AddType application/manifest+json .webmanifest
 RewriteEngine On
 RewriteRule ^admin/$ /admin [R=301,L]
 RewriteRule ^admin$ admin.html [L]
@@ -13,10 +14,13 @@ ErrorDocument 404 /404.html
 
 # Кэш: страницы всегда свежие, статика с версией в адресе кэшируется надолго
 <IfModule mod_headers.c>
-  <FilesMatch "\.(html|php)$">
+  <FilesMatch "\.(html|php|webmanifest)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
   <FilesMatch "\.(css|js|woff2|png|svg|jpg|jpeg|webp|mp4|webm)$">
     Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "^sw\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 </IfModule>

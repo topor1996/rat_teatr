@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0a0a0a">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
 <link href="fonts/fonts.css?v=20260911" rel="stylesheet">
@@ -99,6 +101,11 @@
   .marq i{font-style:normal}
   @keyframes mq{to{transform:translateX(-100%)}}
   @media (prefers-reduced-motion:reduce){.marq .track{animation:none}}
+  .marq.js .track{animation:none;transform:translate3d(0,0,0)}
+  .marq-rat.run{pointer-events:auto;cursor:pointer}
+  .marq-rat.dash{animation:ratDash .8s cubic-bezier(.5,0,1,1) forwards}
+  @keyframes ratDash{from{opacity:1;transform:translateX(var(--x,0px)) rotate(-2deg)}to{opacity:1;transform:translateX(calc(100vw + 160px)) rotate(-6deg)}}
+  @media (prefers-reduced-motion:reduce){.marq-rat.dash{animation:none}}
 
   /* ---------- steps as stickers ---------- */
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:36px 0 8px}
@@ -368,8 +375,27 @@ function marquee(items) {
   const fit = () => { const w = tracks[0].getBoundingClientRect().width; tracks.forEach(t => t.style.animationDuration = (w / 80) + "s"); };
   fit(); if (document.fonts) document.fonts.ready.then(fit);
 }
+/* живая лента: разгоняется от прокрутки, в покое затухает до 80 px/с */
+function marqLive() {
+  const m = document.querySelector(".marq"); if (!m || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const tracks = m.querySelectorAll(".track"); let w = tracks[0].getBoundingClientRect().width; if (!w || tracks.length < 2) return;
+  m.classList.add("js");
+  let x = 0, boost = 0, last = performance.now(), lastY = pageYOffset;
+  const measure = () => { const nw = tracks[0].getBoundingClientRect().width; if (nw) w = nw; };
+  addEventListener("resize", measure); if (document.fonts) document.fonts.ready.then(measure); if (window.ResizeObserver) new ResizeObserver(measure).observe(tracks[0]);
+  addEventListener("scroll", () => { const y = pageYOffset; boost = Math.min(boost + Math.abs(y - lastY) * 2.2, 1400); lastY = y; }, { passive: true });
+  const tick = now => { const dt = Math.min((now - last) / 1000, .05); last = now; x -= (80 + boost) * dt; boost *= Math.pow(.04, dt); if (x <= -w) x += w; const t = `translate3d(${x.toFixed(2)}px,0,0)`; tracks[0].style.transform = t; tracks[1].style.transform = t; requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+/* писк крысы без аудиофайлов */
+function squeak() {
+  try { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; const ac = squeak.ac || (squeak.ac = new AC()); if (ac.state === "suspended") ac.resume();
+    [0, .13].forEach(off => { const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + off; o.type = "square"; o.frequency.setValueAtTime(2300, t); o.frequency.exponentialRampToValueAtTime(3900, t + .05); o.frequency.exponentialRampToValueAtTime(2500, t + .11); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .12); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .13); });
+  } catch (x) {}
+}
 const splitList = s => String(s || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 marquee(["Лучшая сцена", "Любой банк", "СБП", "Голосуй рублём", "Театр RAT"]);
+marqLive();
 
 const grid = document.getElementById("grid");
 let current = ACTORS;
@@ -444,7 +470,13 @@ grid.innerHTML = ACTORS.map((a, i) => {
     if (box && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
       box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M2 20c6-2 10-3 14-2l-2-6c0-4 4-6 8-5 3 1 5 4 9 5h9c6 0 11 2 15 5 1 1 3 2 5 2 2 0 3-1 3-2-2-2-4-3-7-4-4-3-9-5-16-5h-8c-3-3-6-6-11-6-7 0-12 5-11 11l-8 5z" fill="#000"/><circle cx="46" cy="14" r="1.6" fill="#c9ff3d"/><path d="M30 8c-2-3-1-6 1-7 1 1 1 4 0 7z" fill="#000"/></svg>');
       var rat = box.querySelector(".marq-rat");
-      var run = function () { rat.classList.remove("run"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+      var run = function () { rat.classList.remove("run"); rat.classList.remove("dash"); rat.style.removeProperty("--x"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+      rat.addEventListener("click", function () {
+        if (!rat.classList.contains("run") || rat.classList.contains("dash")) return;
+        squeak();
+        try { rat.style.setProperty("--x", new DOMMatrixReadOnly(getComputedStyle(rat).transform).m41.toFixed(0) + "px"); } catch (x) {}
+        rat.classList.add("dash");
+      });
       setTimeout(run, 6000 + Math.random() * 8000);
     }
   } catch (x) {}
