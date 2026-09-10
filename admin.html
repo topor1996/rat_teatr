@@ -737,8 +737,10 @@ document.addEventListener("change", e => {
 });
 async function videoPoster(fileOrUrl) { // кадр из ролика → webp
   return new Promise(res => {
+    // элемент кладём на страницу за экран и явно вызываем load(): отдельно стоящий <video> в Chrome не грузится
     const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
-    let finished = false; const done = f => { if (finished) return; finished = true; res(f); v.removeAttribute("src"); };
+    v.style.cssText = "position:fixed;left:-9999px;top:0;width:16px;height:16px;opacity:0;pointer-events:none"; document.body.appendChild(v);
+    let finished = false; const done = f => { if (finished) return; finished = true; res(f); v.removeAttribute("src"); v.remove(); };
     const timer = setTimeout(() => done(null), 20000);
     v.addEventListener("loadeddata", () => { try { v.currentTime = Math.min(1.5, (v.duration || 2) * 0.15); } catch { done(null); } });
     v.addEventListener("seeked", () => {
@@ -750,6 +752,7 @@ async function videoPoster(fileOrUrl) { // кадр из ролика → webp
     });
     v.addEventListener("error", () => { clearTimeout(timer); done(null); });
     v.src = typeof fileOrUrl === "string" ? fileOrUrl : URL.createObjectURL(fileOrUrl);
+    v.load();
   });
 }
 async function attachPoster(item, fileOrUrl) {
