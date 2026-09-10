@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260911b" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260912b" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -58,6 +58,12 @@
   .checks{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:4px}
   .chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text);margin:0;cursor:pointer}
   .chk input{width:auto;accent-color:var(--acid)}
+  table.stats{width:100%;border-collapse:collapse;font-size:13px}
+  table.stats th,table.stats td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
+  table.stats th{color:var(--muted);font-weight:400;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+  table.stats td.n{text-align:right;font-family:"Oswald",sans-serif;font-size:15px}
+  table.stats tr.total td{color:var(--acid);font-weight:700}
+  .scroll{overflow-x:auto}
   [hidden]{display:none!important}
   .empty{color:var(--muted);text-align:center;padding:24px}
   .help{font-size:12px;color:var(--muted);margin:0 0 14px}
@@ -109,6 +115,8 @@
       <button data-tab="gallery">Бэкстейдж</button>
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
+      <button data-tab="visits">Посещения</button>
+      <button data-tab="history">История</button>
     </div>
 
     <!-- Афиша -->
@@ -194,6 +202,29 @@
     </div>
 
     <!-- Голосование -->
+    <!-- Посещения -->
+    <div class="tab" id="tab-visits">
+      <div class="panel">
+        <h2>Посещения <span class="tools"><button class="btn ghost sm" id="visitsRefresh">Обновить</button></span></h2>
+        <p class="help">Считается на нашем сервере без cookie и без сторонних сервисов: просмотры и уникальные посетители за день (по обезличенному хэшу, IP не хранится). «Голосование» — это в основном зрители с QR на сиденьях.</p>
+        <div id="visitsBody" class="hint">Загружаю…</div>
+      </div>
+    </div>
+
+    <!-- История -->
+    <div class="tab" id="tab-history">
+      <div class="panel">
+        <h2>Резервная копия</h2>
+        <p class="help">Архив со всеми данными сайта и фото. Хостинг сам ничего не хранит, скачивайте раз в неделю и после больших правок.</p>
+        <a class="btn" id="backupLink" href="api.php?a=backup">Скачать всё архивом</a>
+      </div>
+      <div class="panel">
+        <h2>История версий <span class="tools"><button class="btn ghost sm" id="historyRefresh">Обновить</button></span></h2>
+        <p class="help">Последние 20 сохранений. «Вернуть» откатывает данные к этой версии, текущее состояние при этом тоже сохраняется в историю. Фото не трогаются.</p>
+        <div id="historyBody" class="hint">Загружаю…</div>
+      </div>
+    </div>
+
     <div class="tab" id="tab-show">
       <div class="panel">
         <h2>Страница «Голосуй рублём»</h2>
@@ -452,6 +483,50 @@ function renderStatic() {
 }
 function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
 
+/* ---- посещения и история ---- */
+const PAGE_NAMES = { home: "Главная", golos: "Голосование" };
+const pageName = p => PAGE_NAMES[p] || (p.startsWith("play:") ? "Спектакль: " + ((data.plays.find(x => x.id === p.slice(5)) || {}).title || p.slice(5)) : p);
+const apiPath = (php, node) => backend.name === "php" ? php : node;
+async function loadVisits() {
+  const box = $("#visitsBody");
+  if (backend.name === "github") { box.textContent = "На GitHub Pages нет сервера — счётчик работает на InfinityFree и с server.js."; return; }
+  try {
+    const days = (await api(apiPath("api.php?a=visits", "/api/visits"))).days || {};
+    const dates = Object.keys(days).sort().reverse().slice(0, 30);
+    if (!dates.length) { box.textContent = "Пока никто не заходил."; return; }
+    const pages = [...new Set(dates.flatMap(d => Object.keys(days[d])))].sort((a, b) => (PAGE_NAMES[a] ? 0 : 1) - (PAGE_NAMES[b] ? 0 : 1) || a.localeCompare(b));
+    const cell = v => v ? `${v.uniq || 0} <span style="color:var(--muted);font-size:11px">/ ${v.views || 0}</span>` : "—";
+    const tot = {}; pages.forEach(p => { tot[p] = { uniq: 0, views: 0 }; dates.forEach(d => { const v = days[d][p]; if (v) { tot[p].uniq += v.uniq || 0; tot[p].views += v.views || 0; } }); });
+    box.innerHTML = `<p class="hint" style="margin:0 0 8px">В ячейке: уникальные посетители / просмотры. Последние ${dates.length} дн.</p><div class="scroll"><table class="stats"><tr><th>Дата</th>${pages.map(p => `<th>${esc(pageName(p))}</th>`).join("")}</tr>
+      ${dates.map(d => `<tr><td>${d}</td>${pages.map(p => `<td class="n">${cell(days[d][p])}</td>`).join("")}</tr>`).join("")}
+      <tr class="total"><td>Итого</td>${pages.map(p => `<td class="n">${cell(tot[p])}</td>`).join("")}</tr></table></div>`;
+  } catch (err) { box.textContent = err.message; }
+}
+async function loadHistory() {
+  const box = $("#historyBody");
+  $("#backupLink").href = apiPath("api.php?a=backup", "/api/backup");
+  if (backend.name === "github") { box.textContent = "На GitHub Pages история хранится в самом репозитории (вкладка History на GitHub), а архив — кнопка Code → Download ZIP."; $("#backupLink").hidden = true; return; }
+  try {
+    const items = (await api(apiPath("api.php?a=history", "/api/history"))).items || [];
+    if (!items.length) { box.textContent = "Версий пока нет — они появляются после каждого сохранения."; return; }
+    const f = t => new Date(t * 1000).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    box.innerHTML = `<div class="scroll"><table class="stats"><tr><th>Когда</th><th>Спектакли</th><th>Показы</th><th>Актёры</th><th>Отзывы</th><th>Фото</th><th></th></tr>
+      ${items.map(it => `<tr><td>${f(it.time)}</td><td class="n">${it.plays}</td><td class="n">${it.events}</td><td class="n">${it.actors}</td><td class="n">${it.reviews}</td><td class="n">${it.gallery}</td><td><button class="btn ghost sm" data-restore="${esc(it.id)}">Вернуть</button></td></tr>`).join("")}</table></div>`;
+  } catch (err) { box.textContent = err.message; }
+}
+$("#visitsRefresh").onclick = loadVisits;
+$("#historyRefresh").onclick = loadHistory;
+$("#historyBody").addEventListener("click", async e => {
+  const b = e.target.closest("[data-restore]"); if (!b) return;
+  if (!confirm("Вернуть данные сайта к этой версии? Текущее состояние сохранится в историю.")) return;
+  setStatus("Возвращаю версию…");
+  try {
+    const r = await api(apiPath("api.php?a=restore", "/api/restore"), { method: "POST", body: JSON.stringify({ id: b.dataset.restore }) });
+    data = normalize(r.data); dirty = false; renderAll(); loadHistory();
+    setStatus("Версия возвращена ✓ Сайт обновлён", "ok");
+  } catch (err) { setStatus(err.message, "err"); }
+});
+
 /* ---- импорт дат из Афиши ---- */
 async function importAfisha(i) {
   const p = data.plays[i];
@@ -584,6 +659,7 @@ async function load() {
   if (!(await backend.me())) return showLogin();
   data = normalize(await backend.load());
   showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
+  loadVisits(); loadHistory();
 }
 /* страховка: если за 8 секунд ничего не показалось (например, хостинг не пустил запросы к api.php), показать форму входа с подсказкой */
 setTimeout(() => {

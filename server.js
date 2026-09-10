@@ -9,11 +9,14 @@ const crypto = require("crypto");
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "data.json");
+const HISTORY_DIR = path.join(DATA_DIR, "history");
+const VISITS_FILE = path.join(DATA_DIR, "visits.json");
 const PHOTOS_DIR = path.join(ROOT, "photos");
 const PORT = process.env.PORT || 3000;
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(PHOTOS_DIR, { recursive: true });
+fs.mkdirSync(HISTORY_DIR, { recursive: true });
 
 // ---------- пароль админки ----------
 let PASSWORD = process.env.ADMIN_PASSWORD;
@@ -149,11 +152,51 @@ app.post("/api/logout", (req, res) => {
 });
 app.get("/api/me", (req, res) => res.json({ authed: isAuthed(req) }));
 
+const snapshot = () => { try { if (!fs.existsSync(DATA_FILE)) return; fs.copyFileSync(DATA_FILE, path.join(HISTORY_DIR, new Date().toISOString().replace(/[:T.]/g, "-").slice(0, 23) + ".json")); const files = fs.readdirSync(HISTORY_DIR).filter(f => f.endsWith(".json")).sort(); while (files.length > 20) fs.unlinkSync(path.join(HISTORY_DIR, files.shift())); } catch {} };
+const readJson = (f, d) => { try { return { ...d, ...JSON.parse(fs.readFileSync(f, "utf8")) }; } catch { return d; } };
+const writeJson = (f, v) => { fs.writeFileSync(f + ".tmp", JSON.stringify(v)); fs.renameSync(f + ".tmp", f); };
 app.put("/api/data", requireAuth, (req, res) => {
   const data = sanitize(req.body || {});
-  writeData(data);
+  snapshot(); writeData(data);
   res.json({ ok: true, data });
 });
+app.get("/api/history", requireAuth, (req, res) => {
+  const items = fs.readdirSync(HISTORY_DIR).filter(f => f.endsWith(".json")).sort().reverse().map(f => { const p = path.join(HISTORY_DIR, f); let j = {}; try { j = JSON.parse(fs.readFileSync(p, "utf8")); } catch {} const st = fs.statSync(p); return { id: f.replace(/\.json$/, ""), time: Math.floor(st.mtimeMs / 1000), size: st.size, actors: (j.actors || []).length, events: (j.events || []).length, plays: (j.plays || []).length, reviews: (j.reviews || []).length, gallery: (j.gallery || []).length }; });
+  res.json({ ok: true, items });
+});
+app.post("/api/restore", requireAuth, (req, res) => {
+  const id = str(req.body?.id, 40).replace(/[^0-9-]/g, ""); const f = path.join(HISTORY_DIR, id + ".json");
+  if (!id || !fs.existsSync(f)) return res.status(400).json({ error: "Версия не найдена" });
+  let j; try { j = JSON.parse(fs.readFileSync(f, "utf8")); } catch { return res.status(400).json({ error: "Файл версии повреждён" }); }
+  snapshot(); writeData(sanitize(j)); res.json({ ok: true, data: readData() });
+});
+app.get("/api/backup", requireAuth, (req, res) => {
+  // zip без сжатия (store), без внешних зависимостей
+  const files = []; const walk = (dir, base) => { for (const n of fs.readdirSync(dir)) { const p = path.join(dir, n); if (fs.statSync(p).isDirectory()) walk(p, base + n + "/"); else if (n !== "password.txt") files.push([base + n, fs.readFileSync(p)]); } };
+  walk(DATA_DIR, "data/"); walk(PHOTOS_DIR, "photos/");
+  const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+  const crc32 = b => { let c = 0xFFFFFFFF; for (const x of b) c = crcTable[(c ^ x) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  const parts = [], central = []; let offset = 0;
+  const d = new Date(), dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  for (const [name, buf] of files) {
+    const n = Buffer.from(name), crc = crc32(buf);
+    const lh = Buffer.alloc(30); lh.writeUInt32LE(0x04034b50, 0); lh.writeUInt16LE(20, 4); lh.writeUInt16LE(0x800, 6); lh.writeUInt16LE(0, 8); lh.writeUInt16LE(dosTime, 10); lh.writeUInt16LE(dosDate, 12); lh.writeUInt32LE(crc, 14); lh.writeUInt32LE(buf.length, 18); lh.writeUInt32LE(buf.length, 22); lh.writeUInt16LE(n.length, 26); lh.writeUInt16LE(0, 28);
+    const ch = Buffer.alloc(46); ch.writeUInt32LE(0x02014b50, 0); ch.writeUInt16LE(20, 4); ch.writeUInt16LE(20, 6); ch.writeUInt16LE(0x800, 8); ch.writeUInt16LE(0, 10); ch.writeUInt16LE(dosTime, 12); ch.writeUInt16LE(dosDate, 14); ch.writeUInt32LE(crc, 16); ch.writeUInt32LE(buf.length, 20); ch.writeUInt32LE(buf.length, 24); ch.writeUInt16LE(n.length, 28); ch.writeUInt32LE(offset, 42);
+    parts.push(lh, n, buf); central.push(ch, n); offset += lh.length + n.length + buf.length;
+  }
+  const cd = Buffer.concat(central), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
+  res.set("Content-Type", "application/zip").set("Content-Disposition", `attachment; filename="rat-theater-backup-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.zip"`).send(Buffer.concat([...parts, cd, end]));
+});
+app.get("/api/hit", (req, res) => {
+  const page = str(req.query.p, 60).toLowerCase().replace(/[^a-z0-9:_-]/g, ""); if (!page) return res.status(400).json({ error: "no page" });
+  const day = today(), h = crypto.createHash("sha256").update(`${req.ip}|${req.headers["user-agent"] || ""}|${day}`).digest("hex").slice(0, 12);
+  const v = readJson(VISITS_FILE, { days: {}, seen: {} });
+  v.days[day] ||= {}; v.days[day][page] ||= { views: 0, uniq: 0 }; v.days[day][page].views++;
+  v.seen = { [day]: v.seen[day] || {} }; v.seen[day][page] ||= {};
+  if (!v.seen[day][page][h]) { v.seen[day][page][h] = 1; v.days[day][page].uniq++; }
+  writeJson(VISITS_FILE, v); res.json({ ok: true });
+});
+app.get("/api/visits", requireAuth, (req, res) => { const v = readJson(VISITS_FILE, { days: {} }); res.json({ ok: true, days: Object.fromEntries(Object.entries(v.days).sort().reverse()) }); });
 
 app.post("/api/upload", requireAuth, upload.single("photo"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Нужен файл JPG, PNG или WebP до 8 МБ" });

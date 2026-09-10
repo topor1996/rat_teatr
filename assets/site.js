@@ -69,10 +69,17 @@ window.RAT = (function () {
     if (p && p.afishaShowId) return ' data-afisha-show="' + esc(p.afishaShowId) + '"';
     return "";
   }
+  var plural = function (n, one, few, many) { var m = n % 10, h = n % 100; return (m === 1 && h !== 11) ? one : (m >= 2 && m <= 4 && (h < 10 || h >= 20)) ? few : many; };
+  function leftBadge(e) {
+    var c = e && e.live && e.live.count;
+    if (!c || c > 15) return "";
+    return '<span class="left">Осталось ' + c + " " + plural(c, "место", "места", "мест") + "</span>";
+  }
   function buyBtn(e, p, th, label, cls) {
     var u = ticket(e, p, th), a = afishaAttrs(e, p, th);
     if (!u && !a) return "";
-    return '<a class="btn ' + (cls || "") + '" href="' + (u ? esc(u) : "#") + '"' + (a ? a : ' target="_blank" rel="noopener"') + a + ">" + label + "</a>";
+    var lb = leftBadge(e);
+    return '<a class="btn ' + (cls || "") + (lb ? " has-left" : "") + '" href="' + (u ? esc(u) : "#") + '"' + (a ? a : ' target="_blank" rel="noopener"') + a + ">" + label + lb + "</a>";
   }
   function applyBuy(el, e, p, th) {
     var u = ticket(e, p, th), sess = e && e.afishaSessionId, show = p && p.afishaShowId;
@@ -80,6 +87,24 @@ window.RAT = (function () {
     if (th && th.afishaPartnerId && (sess || show)) { if (sess) el.setAttribute("data-afisha-session", sess); else el.setAttribute("data-afisha-show", show); el.removeAttribute("target"); return true; }
     if (u) { el.target = "_blank"; el.rel = "noopener"; }
     return !!u;
+  }
+  function applyLeft(el, e) { var lb = leftBadge(e); if (lb && !el.querySelector(".left")) { el.classList.add("has-left"); el.insertAdjacentHTML("beforeend", lb); } }
+
+  /* ---------- счётчик посещений без cookie ---------- */
+  function hit(page) {
+    var q = "p=" + encodeURIComponent(page);
+    try { if (navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q)) return; } catch (x) {}
+    fetch("api.php?a=hit&" + q, { keepalive: true }).then(function (r) { if (!r.ok) throw 0; }).catch(function () { fetch("/api/hit?" + q, { keepalive: true }).catch(function () {}); });
+  }
+
+  /* ---------- крыса, пробегающая по ленте ---------- */
+  function marqRat() {
+    var box = document.querySelector(".marq-outer"); if (!box || box.querySelector(".marq-rat")) return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M2 20c6-2 10-3 14-2l-2-6c0-4 4-6 8-5 3 1 5 4 9 5h9c6 0 11 2 15 5 1 1 3 2 5 2 2 0 3-1 3-2-2-2-4-3-7-4-4-3-9-5-16-5h-8c-3-3-6-6-11-6-7 0-12 5-11 11l-8 5z" fill="#000"/><circle cx="46" cy="14" r="1.6" fill="#c9ff3d"/><path d="M30 8c-2-3-1-6 1-7 1 1 1 4 0 7z" fill="#000"/></svg>');
+    var rat = box.querySelector(".marq-rat");
+    var run = function () { rat.classList.remove("run"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+    setTimeout(run, 6000 + Math.random() * 8000);
   }
   function afishaLoad() {
     if (afisha.widget) return Promise.resolve(afisha.widget);
@@ -265,6 +290,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

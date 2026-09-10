@@ -90,7 +90,10 @@
     white-space:nowrap;display:flex
   }
   /* две одинаковые дорожки едут друг за другом — стык не виден, лента бесконечная */
-  .marq-outer{overflow:hidden;padding:14px 0;margin:20px 0 0}
+  .marq-outer{overflow:hidden;padding:14px 0;margin:20px 0 0;position:relative}
+  .marq-rat{position:absolute;left:-80px;top:2px;width:64px;height:28px;pointer-events:none;opacity:0;z-index:2;filter:drop-shadow(0 2px 0 rgba(0,0,0,.4))}
+  .marq-rat.run{animation:ratRun 7s linear forwards}
+  @keyframes ratRun{0%{opacity:0;transform:translateX(0) rotate(-2deg)}3%{opacity:1}97%{opacity:1}100%{opacity:0;transform:translateX(calc(100vw + 160px)) rotate(-2deg)}}
   .marq .track{flex:none;display:flex;align-items:center;padding:8px 0;animation:mq 60s linear infinite;will-change:transform}
   .marq span{padding:0 18px}
   .marq i{font-style:normal}
@@ -433,6 +436,16 @@ grid.innerHTML = ACTORS.map((a, i) => {
     } catch {}
   }
   render(d.show || SHOW, d.actors);
+  try { var q = "p=golos"; if (!(navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q))) fetch("api.php?a=hit&" + q, { keepalive: true }).catch(function () {}); } catch (x) {}
+  try {
+    var box = document.querySelector(".marq-outer");
+    if (box && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)) {
+      box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M2 20c6-2 10-3 14-2l-2-6c0-4 4-6 8-5 3 1 5 4 9 5h9c6 0 11 2 15 5 1 1 3 2 5 2 2 0 3-1 3-2-2-2-4-3-7-4-4-3-9-5-16-5h-8c-3-3-6-6-11-6-7 0-12 5-11 11l-8 5z" fill="#000"/><circle cx="46" cy="14" r="1.6" fill="#c9ff3d"/><path d="M30 8c-2-3-1-6 1-7 1 1 1 4 0 7z" fill="#000"/></svg>');
+      var rat = box.querySelector(".marq-rat");
+      var run = function () { rat.classList.remove("run"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
+      setTimeout(run, 6000 + Math.random() * 8000);
+    }
+  } catch (x) {}
 })();
 
 grid.addEventListener("click", async e => {

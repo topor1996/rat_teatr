@@ -7,6 +7,8 @@ declare(strict_types=1);
 $ROOT = __DIR__;
 $DATA_DIR = $ROOT . '/data';
 $DATA_FILE = $DATA_DIR . '/data.json';
+$HISTORY_DIR = $DATA_DIR . '/history';
+$VISITS_FILE = $DATA_DIR . '/visits.json';
 $PHOTOS_DIR = $ROOT . '/photos';
 $DEFAULT_PASSWORD = 'смените-меня';
 
@@ -15,6 +17,7 @@ $PASSWORD = (string)($config['password'] ?? '');
 
 @mkdir($DATA_DIR, 0755, true);
 @mkdir($PHOTOS_DIR, 0755, true);
+@mkdir($HISTORY_DIR, 0755, true);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
@@ -118,6 +121,24 @@ function afisha_events(array $show): array {
   return $out;
 }
 
+function readJson(string $file, array $default): array { $j = is_file($file) ? json_decode((string)file_get_contents($file), true) : null; return is_array($j) ? $j + $default : $default; }
+function writeJson(string $file, array $v): void { $tmp = $file . '.tmp'; file_put_contents($tmp, json_encode($v, JSON_UNESCAPED_UNICODE)); rename($tmp, $file); }
+function snapshot(string $dataFile, string $dir): void {
+  if (!is_file($dataFile)) return;
+  @copy($dataFile, $dir . '/' . date('Y-m-d-His') . '-' . substr((string)microtime(true), -3) . '.json');
+  $files = glob($dir . '/*.json') ?: []; sort($files);
+  while (count($files) > 20) @unlink(array_shift($files));
+}
+function historyList(string $dir): array {
+  $out = [];
+  foreach (array_reverse(glob($dir . '/*.json') ?: []) as $f) {
+    $j = json_decode((string)file_get_contents($f), true) ?: [];
+    $out[] = ['id' => basename($f, '.json'), 'time' => filemtime($f), 'size' => filesize($f),
+              'actors' => count($j['actors'] ?? []), 'events' => count($j['events'] ?? []), 'plays' => count($j['plays'] ?? []), 'reviews' => count($j['reviews'] ?? []), 'gallery' => count($j['gallery'] ?? [])];
+  }
+  return $out;
+}
+
 $a = $_GET['a'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -150,10 +171,70 @@ switch ($a) {
     if ($method !== 'PUT' && $method !== 'POST') fail('PUT only', 405);
     requireAuth();
     $data = sanitize(body());
+    snapshot($DATA_FILE, $HISTORY_DIR);
     $tmp = $DATA_FILE . '.tmp';
     if (file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) === false) fail('Не удалось записать data/data.json — проверьте права на папку data', 500);
     rename($tmp, $DATA_FILE);
     out(['ok' => true, 'data' => $data]);
+
+  case 'history':
+    // список сохранённых версий (последние 20)
+    requireAuth();
+    out(['ok' => true, 'items' => historyList($HISTORY_DIR)]);
+
+  case 'restore':
+    // вернуть версию: текущая перед этим тоже сохраняется в историю
+    requireAuth();
+    if ($method !== 'POST') fail('POST only', 405);
+    $id = preg_replace('~[^0-9-]~', '', (string)(body()['id'] ?? ''));
+    $f = $HISTORY_DIR . '/' . $id . '.json';
+    if ($id === '' || !is_file($f)) fail('Версия не найдена');
+    $restored = json_decode((string)file_get_contents($f), true);
+    if (!is_array($restored)) fail('Файл версии повреждён');
+    snapshot($DATA_FILE, $HISTORY_DIR);
+    file_put_contents($DATA_FILE, json_encode(sanitize($restored), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    out(['ok' => true, 'data' => readData($DATA_FILE)]);
+
+  case 'backup':
+    // архив со всеми данными и фото
+    requireAuth();
+    if (!class_exists('ZipArchive')) fail('На хостинге нет ZipArchive — скачайте папки data и photos через File Manager', 500);
+    $zipPath = tempnam(sys_get_temp_dir(), 'ratbk');
+    $zip = new ZipArchive();
+    if ($zip->open($zipPath, ZipArchive::OVERWRITE) !== true) fail('Не удалось создать архив', 500);
+    foreach ([$DATA_DIR => 'data', $PHOTOS_DIR => 'photos'] as $dir => $name) {
+      foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)) as $file) {
+        $rel = $name . '/' . substr($file->getPathname(), strlen($dir) + 1);
+        if (basename($rel) === 'password.txt') continue;
+        $zip->addFile($file->getPathname(), $rel);
+      }
+    }
+    $zip->close();
+    header_remove('Content-Type');
+    header('Content-Type: application/zip');
+    header('Content-Disposition: attachment; filename="rat-theater-backup-' . date('Y-m-d-Hi') . '.zip"');
+    header('Content-Length: ' . filesize($zipPath));
+    readfile($zipPath); @unlink($zipPath); exit;
+
+  case 'hit':
+    // счётчик посещений без cookie: страница + день; уникальность — по усечённому хэшу IP+браузера, IP не хранится
+    $page = preg_replace('~[^a-z0-9:_-]~', '', mb_strtolower(str($_GET['p'] ?? '', 60)));
+    if ($page === '') fail('no page');
+    $day = date('Y-m-d');
+    $h = substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? '') . '|' . $day), 0, 12);
+    $v = readJson($VISITS_FILE, ['days' => [], 'seen' => []]);
+    $v['days'][$day][$page]['views'] = (int)($v['days'][$day][$page]['views'] ?? 0) + 1;
+    if (empty($v['seen'][$day][$page][$h])) { $v['seen'][$day][$page][$h] = 1; $v['days'][$day][$page]['uniq'] = (int)($v['days'][$day][$page]['uniq'] ?? 0) + 1; }
+    foreach (array_keys($v['seen']) as $d) if ($d !== $day) unset($v['seen'][$d]);       // хэши храним только за текущий день
+    foreach (array_keys($v['days']) as $d) if ($d < date('Y-m-d', strtotime('-400 days'))) unset($v['days'][$d]);
+    writeJson($VISITS_FILE, $v);
+    out(['ok' => true]);
+
+  case 'visits':
+    requireAuth();
+    $v = readJson($VISITS_FILE, ['days' => [], 'seen' => []]);
+    krsort($v['days']);
+    out(['ok' => true, 'days' => $v['days']]);
 
   case 'upload':
     // фото (jpg/png/webp до 8 МБ) и видео для шапки (mp4/webm до 10 МБ)
