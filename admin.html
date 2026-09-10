@@ -27,7 +27,8 @@
   label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:10px 0 4px}
   input,textarea,select{width:100%;padding:10px;background:#0a0a0a;border:1px solid var(--line);color:var(--text);font:inherit;border-radius:0}
   input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acid)}
-  textarea{min-height:64px;resize:vertical}
+  textarea{min-height:64px;resize:vertical;overflow:hidden}
+  textarea.grow{min-height:0;resize:none;line-height:1.45} /* бывшее однострочное поле с длинным текстом: растёт по высоте, весь текст виден */
   input[type=date]{color-scheme:dark}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
   .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px}
@@ -583,6 +584,7 @@ function renderList(key) {
       </div>
     </div>`).join("") : `<div class="empty">Пока пусто — добавьте первую запись.</div>`;
   box.querySelectorAll(".entry").forEach(el => checkSbp(el, list[el.dataset.i].sbp));
+  growLong(box);
 }
 function renderStatic() {
   document.querySelectorAll("[data-th]").forEach(i => i.value = data.theatre[i.dataset.th] || "");
@@ -591,7 +593,29 @@ function renderStatic() {
   $("#heroPosterBox").innerHTML = pst ? `<img src="${previews[pst] || backend.photoUrl(pst) + "?" + Date.now()}" alt="">` : "Нет фото";
   document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
 }
-function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
+function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); growLong(); }
+/* ---- длинный текст виден целиком: однострочное поле с длинным значением превращается в textarea, все textarea растут под содержимое ---- */
+const fitTa = ta => { ta.style.height = "auto"; ta.style.height = Math.max(ta.scrollHeight + 2, ta.classList.contains("grow") ? 0 : 64) + "px"; };
+function toGrow(inp, keepFocus) {
+  const ta = document.createElement("textarea"); ta.className = "grow"; ta.rows = 1;
+  for (const a of inp.attributes) if (a.name !== "type" && a.name !== "value") ta.setAttribute(a.name, a.value);
+  ta.value = inp.value; inp.replaceWith(ta); fitTa(ta);
+  if (keepFocus) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+  return ta;
+}
+const LONG_SEL = 'input[data-f],input[data-th],input[data-show],input[data-mf],input[data-vf]';
+const isTextInput = el => el.tagName === "INPUT" && (!el.type || el.type === "text");
+function growLong(root) {
+  (root || document).querySelectorAll(LONG_SEL).forEach(inp => { if (isTextInput(inp) && (inp.value.length > 60 || (inp.clientWidth && inp.scrollWidth > inp.clientWidth + 2))) toGrow(inp, false); });
+  (root || document).querySelectorAll("textarea").forEach(ta => { if (ta.offsetParent) fitTa(ta); });
+}
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.tagName === "TEXTAREA") { fitTa(t); return; }
+  if (isTextInput(t) && t.matches(LONG_SEL) && t.scrollWidth > t.clientWidth + 2) toGrow(t, true);
+});
+document.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.classList.contains("grow")) e.preventDefault(); }); // это всё ещё «строка»: без переводов строк
+window.addEventListener("resize", () => growLong());
 
 /* ---- автоподпись к фото: без внешних сервисов, по спектаклю, дате съёмки и самому кадру ---- */
 const MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
@@ -722,6 +746,7 @@ async function loadCheck() {
 $("#checkRefresh").onclick = loadCheck;
 $("#checkBody").addEventListener("click", e => { const a = e.target.closest("[data-goto]"); if (!a) return; e.preventDefault(); $(`#tabs [data-tab=${a.dataset.goto}]`).click(); window.scrollTo(0, 0); });
 $("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab=check]"); if (b) loadCheck(); });
+$("#tabs").addEventListener("click", e => { if (e.target.closest("[data-tab]")) setTimeout(() => growLong(), 0); });
 
 /* ---- посещения и история ---- */
 const PAGE_NAMES = { home: "Главная", golos: "Голосование" };
