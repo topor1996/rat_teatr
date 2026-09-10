@@ -67,8 +67,10 @@ window.RAT = (function () {
     afisha.loading = new Promise(function (res, rej) {
       var sc = document.createElement("script");
       sc.src = "https://tickets.afisha.ru/wl/embed/widget.js?" + Date.now(); sc.async = true;
-      sc.onload = function () { try { afisha.widget = new AfishaWidget(afisha.partner, "events"); res(afisha.widget); } catch (err) { rej(err); } };
-      sc.onerror = function () { rej(new Error("widget load failed")); };
+      var fail = function (err) { afisha.loading = null; if (sc.parentNode) sc.parentNode.removeChild(sc); rej(err || new Error("widget load failed")); };
+      sc.onload = function () { try { afisha.widget = new AfishaWidget(afisha.partner, "events"); res(afisha.widget); } catch (err) { fail(err); } };
+      sc.onerror = function () { fail(); };
+      setTimeout(function () { if (!afisha.widget) fail(new Error("widget load timeout")); }, 12000);
       document.head.appendChild(sc);
     });
     return afisha.loading;
@@ -85,8 +87,10 @@ window.RAT = (function () {
     ev.preventDefault();
     var sess = a.getAttribute("data-afisha-session"), show = a.getAttribute("data-afisha-show"), href = a.getAttribute("href");
     var label = a.textContent; a.textContent = "Открываем…";
-    afishaLoad().then(function (w) { a.textContent = label; w.openModal(sess ? Number(sess) : { shows_id: Number(show) }); })
-      .catch(function () { a.textContent = label; if (href && href !== "#") window.open(href, "_blank", "noopener"); });
+    var open = function (w) { a.textContent = label; w.openModal(sess ? Number(sess) : { shows_id: Number(show) }); };
+    var fallback = function () { a.textContent = label; if (href && href !== "#") location.href = href; };
+    // одна повторная попытка загрузки, если первая (фоновая) сорвалась; иначе — обычный переход в этой же вкладке
+    afishaLoad().then(open).catch(function () { afishaLoad().then(open).catch(fallback); });
   });
 
   /* ---------- бегущая лента ---------- */
