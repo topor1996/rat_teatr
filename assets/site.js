@@ -31,6 +31,26 @@ window.RAT = (function () {
       if (!d) { d = fallback || {}; var g = document.getElementById("diag"); if (g) g.textContent = "Данные не загрузились, показана заглушка. Обновите страницу.\n" + log.join("\n"); }
       d.theatre = d.theatre || {}; d.plays = d.plays || []; d.events = d.events || []; d.actors = d.actors || []; d.reviews = d.reviews || []; d.gallery = d.gallery || [];
       afishaInit(d.theatre);
+      return applyLive(d);
+    });
+  }
+  /* ---------- живые остатки мест из Афиши (через api.php, кэш 10 минут) ---------- */
+  function applyLive(d) {
+    var need = (d.events || []).some(function (e) { return e.afishaSessionId; });
+    if (!need) return Promise.resolve(d);
+    var urls = ["api.php?a=afisha_status", "/api/afisha_status"];
+    return urls.reduce(function (p, url) {
+      return p.then(function (st) { if (st) return st; return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok || (r.headers.get("content-type") || "").indexOf("json") < 0) return null; return r.json(); }).catch(function () { return null; }); });
+    }, Promise.resolve(null)).then(function (st) {
+      if (!st || !st.sessions) return d;
+      d.events.forEach(function (e) {
+        var s = e.afishaSessionId && st.sessions[e.afishaSessionId]; if (!s) return;
+        e.live = s; e.badges = (e.badges || []).slice();
+        if (s.count === 0) { if (e.badges.indexOf("soldout") < 0) e.badges.push("soldout"); }
+        else { e.badges = e.badges.filter(function (b) { return b !== "soldout"; }); if (s.count <= 15 && e.badges.indexOf("few") < 0) e.badges.push("few"); }
+        if (s.minPrice > 0) e.price = "от " + s.minPrice + " ₽";
+      });
+      d.liveUpdated = st.updated || 0;
       return d;
     });
   }
@@ -245,6 +265,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

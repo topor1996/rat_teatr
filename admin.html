@@ -96,6 +96,7 @@
       <div class="links">
         <a class="btn ghost sm" href="./" target="_blank">Сайт ↗</a>
         <a class="btn ghost sm" href="golos" target="_blank">Голосование ↗</a>
+        <a class="btn ghost sm" href="poster.html" target="_blank">Афиша на печать ↗</a>
         <button class="btn ghost sm" id="logout">Выйти</button>
       </div>
     </div>
@@ -360,7 +361,8 @@ const SECTIONS = {
       <div class="row">
         <div><label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
         <div><label>ID спектакля в Афише (виджет)</label><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="179397"><p class="hint">Число из кода teatrdoc.ru: openModal({shows_id: 179397}). Открывает окно с датами и оплатой прямо на сайте.</p></div>
-      </div>`,
+      </div>
+      <div class="tools" style="margin-top:10px"><button class="btn sm" data-act="import">Обновить даты из Афиши</button><span class="hint" style="margin:0;align-self:center">Подтянет все даты, время, цены и номера сеансов. Можно вставить ссылку на спектакль на teatrdoc.ru, если ID ещё не известен.</span></div>`,
   },
   actors: {
     img: "photo", label: a => a.name || "Новый актёр",
@@ -450,6 +452,30 @@ function renderStatic() {
 }
 function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
 
+/* ---- импорт дат из Афиши ---- */
+async function importAfisha(i) {
+  const p = data.plays[i];
+  if (backend.name === "github") { alert("Импорт дат работает на InfinityFree или с server.js — на GitHub Pages нет сервера."); return; }
+  let q = (p.afishaShowId || "").trim();
+  if (!q) { q = prompt("ID спектакля в Афише или ссылка на страницу спектакля на teatrdoc.ru:", "https://teatrdoc.ru/performances/"); if (!q) return; }
+  setStatus("Запрашиваю Афишу…");
+  try {
+    const url = backend.name === "php" ? "api.php?a=afisha_import&q=" : "/api/afisha_import?q=";
+    const r = await api(url + encodeURIComponent(q));
+    p.afishaShowId = r.showId; if (!p.age && r.age) p.age = r.age + "+";
+    let added = 0, updated = 0;
+    r.events.forEach(ev => {
+      let e = data.events.find(x => x.afishaSessionId === ev.sessionId) || data.events.find(x => x.playId === p.id && x.date === ev.date && x.time === ev.time);
+      const price = ev.minPrice ? "от " + ev.minPrice + " ₽" : "";
+      if (e) { e.afishaSessionId = ev.sessionId; e.date = ev.date; e.time = ev.time; if (ev.venue) e.venue = ev.venue; if (price) e.price = price; updated++; }
+      else { data.events.push({ date: ev.date, time: ev.time, playId: p.id, venue: ev.venue || data.theatre.venue || "", price, ticketUrl: "", afishaSessionId: ev.sessionId, note: "", badges: [] }); added++; }
+    });
+    data.events.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+    markDirty(); renderAll();
+    setStatus(`Афиша: «${r.name}» — новых показов ${added}, обновлено ${updated}. Не забудьте сохранить`, "ok");
+  } catch (err) { setStatus(err.message, "err"); }
+}
+
 /* ---- события ---- */
 $("#tabs").addEventListener("click", e => {
   const b = e.target.closest("[data-tab]"); if (!b) return;
@@ -484,6 +510,7 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "up" && i > 0) [list[i - 1], list[i]] = [list[i], list[i - 1]];
   if (b.dataset.act === "down" && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
+  if (b.dataset.act === "import") { importAfisha(i); return; }
   markDirty(); renderList(key);
 });
 /* сжатие фото перед загрузкой: до 1600px по длинной стороне, WebP (или JPEG, если браузер не умеет WebP) */

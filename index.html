@@ -17,8 +17,8 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260911e" rel="stylesheet">
-<link href="assets/site.css?v=20260911e" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260912a" rel="stylesheet">
+<link href="assets/site.css?v=20260912a" rel="stylesheet">
 </head>
 <body>
 
@@ -61,6 +61,7 @@
       <div><div class="lbl">Ближайший показ</div><div class="what" id="nextWhat"></div><div class="when" id="nextWhen"></div></div>
       <a class="btn" id="nextBtn" href="#" target="_blank" rel="noopener">Купить билет</a>
     </div>
+    <div class="countdown" id="countdown" hidden></div>
   </section>
 </div>
 
@@ -131,7 +132,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260911e"></script>
+<script src="assets/site.js?v=20260912a"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 var FALLBACK = { theatre: { name: "Театр RAT", tagline: "Актёрская шоу-лаборатория." }, plays: [], events: [], actors: [] };
@@ -159,6 +160,24 @@ function render(d) {
     if (R.hasBadge(next, "soldout")) { b.textContent = "Билетов нет"; b.href = "#afisha"; b.removeAttribute("target"); }
     else if (!R.applyBuy(b, next, p, th)) { b.textContent = "Смотреть афишу"; b.href = "#afisha"; b.removeAttribute("target"); }
   }
+
+  /* обратный отсчёт до премьеры: показ со стикером «Премьера» в ближайшие 7 дней */
+  var prem = events.filter(function (e) { return R.hasBadge(e, "premiere"); })[0];
+  if (prem) {
+    var hm = (prem.time || "19:00").split(":").map(Number), pd = R.parseDate(prem.date);
+    var start = new Date(pd.getFullYear(), pd.getMonth(), pd.getDate(), hm[0] || 19, hm[1] || 0), cd = document.getElementById("countdown");
+    var pp = map[prem.playId], pname = pp ? pp.title : (prem.note || "Премьера");
+    var tick = function () {
+      var diff = start - new Date();
+      if (diff <= 0 || diff > 7 * 86400e3) { cd.hidden = true; return; }
+      var dd = Math.floor(diff / 86400e3), h = Math.floor(diff % 86400e3 / 3600e3), m = Math.floor(diff % 3600e3 / 60e3), sec = Math.floor(diff % 60e3 / 1000);
+      var pad = function (n) { return (n < 10 ? "0" : "") + n; };
+      cd.innerHTML = '<span class="lbl">До премьеры</span><span class="t">' + (dd ? dd + "<small>" + (dd === 1 ? "день" : dd < 5 ? "дня" : "дней") + "</small>" : "") + pad(h) + ":" + pad(m) + ":" + pad(sec) + '</span><span class="what">' + esc(pname) + " · " + R.fmtLong(prem) + "</span>";
+      cd.hidden = false;
+    };
+    tick(); setInterval(tick, 1000);
+  }
+  if (d.liveUpdated) { var ln = document.createElement("div"); ln.className = "live-note"; ln.textContent = "Наличие билетов и цены обновляются автоматически по данным Афиши."; document.getElementById("afisha").appendChild(ln); }
 
   /* афиша */
   document.getElementById("afishaList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, map[e.playId], th); }).join("") : '<div class="empty">Ближайшие даты скоро объявим. Следите в соцсетях.</div>';

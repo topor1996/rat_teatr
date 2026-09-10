@@ -89,6 +89,35 @@ function sanitize(array $in): array {
   ];
 }
 
+
+// ---------- Афиша (tickets.afisha.ru): даты, цены и остатки мест ----------
+function http_get(string $url, int $timeout = 15): ?string {
+  if (function_exists('curl_init')) {
+    $ch = curl_init($url);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => $timeout, CURLOPT_FOLLOWLOCATION => true, CURLOPT_USERAGENT => 'Mozilla/5.0 (rat-theater site)', CURLOPT_SSL_VERIFYPEER => false]);
+    $r = curl_exec($ch); curl_close($ch);
+    if (is_string($r) && $r !== '') return $r;
+  }
+  $ctx = stream_context_create(['http' => ['timeout' => $timeout, 'header' => "User-Agent: Mozilla/5.0 (rat-theater site)\r\n"], 'ssl' => ['verify_peer' => false]]);
+  $r = @file_get_contents($url, false, $ctx);
+  return is_string($r) && $r !== '' ? $r : null;
+}
+function afisha_show(string $partner, string $showId): ?array {
+  $j = http_get("https://tickets.afisha.ru/wl/{$partner}/api/shows/info?lang=ru&show_id={$showId}");
+  $d = $j ? json_decode($j, true) : null;
+  return is_array($d) && !empty($d['show']) ? $d['show'] : null;
+}
+function afisha_events(array $show): array {
+  $out = [];
+  foreach ($show['events'] ?? [] as $e) {
+    if (empty($e['id']) || empty($e['date'])) continue;
+    $out[] = ['sessionId' => (string)$e['id'], 'date' => substr($e['date'], 0, 10), 'time' => substr($e['date'], 11, 5),
+              'venue' => trim((string)($e['location_name'] ?? '')), 'count' => (int)($e['count'] ?? 0),
+              'minPrice' => (int)round((float)($e['min_price'] ?? 0)), 'maxPrice' => (int)round((float)($e['max_price'] ?? 0))];
+  }
+  return $out;
+}
+
 $a = $_GET['a'] ?? '';
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -147,6 +176,52 @@ switch ($a) {
     $name = time() . '-' . bin2hex(random_bytes(3)) . $ext;
     if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить файл — проверьте права на папку photos', 500);
     out(['ok' => true, 'photo' => 'photos/' . $name]);
+
+  case 'afisha_status':
+    // остатки мест и цены по всем сеансам сайта; кэш 10 минут в data/afisha-status.json
+    $cacheFile = $DATA_DIR . '/afisha-status.json';
+    $cache = is_file($cacheFile) ? json_decode((string)file_get_contents($cacheFile), true) : null;
+    if (is_array($cache) && time() - (int)($cache['updated'] ?? 0) < 600 && empty($_GET['force'])) out($cache);
+    $data = readData($DATA_FILE);
+    $partner = preg_replace('~\D~', '', (string)($data['theatre']['afishaPartnerId'] ?? ''));
+    $sessions = []; $ok = false;
+    if ($partner !== '') {
+      $showIds = array_unique(array_filter(array_map(fn($p) => preg_replace('~\D~', '', (string)($p['afishaShowId'] ?? '')), $data['plays'] ?? [])));
+      foreach ($showIds as $sid) {
+        $show = afisha_show($partner, $sid);
+        if (!$show) continue;
+        $ok = true;
+        foreach (afisha_events($show) as $e) $sessions[$e['sessionId']] = ['count' => $e['count'], 'minPrice' => $e['minPrice'], 'date' => $e['date'], 'time' => $e['time']];
+      }
+    }
+    if (!$ok) { if (is_array($cache)) out($cache); out(['ok' => false, 'updated' => 0, 'sessions' => []]); }
+    $res = ['ok' => true, 'updated' => time(), 'sessions' => $sessions];
+    @file_put_contents($cacheFile, json_encode($res, JSON_UNESCAPED_UNICODE));
+    out($res);
+
+  case 'afisha_import':
+    // даты спектакля из Афиши: q — ID спектакля в Афише или ссылка на страницу спектакля на teatrdoc.ru
+    requireAuth();
+    $q = str($_GET['q'] ?? '', 300);
+    $data = readData($DATA_FILE);
+    $partner = preg_replace('~\D~', '', (string)($data['theatre']['afishaPartnerId'] ?? '')) ?: '37';
+    $showId = '';
+    if (preg_match('~^https?://~', $q)) {
+      $html = http_get($q);
+      if (!$html) fail('Не удалось загрузить страницу площадки');
+      if (preg_match('~shows_id\s*:\s*(\d+)~', $html, $m)) $showId = $m[1];
+      elseif (preg_match('~openModal\((\d+)\)~', $html, $m)) { // есть только сеанс — узнаём спектакль через событие
+        $j = http_get("https://tickets.afisha.ru/wl/{$partner}/api/events/info?lang=ru&event_id={$m[1]}");
+        $d = $j ? json_decode($j, true) : null; $showId = (string)($d['event']['show_id'] ?? '');
+      }
+      if ($showId === '') fail('На этой странице не нашлось виджета Афиши');
+    } else {
+      $showId = preg_replace('~\D~', '', $q);
+      if ($showId === '') fail('Укажите ID спектакля в Афише или ссылку на teatrdoc.ru');
+    }
+    $show = afisha_show($partner, $showId);
+    if (!$show) fail('Афиша не вернула спектакль с ID ' . $showId);
+    out(['ok' => true, 'showId' => (string)$show['id'], 'name' => (string)($show['name'] ?? ''), 'image' => (string)($show['image'] ?? ''), 'age' => (int)($show['age_limit'] ?? 0), 'events' => afisha_events($show)]);
 
   default:
     fail('unknown action', 404);

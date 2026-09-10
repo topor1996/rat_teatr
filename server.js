@@ -160,6 +160,42 @@ app.post("/api/upload", requireAuth, upload.single("photo"), (req, res) => {
   res.json({ ok: true, photo: `photos/${req.file.filename}` });
 });
 
+// ---------- Афиша: остатки мест и импорт дат ----------
+const STATUS_FILE = path.join(DATA_DIR, "afisha-status.json");
+const httpGet = async (u) => { const r = await fetch(u, { headers: { "User-Agent": "Mozilla/5.0 (rat-theater site)" }, signal: AbortSignal.timeout(15000) }); if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); };
+const afishaShow = async (partner, showId) => { const j = JSON.parse(await httpGet(`https://tickets.afisha.ru/wl/${partner}/api/shows/info?lang=ru&show_id=${showId}`)); return j && j.show ? j.show : null; };
+const afishaEvents = show => (show.events || []).filter(e => e.id && e.date).map(e => ({ sessionId: String(e.id), date: e.date.slice(0, 10), time: e.date.slice(11, 16), venue: String(e.location_name || "").trim(), count: Number(e.count || 0), minPrice: Math.round(Number(e.min_price || 0)), maxPrice: Math.round(Number(e.max_price || 0)) }));
+app.get("/api/afisha_status", async (req, res) => {
+  let cache = null; try { cache = JSON.parse(fs.readFileSync(STATUS_FILE, "utf8")); } catch {}
+  if (cache && Date.now() / 1000 - (cache.updated || 0) < 600 && !req.query.force) return res.json(cache);
+  const data = readData(); const partner = str(data.theatre?.afishaPartnerId, 20).replace(/\D/g, "");
+  const sessions = {}; let ok = false;
+  if (partner) for (const sid of new Set((data.plays || []).map(p => str(p.afishaShowId, 40).replace(/\D/g, "")).filter(Boolean))) {
+    try { const show = await afishaShow(partner, sid); if (!show) continue; ok = true; for (const e of afishaEvents(show)) sessions[e.sessionId] = { count: e.count, minPrice: e.minPrice, date: e.date, time: e.time }; } catch {}
+  }
+  if (!ok) return res.json(cache || { ok: false, updated: 0, sessions: {} });
+  const out = { ok: true, updated: Math.floor(Date.now() / 1000), sessions }; try { fs.writeFileSync(STATUS_FILE, JSON.stringify(out)); } catch {}
+  res.json(out);
+});
+app.get("/api/afisha_import", requireAuth, async (req, res) => {
+  try {
+    const q = str(req.query.q, 300); const data = readData(); const partner = str(data.theatre?.afishaPartnerId, 20).replace(/\D/g, "") || "37";
+    let showId = "";
+    if (/^https?:\/\//.test(q)) {
+      const html = await httpGet(q); let m = html.match(/shows_id\s*:\s*(\d+)/);
+      if (m) showId = m[1]; else if ((m = html.match(/openModal\((\d+)\)/))) { const j = JSON.parse(await httpGet(`https://tickets.afisha.ru/wl/${partner}/api/events/info?lang=ru&event_id=${m[1]}`)); showId = String(j.event?.show_id || ""); }
+      if (!showId) return res.status(400).json({ error: "На этой странице не нашлось виджета Афиши" });
+    } else { showId = q.replace(/\D/g, ""); if (!showId) return res.status(400).json({ error: "Укажите ID спектакля в Афише или ссылку на teatrdoc.ru" }); }
+    const show = await afishaShow(partner, showId); if (!show) return res.status(400).json({ error: "Афиша не вернула спектакль с ID " + showId });
+    res.json({ ok: true, showId: String(show.id), name: String(show.name || ""), image: String(show.image || ""), age: Number(show.age_limit || 0), events: afishaEvents(show) });
+  } catch (e) { res.status(400).json({ error: "Ошибка запроса к Афише: " + e.message }); }
+});
+app.get("/sitemap.xml", (req, res) => {
+  const d = readData(); const base = `${req.protocol}://${req.get("host")}`;
+  const urls = ["/", "/golos", ...(d.plays || []).map(p => "/play.html?id=" + encodeURIComponent(p.id))];
+  res.type("application/xml").send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls.map(u => `<url><loc>${base}${u.replace(/&/g, "&amp;")}</loc></url>`).join("") + "</urlset>");
+});
+
 app.use((err, req, res, next) => {
   console.error(err.message);
   res.status(400).json({ error: err.code === "LIMIT_FILE_SIZE" ? "Файл больше 8 МБ" : "Ошибка запроса" });

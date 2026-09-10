@@ -1,0 +1,9 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin.html
+Disallow: /api.php
+Disallow: /data/
+Disallow: /poster.html
+Allow: /
+
+Sitemap: https://rat-theater.rf.gd/sitemap.xml
