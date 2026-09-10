@@ -78,6 +78,10 @@ window.RAT = (function () {
   function afishaInit(th) {
     afisha.partner = (th && th.afishaPartnerId) || "";
     if (!afisha.partner) return;
+    // пока окно виджета открыто — класс на <html>, чтобы наш CSS заблокировал фон и растянул окно
+    var sync = function () { document.documentElement.classList.toggle("afisha-open", !!document.getElementById("modal")); };
+    if (window.MutationObserver) new MutationObserver(sync).observe(document.body, { childList: true });
+    window.addEventListener("popstate", function () { setTimeout(sync, 50); });
     var idle = window.requestIdleCallback || function (f) { setTimeout(f, 2500); };
     idle(function () { afishaLoad().catch(function () {}); });
   }
