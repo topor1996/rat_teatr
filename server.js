@@ -64,7 +64,7 @@ function sanitize(input) {
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
     hidden: !!e.hidden, price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
-  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
+  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.fromSite ? { fromSite: true, id: str(r.id, 40).replace(/[^\w-]/g, ""), date: str(r.date, 10) } : {}) })).filter(r => r.text);
   const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden })).filter(g => g.photo);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
@@ -169,8 +169,47 @@ const readJson = (f, d) => { try { return { ...d, ...JSON.parse(fs.readFileSync(
 const writeJson = (f, v) => { fs.writeFileSync(f + ".tmp", JSON.stringify(v)); fs.renameSync(f + ".tmp", f); };
 app.put("/api/data", requireAuth, (req, res) => {
   const data = sanitize(req.body || {});
+  const since = +req.query.since || 0; // отзывы с сайта, пришедшие пока админка была открыта, не затираем
+  if (since) { const have = new Set(data.reviews.map(r => r.id).filter(Boolean)); for (const r of readData().reviews || []) if (r.fromSite && r.id && !have.has(r.id) && +r.id.slice(1, 11) > since) data.reviews.push(r); }
   snapshot(); writeData(data);
   res.json({ ok: true, data });
+});
+const reviewRate = new Map();
+app.post("/api/review", (req, res) => {
+  const b = req.body || {};
+  if (String(b.site || "").trim()) return res.json({ ok: true });
+  const text = str(b.text, 800), author = str(b.author, 60), playId = str(b.playId, 40).replace(/[^\w-]/g, "");
+  if (text.length < 20) return res.status(400).json({ error: "Напишите хотя бы пару предложений" });
+  if (/https?:\/\/|www\./i.test(text)) return res.status(400).json({ error: "Ссылки в отзывах не публикуем" });
+  const day = new Date().toISOString().slice(0, 10), rk = day + "-" + crypto.createHash("sha256").update((req.ip || "") + "|" + (req.headers["user-agent"] || "")).digest("hex").slice(0, 12);
+  if ((reviewRate.get(rk) || 0) >= 5) return res.status(429).json({ error: "Слишком много отзывов за день, спасибо! Остальное — завтра" });
+  reviewRate.set(rk, (reviewRate.get(rk) || 0) + 1);
+  const data = readData(); (data.reviews = data.reviews || []).push({ text, author, source: "с сайта", url: "", playId, hidden: true, fromSite: true, id: "r" + Math.floor(Date.now() / 1000) + "-" + crypto.randomBytes(2).toString("hex"), date: day });
+  writeData(data); res.json({ ok: true });
+});
+app.get("/api/snapshot", requireAuth, (req, res) => {
+  const id = String(req.query.id || "").replace(/[^0-9-]/g, ""), p = path.join(HISTORY_DIR, id + ".json");
+  if (!id || !fs.existsSync(p)) return res.status(404).json({ error: "Версия не найдена" });
+  try { res.json({ ok: true, data: JSON.parse(fs.readFileSync(p, "utf8")) }); } catch { res.status(500).json({ error: "Файл версии повреждён" }); }
+});
+app.get("/calendar.ics", (req, res) => {
+  // живой календарь: как calendar.php
+  const d = readData(), th = d.theatre || {}, name = th.name || "Театр RAT", plays = Object.fromEntries((d.plays || []).filter(p => !p.hidden).map(p => [p.id, p]));
+  const base = siteBase(req), esc = s => String(s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  const z = dt => dt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//" + esc(name) + "//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:" + esc(name), "X-WR-TIMEZONE:Europe/Moscow", "X-PUBLISHED-TTL:PT6H", "REFRESH-INTERVAL;VALUE=DURATION:PT6H"];
+  for (const e of d.events || []) {
+    if (e.hidden || !e.date || e.date < since || (e.playId && !plays[e.playId])) continue;
+    const p = plays[e.playId], title = p ? p.title : (e.note || "Спектакль"), time = e.time || "19:00";
+    const start = new Date(e.date + "T" + time + ":00+03:00"); let mins = 90; const m = /(\d+)\s*час/.exec(p?.duration || ""), mm = /(\d+)\s*мин/.exec(p?.duration || ""); if (m) mins = +m[1] * 60 + (mm ? +mm[1] : 0); else if (mm) mins = +mm[1];
+    const end = new Date(start.getTime() + mins * 6e4), url = p ? base + "play.html?id=" + encodeURIComponent(p.id) : base, ticket = e.ticketUrl || p?.ticketUrl || th.ticketsUrl || "";
+    L.push("BEGIN:VEVENT", "UID:" + e.date + "-" + time.replace(":", "") + "-" + (e.playId || "show") + "@" + req.get("host"), "DTSTAMP:" + z(new Date()), "DTSTART:" + z(start), "DTEND:" + z(end),
+      "SUMMARY:" + esc((e.badges || []).includes("soldout") ? "[аншлаг] " : "") + esc(title + " — " + name), "LOCATION:" + esc((e.venue || th.venue || "") + (th.address ? ", " + th.address : "")),
+      "DESCRIPTION:" + esc([p?.genre, p ? (p.description || "").slice(0, 300) : "", e.note, ticket ? "Билеты: " + ticket : "", url].filter(Boolean).join("\n")), "URL:" + url, "STATUS:CONFIRMED", "BEGIN:VALARM", "TRIGGER:-PT24H", "ACTION:DISPLAY", "DESCRIPTION:" + esc("Завтра: " + title), "END:VALARM", "END:VEVENT");
+  }
+  const fold = line => { let out = ""; while (Buffer.byteLength(line) > 74) { let n = 74; while (Buffer.byteLength(line.slice(0, n)) > 74) n--; out += line.slice(0, n) + "\r\n "; line = line.slice(n); } return out + line; };
+  L.push("END:VCALENDAR"); res.set("Content-Type", "text/calendar; charset=utf-8").send(L.map(fold).join("\r\n") + "\r\n");
 });
 app.get("/api/history", requireAuth, (req, res) => {
   const items = fs.readdirSync(HISTORY_DIR).filter(f => f.endsWith(".json")).sort().reverse().map(f => { const p = path.join(HISTORY_DIR, f); let j = {}; try { j = JSON.parse(fs.readFileSync(p, "utf8")); } catch {} const st = fs.statSync(p); return { id: f.replace(/\.json$/, ""), time: Math.floor(st.mtimeMs / 1000), size: st.size, actors: (j.actors || []).length, events: (j.events || []).length, plays: (j.plays || []).length, reviews: (j.reviews || []).length, gallery: (j.gallery || []).length }; });

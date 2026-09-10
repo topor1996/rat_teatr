@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.css?v=20260913i" rel="stylesheet">
+<link href="assets/intro.css?v=20260913j" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
-<link href="fonts/fonts.css?v=20260911" rel="stylesheet">
+<link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
+<link href="fonts/fonts.css?v=20260913j" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -25,7 +26,7 @@
   html,body{margin:0;padding:0;overflow-x:hidden;max-width:100%}
   body{
     background:var(--black);color:#f4f2ea;
-    font-family:"PT Mono",ui-monospace,Menlo,monospace;
+    font-family:"PT Mono","PT Mono Fallback",ui-monospace,Menlo,monospace;
     line-height:1.5;min-height:100vh;overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
   }
@@ -44,8 +45,8 @@
   .wrap{max-width:1040px;margin:0 auto;padding:0 18px;position:relative;z-index:1}
   a{color:inherit}
 
-  .oswald{font-family:"Oswald",Impact,"Arial Narrow",sans-serif}
-  .spray{font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif}
+  .oswald{font-family:"Oswald","Oswald Fallback",Impact,"Arial Narrow",sans-serif}
+  .spray{font-family:"Rubik Spray Paint","Spray Fallback","Rubik Mono One",Impact,sans-serif}
 
   /* ---------- top bar ---------- */
   .top{
@@ -54,23 +55,23 @@
   }
   .stamp{
     display:inline-flex;align-items:center;gap:8px;padding:6px 10px;
-    border:2px solid #fff;font-family:"Oswald",sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;
+    border:2px solid #fff;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:13px;letter-spacing:.12em;
     transform:rotate(-2deg);background:rgba(0,0,0,.4);text-decoration:none;color:inherit
   }
   .stamp:hover{border-color:var(--acid);color:var(--acid)}
   .stamp .rat{width:22px;height:22px}
-  .date{color:var(--acid);font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
+  .date{color:var(--acid);font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
 
   /* ---------- hero ---------- */
   .hero{padding:26px 0 10px;position:relative}
   .hero h1{
     margin:0;line-height:.86;text-transform:uppercase;
-    font-family:"Oswald",Impact,sans-serif;font-weight:700;
+    font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;
     font-size:clamp(64px,17vw,164px);letter-spacing:-.01em
   }
   .hero h1 .a{display:block;color:#fff}
   .hero h1 .b{
-    display:block;font-family:"Rubik Spray Paint","Rubik Mono One",Impact,sans-serif;font-weight:400;
+    display:block;font-family:"Rubik Spray Paint","Spray Fallback","Rubik Mono One",Impact,sans-serif;font-weight:400;
     color:var(--acid);font-size:clamp(66px,17.5vw,170px);letter-spacing:.01em;
     transform:rotate(-2.5deg) translateX(2%);transform-origin:left;margin-top:4px;
     filter:drop-shadow(0 6px 0 rgba(0,0,0,.6))
@@ -89,7 +90,7 @@
   .marq{
     margin:0 -30px;background:var(--acid);color:#000;overflow:hidden;
     transform:rotate(-2deg);border-top:3px solid #000;border-bottom:3px solid #000;
-    font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;
+    font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;font-size:20px;letter-spacing:.08em;
     white-space:nowrap;display:flex
   }
   /* две одинаковые дорожки едут друг за другом — стык не виден, лента бесконечная */
@@ -117,10 +118,10 @@
   .step:nth-child(odd){transform:rotate(-1.4deg)}
   .step:nth-child(even){transform:rotate(1.1deg)}
   .step i{
-    font-style:normal;display:inline-block;font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:30px;line-height:1;
+    font-style:normal;display:inline-block;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:30px;line-height:1;
     color:var(--red);margin-bottom:6px
   }
-  .step b{display:block;font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px}
+  .step b{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:17px;text-transform:uppercase;letter-spacing:.02em;margin-bottom:2px}
   .step span{color:var(--muted)}
   .tape{
     position:absolute;width:74px;height:22px;background:var(--tape);left:50%;top:-11px;
@@ -151,7 +152,7 @@
   .photo::after{content:"";position:absolute;inset:0;background:var(--acid);mix-blend-mode:multiply;opacity:.75;pointer-events:none}
   .photo .initials{
     position:absolute;inset:0;display:grid;place-items:center;
-    font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:96px;color:#fff;
+    font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:96px;color:#fff;
     background:
       repeating-linear-gradient(135deg, #151515 0 14px, #1d1d1d 14px 28px);
   }
@@ -159,17 +160,17 @@
   .num{
     position:absolute;z-index:2;top:-10px;left:-10px;width:52px;height:52px;border-radius:50%;
     display:grid;place-items:center;background:var(--red);color:#fff;
-    font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:26px;
+    font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:26px;
     transform:rotate(-8deg);box-shadow:0 6px 14px rgba(0,0,0,.4)
   }
   .body{padding:14px 16px 20px;display:flex;flex-direction:column;flex:1}
   .name{
-    margin:0;font-family:"Oswald",Impact,sans-serif;font-weight:700;font-size:34px;line-height:.95;
+    margin:0;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;font-size:34px;line-height:.95;
     text-transform:uppercase;letter-spacing:-.005em
   }
   .role{
     display:inline-block;margin:10px 0 0;padding:3px 8px;background:#000;color:var(--acid);
-    font-family:"Oswald",sans-serif;font-weight:500;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:13px;letter-spacing:.12em;text-transform:uppercase;
     transform:rotate(-1deg);align-self:flex-start
   }
   .scene{color:var(--muted);font-size:13px;margin:12px 0 16px;flex:1}
@@ -177,7 +178,7 @@
   .btn{
     display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
     padding:14px 14px;border:2.5px solid #000;cursor:pointer;text-decoration:none;
-    font-family:"Oswald",sans-serif;font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;
+    font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;
     background:#000;color:var(--acid);transition:background .15s,color .15s,transform .1s
   }
   .btn:hover{background:var(--acid);color:#000}
@@ -195,7 +196,7 @@
   }
   .phone b{color:#000}
   .phone .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
-  .phone .val{font-family:"Oswald",sans-serif;font-size:20px;font-weight:600;color:#000;letter-spacing:.03em;white-space:nowrap}
+  .phone .val{font-family:"Oswald","Oswald Fallback",sans-serif;font-size:20px;font-weight:600;color:#000;letter-spacing:.03em;white-space:nowrap}
   .copy{
     flex:none;padding:7px 8px;border:2px solid #000;background:#fff;color:#000;
     font:inherit;font-size:11px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em
@@ -211,19 +212,19 @@
   }
   .sheet .tape{top:-11px;left:50%;transform:translateX(-50%) rotate(2deg)}
   @keyframes pop{from{transform:translateY(12px) rotate(-1deg);opacity:0}to{transform:rotate(-1deg);opacity:1}}
-  .sheet h3{font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:28px;margin:0 0 4px;line-height:1}
+  .sheet h3{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;font-size:28px;margin:0 0 4px;line-height:1}
   .sheet p{margin:0 0 16px;color:var(--muted);font-size:12px}
   .qr{display:grid;place-items:center;margin:0 auto 12px;padding:10px;background:#fff;border:2.5px solid #000}
   .qr img,.qr canvas{width:220px;height:220px}
   .sbp-badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.06em}
   .sheet .close{
     width:100%;padding:12px;border:2.5px solid #000;background:#000;color:var(--acid);
-    font-family:"Oswald",sans-serif;font-weight:600;font-size:17px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer
+    font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:17px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer
   }
 
   footer{padding:30px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
   footer .big{
-    font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(34px,8vw,64px);color:#fff;line-height:1;
+    font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:clamp(34px,8vw,64px);color:#fff;line-height:1;
     margin-bottom:14px;transform:rotate(-2deg);display:inline-block
   }
   footer .big em{font-style:normal;color:var(--acid)}
@@ -245,12 +246,14 @@
   </div></div>
   <button class="tv-skip" type="button">пропустить →</button>
 </div>
-<script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search);
+<script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search),skip=/[?&]nointro/.test(location.search);
 try{var nav=(performance.getEntriesByType&&performance.getEntriesByType("navigation")[0])||{},type=nav.type||(performance.navigation&&performance.navigation.type===1?"reload":"navigate");
 var internal=document.referrer&&document.referrer.indexOf(location.origin)===0;
-if(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(internal&&type!=="reload"))){el.parentNode.removeChild(el);return}}catch(e){}
-var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
-el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);setTimeout(done,4500)})();</script>
+if(skip||(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(internal&&type!=="reload")))){el.parentNode.removeChild(el);return}}catch(e){}
+var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");el.classList.add("pre");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
+el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);
+/* ждём картинку телевизора не дольше 900 мс: на медленной сети заставку пропускаем, чтобы не держать чёрный экран */
+var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">

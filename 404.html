@@ -3,28 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Страница не найдена — Театр RAT</title>
+<title>Нет сигнала — Театр RAT</title>
 <meta name="robots" content="noindex">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link href="/fonts/fonts.css?v=20260912a" rel="stylesheet">
-<link href="/assets/site.css?v=20260912a" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260913j" rel="stylesheet">
 <style>
-  .nf{min-height:80vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 18px}
-  .nf .code{font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:clamp(120px,30vw,300px);line-height:.9;color:var(--acid);transform:rotate(-3deg);filter:drop-shadow(0 8px 0 rgba(0,0,0,.6))}
-  .nf h1{font-family:"Oswald",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(28px,6vw,54px);margin:18px 0 8px;line-height:1}
-  .nf p{color:#cfcbbd;max-width:460px;margin:0 0 24px}
-  .nf .rat{width:64px;height:64px;color:var(--acid);margin-bottom:10px}
-  .nf .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  /* страница 404 как экран телевизора без сигнала: помехи, цветные полосы, шипение по кнопке */
+  html,body{margin:0;height:100%;background:#050505;color:#fff;font-family:"PT Mono","PT Mono Fallback",ui-monospace,monospace;overflow:hidden}
+  .scr{position:fixed;inset:0;overflow:hidden;background:#111}
+  .noise{position:absolute;inset:-50% 0 0 -50%;width:200%;height:200%;opacity:.55;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain .3s steps(3) infinite}
+  @keyframes grain{0%{transform:translate(0,0)}33%{transform:translate(-8%,5%)}66%{transform:translate(6%,-9%)}100%{transform:translate(0,0)}}
+  .bars{position:absolute;left:0;right:0;top:0;height:58%;display:flex;opacity:.85;mix-blend-mode:screen;animation:flick 4s steps(1,end) infinite}
+  .bars i{flex:1}
+  .bars i:nth-child(1){background:#c0c0c0}.bars i:nth-child(2){background:#c9ff3d}.bars i:nth-child(3){background:#00c0c0}.bars i:nth-child(4){background:#00c000}.bars i:nth-child(5){background:#c000c0}.bars i:nth-child(6){background:#ff3b2f}.bars i:nth-child(7){background:#0000c0}
+  @keyframes flick{0%,42%,100%{opacity:.85;transform:none}43%{opacity:.4;transform:translateX(-6px)}44%{opacity:.9;transform:translateX(5px)}46%{opacity:.85;transform:none}71%{opacity:.5}72%{opacity:.85}}
+  .scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.42) 0 2px,transparent 2px 4px);pointer-events:none}
+  .roll{position:absolute;left:0;right:0;top:0;height:60px;will-change:transform;background:linear-gradient(180deg,transparent,rgba(255,255,255,.25),transparent);animation:roll 2.2s linear infinite;pointer-events:none}
+  @keyframes roll{from{transform:translateY(-70px)}to{transform:translateY(100vh)}}
+  .vig{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.75) 100%);pointer-events:none}
+  .msg{position:absolute;left:0;right:0;top:58%;bottom:0;background:#0b0b0b;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+  .msg h1{margin:0;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(34px,8vw,84px);line-height:.95;letter-spacing:.02em;animation:blink 1.4s steps(2,end) infinite}
+  @keyframes blink{50%{opacity:.35}}
+  .msg p{margin:12px 0 22px;color:#9c978a;font-size:14px;max-width:520px}
+  .msg .code{position:absolute;right:18px;top:12px;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:clamp(40px,9vw,90px);color:#c9ff3d;transform:rotate(6deg);opacity:.9}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:2.5px solid #c9ff3d;background:#c9ff3d;color:#000;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer}
+  .btn.ghost{background:transparent;color:#fff;border-color:#555}
+  .btn.ghost:hover{border-color:#c9ff3d;color:#c9ff3d}
+  .snd{position:fixed;left:14px;bottom:14px;font-size:12px;color:#9c978a;background:none;border:1px solid #444;padding:7px 10px;cursor:pointer;font-family:inherit}
+  .snd.on{color:#c9ff3d;border-color:#c9ff3d}
+  @media (prefers-reduced-motion:reduce){.noise,.bars,.roll,.msg h1{animation:none}}
 </style>
 </head>
 <body>
-<svg width="0" height="0" style="position:absolute"><symbol id="rat" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="41" r="2.5" fill="currentColor"/><path d="M10 40l16 1M10 46l16-1M54 40l-16 1M54 46l-16-1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><text x="32" y="36" text-anchor="middle" font-family="Impact,sans-serif" font-size="12" fill="currentColor" letter-spacing="1">RAT</text></symbol></svg>
-<div class="wrap nf">
-  <svg class="rat"><use href="#rat"/></svg>
-  <div class="code">404</div>
-  <h1>Такой сцены нет</h1>
-  <p>Крыса искала, но страница не нашлась. Зато афиша на месте.</p>
-  <div class="row"><a class="btn light" href="/">На главную</a><a class="btn ghost onDark" href="/#afisha">Афиша</a><a class="btn ghost onDark" href="/golos">Голосуй рублём</a></div>
-</div>
+<div class="scr" aria-hidden="true"><div class="noise"></div><div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="roll"></div><div class="scan"></div><div class="vig"></div></div>
+<main class="msg">
+  <span class="code">404</span>
+  <h1>Нет сигнала</h1>
+  <p>Такого канала в сетке нет: страница переехала или адрес с опечаткой. Афиша и билеты в эфире.</p>
+  <div class="row"><a class="btn" href="/">📺 Вернуться в эфир</a><a class="btn ghost" href="/#afisha">Афиша</a><a class="btn ghost" href="/golos">Голосуй рублём</a></div>
+</main>
+<button class="snd" id="snd" type="button">🔇 шипение выключено</button>
+<script>
+/* шипение телевизора без аудиофайлов: белый шум через Web Audio, только по нажатию */
+(function () {
+  var b = document.getElementById("snd"), ac = null, src = null;
+  b.addEventListener("click", function () {
+    if (src) { src.stop(); src = null; b.classList.remove("on"); b.textContent = "🔇 шипение выключено"; return; }
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext; ac = ac || new AC(); if (ac.state === "suspended") ac.resume();
+      var len = ac.sampleRate * 2, buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * .35;
+      src = ac.createBufferSource(); src.buffer = buf; src.loop = true;
+      var f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = .5;
+      var g = ac.createGain(); g.gain.value = .25;
+      src.connect(f); f.connect(g); g.connect(ac.destination); src.start();
+      b.classList.add("on"); b.textContent = "🔊 шипит";
+    } catch (e) {}
+  });
+})();
+</script>
 </body>
 </html>

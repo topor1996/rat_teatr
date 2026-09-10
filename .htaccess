@@ -8,6 +8,8 @@ RewriteRule ^golos/$ /golos [R=301,L]
 RewriteRule ^golos$ golos.html [L]
 RewriteCond %{DOCUMENT_ROOT}/play.php -f
 RewriteRule ^play\.html$ play.php [L,QSA]
+RewriteCond %{DOCUMENT_ROOT}/calendar.php -f
+RewriteRule ^calendar\.ics$ calendar.php [L]
 RewriteCond %{DOCUMENT_ROOT}/sitemap.php -f
 RewriteRule ^sitemap\.xml$ sitemap.php [L]
 ErrorDocument 404 /404.html

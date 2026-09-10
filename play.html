@@ -22,9 +22,13 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Театр RAT">
-<link href="fonts/fonts.css?v=20260913i" rel="stylesheet">
-<link href="assets/site.css?v=20260913i" rel="stylesheet">
-<link href="assets/intro.css?v=20260913i" rel="stylesheet">
+<link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
+<link href="fonts/fonts.css?v=20260913j" rel="stylesheet">
+<link href="assets/intro.css?v=20260913j" rel="stylesheet">
+<link href="assets/site.css?v=20260913j" rel="stylesheet">
 </head>
 <body>
 
@@ -41,12 +45,14 @@
   </div></div>
   <button class="tv-skip" type="button">пропустить →</button>
 </div>
-<script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search);
+<script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search),skip=/[?&]nointro/.test(location.search);
 try{var nav=(performance.getEntriesByType&&performance.getEntriesByType("navigation")[0])||{},type=nav.type||(performance.navigation&&performance.navigation.type===1?"reload":"navigate");
 var internal=document.referrer&&document.referrer.indexOf(location.origin)===0;
-if(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(internal&&type!=="reload"))){el.parentNode.removeChild(el);return}}catch(e){}
-var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
-el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);setTimeout(done,4500)})();</script>
+if(skip||(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(internal&&type!=="reload")))){el.parentNode.removeChild(el);return}}catch(e){}
+var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");el.classList.add("pre");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
+el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);
+/* ждём картинку телевизора не дольше 900 мс: на медленной сети заставку пропускаем, чтобы не держать чёрный экран */
+var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">
@@ -93,6 +99,7 @@ el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addE
     <h2 class="sec">Да<em>ты</em><span class="stamp-deco">билеты</span></h2>
     <p class="sec-sub">Билеты продаёт площадка — оплата картой или через СБП на её сайте.</p>
     <div class="afisha" id="datesList"></div>
+      <div id="calsub"></div>
   </section>
 
   <section id="media" hidden>
@@ -139,8 +146,9 @@ el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addE
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913i"></script>
+<script src="assets/site.js?v=20260913j" defer></script>
 <script>
+window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
 function render(d) {
@@ -169,6 +177,7 @@ function render(d) {
   window.__storyCtx = { p: p, events: events, th: th };
 
   document.getElementById("dates").hidden = false;
+  document.getElementById("calsub").innerHTML = R.calendarLinks();
   document.getElementById("datesList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, p, th, { link: false }); }).join("") : '<div class="empty">Ближайших дат пока нет. Следите в соцсетях.</div>';
 
   var revs = d.reviews.filter(function (r) { return !r.playId || r.playId === p.id; });
@@ -178,7 +187,7 @@ function render(d) {
     if (fsrc) { var pl = document.createElement("link"); pl.rel = "preload"; pl.as = "image"; pl.href = fsrc; pl.setAttribute("fetchpriority", "high"); document.head.appendChild(pl); }
     document.getElementById("media").hidden = false; document.getElementById("mediaBox").innerHTML = R.mediaSlider(p.media); R.sliders(document.getElementById("mediaBox")); }
   if (p.voices && p.voices.length) { document.getElementById("voices").hidden = false; document.getElementById("voicesList").innerHTML = R.voicesHtml(p.voices); R.voicePlayers(document.getElementById("voicesList")); }
-  if (revs.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join(""); }
+  document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join("") + R.reviewForm(p.id);
   var shots = d.gallery.filter(function (x) { return x.playId === p.id; });
   if (shots.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = shots.map(R.shot).join(""); }
 
@@ -193,6 +202,7 @@ function render(d) {
   R.todayBar(d, "golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.hit("play:" + p.id);
 }
 RAT.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [] }).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
+});
 </script>
 </body>
 </html>

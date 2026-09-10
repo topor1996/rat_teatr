@@ -6,20 +6,20 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913i" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913j" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--text);font-family:"PT Mono",ui-monospace,Menlo,monospace;font-size:14px;line-height:1.45}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"PT Mono","PT Mono Fallback",ui-monospace,Menlo,monospace;font-size:14px;line-height:1.45}
   .wrap{max-width:960px;margin:0 auto;padding:20px 16px 120px}
-  h1,h2,h3{font-family:"Oswald",Impact,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0}
+  h1,h2,h3{font-family:"Oswald","Oswald Fallback",Impact,sans-serif;text-transform:uppercase;letter-spacing:.03em;margin:0}
   h1{font-size:28px}
   h1 em{font-style:normal;color:var(--acid)}
   .bar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
   .bar .links{display:flex;gap:8px;flex-wrap:wrap}
   a{color:var(--acid)}
   .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--line)}
-  .tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font-family:"Oswald",sans-serif;font-weight:500;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;cursor:pointer;margin-bottom:-1px}
+  .tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:15px;letter-spacing:.08em;text-transform:uppercase;padding:10px 12px;cursor:pointer;margin-bottom:-1px}
   .tabs button.on{color:var(--acid);border-color:var(--acid)}
   .tab{display:none}.tab.on{display:block}
   .panel{background:var(--panel);border:1px solid var(--line);padding:16px;margin-bottom:16px;position:relative}
@@ -34,7 +34,7 @@
   @media (max-width:560px){.row,.row3{grid-template-columns:1fr}}
   .hint{font-size:11px;color:var(--muted);margin-top:4px}
   .hint.bad{color:var(--red)} .hint.good{color:var(--ok)}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#000;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:2px solid var(--acid);background:var(--acid);color:#000;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:14px;cursor:pointer;text-decoration:none}
   .btn:hover{filter:brightness(1.08)}
   .btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}
   .btn.ghost:hover{border-color:var(--text)}
@@ -49,7 +49,7 @@
   .photo img{width:100%;height:100%;object-fit:cover}
   .photo-tools{display:flex;flex-direction:column;gap:6px;margin-top:8px}
   .photo-tools input[type=file]{display:none}
-  .num{position:absolute;top:-10px;left:-10px;width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-family:"Oswald",sans-serif;font-weight:700}
+  .num{position:absolute;top:-10px;left:-10px;width:32px;height:32px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700}
   .save{position:fixed;left:0;right:0;bottom:0;background:#000;border-top:1px solid var(--line);padding:12px 16px;display:flex;justify-content:center;gap:12px;align-items:center;z-index:10}
   .save .status{color:var(--muted);font-size:12px}
   .save .status.ok{color:var(--ok)} .save .status.err{color:var(--red)}
@@ -61,13 +61,13 @@
   table.stats{width:100%;border-collapse:collapse;font-size:13px}
   table.stats th,table.stats td{border:1px solid var(--line);padding:6px 8px;text-align:left;white-space:nowrap}
   table.stats th{color:var(--muted);font-weight:400;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
-  table.stats td.n{text-align:right;font-family:"Oswald",sans-serif;font-size:15px}
+  table.stats td.n{text-align:right;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:15px}
   table.stats tr.total td{color:var(--acid);font-weight:700}
   .scroll{overflow-x:auto}
   .voices-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
   .media-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
   .entry.is-hidden{opacity:.55;border-style:dashed}
-  .draft-tag{font-family:"PT Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--red);color:#fff;padding:2px 6px;vertical-align:middle;margin-left:8px}
+  .draft-tag{font-family:"PT Mono","PT Mono Fallback",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--red);color:#fff;padding:2px 6px;vertical-align:middle;margin-left:8px}
   .chk.draft{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;margin-right:6px}
   .chk.draft input{width:auto;accent-color:var(--red)}
   .media-row.m-hidden .mthumb{opacity:.45}
@@ -86,6 +86,7 @@
   .voice-row audio{height:34px;max-width:220px}
   @media (max-width:640px){.voice-row{grid-template-columns:1fr}}
   /* ---- телефон: вкладки внизу под большим пальцем, крупные кнопки, без зума полей ---- */
+  .diff{font-size:13px;line-height:1.5;padding:6px 0} .diff ul{margin:2px 0 8px;padding-left:18px} .diffrow td{background:#0e0e0e}
   .drag{cursor:grab;touch-action:none;user-select:none;padding:6px 10px;font-size:18px;line-height:1;color:var(--muted);border:2px solid var(--line);background:transparent}
   .drag:active{cursor:grabbing}
   .entry.dragging{opacity:.5;outline:2px dashed var(--acid)}
@@ -304,6 +305,11 @@
         <p class="help">Последние 20 сохранений. «Вернуть» откатывает данные к этой версии, текущее состояние при этом тоже сохраняется в историю. Фото не трогаются.</p>
         <div id="historyBody" class="hint">Загружаю…</div>
       </div>
+      <div class="panel">
+        <h2>Журнал обновлений сайта</h2>
+        <p class="help">Что и когда добавлялось на сайт (не путать с версиями данных выше). Файл <code>changelog.json</code> в корне.</p>
+        <div id="changelogBody" class="hint">Загружаю…</div>
+      </div>
     </div>
 
     <div class="tab" id="tab-show">
@@ -360,7 +366,7 @@ const serverBackend = {
   async login(c) { await api("/api/login", { method: "POST", body: JSON.stringify({ password: c.password }) }); },
   async logout() { await api("/api/logout", { method: "POST" }); },
   async load() { return api("/api/data"); },
-  async save(d) { return (await api("/api/data", { method: "PUT", body: JSON.stringify(d) })).data; },
+  async save(d) { return (await api("/api/data?since=" + loadedAt, { method: "PUT", body: JSON.stringify(d) })).data; },
   async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("/api/upload", { method: "POST", body: fd })).photo; },
   photoUrl(p) { return "/" + p; },
 };
@@ -371,7 +377,7 @@ const phpBackend = {
   async login(c) { await api("api.php?a=login", { method: "POST", body: JSON.stringify({ password: c.password }) }); },
   async logout() { await api("api.php?a=logout", { method: "POST" }); },
   async load() { return api("api.php?a=data"); },
-  async save(d) { return (await api("api.php?a=data", { method: "POST", body: JSON.stringify(d) })).data; },
+  async save(d) { return (await api("api.php?a=data&since=" + loadedAt, { method: "POST", body: JSON.stringify(d) })).data; },
   async upload(file) { const fd = new FormData(); fd.append("photo", file); return (await api("api.php?a=upload", { method: "POST", body: fd })).photo; },
   photoUrl(p) { return p; },
 };
@@ -515,6 +521,7 @@ const SECTIONS = {
     img: null, label: r => (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
     blank: () => ({ text: "", author: "", source: "", url: "", playId: "" }),
     form: r => `
+      ${r.fromSite ? `<p class="help" style="margin:0 0 8px">✉️ Пришёл с сайта${r.date ? " " + esc(r.date) : ""}. Прочитайте и снимите галочку «Скрыть», чтобы опубликовать.</p>` : ""}
       <label>Текст отзыва</label><textarea data-f="text">${esc(r.text)}</textarea>
       <div class="row3">
         <div><label>Автор</label><input data-f="author" value="${esc(r.author)}" placeholder="Анна, зритель"></div>
@@ -546,6 +553,7 @@ function showLogin() {
 }
 function showEditor() { $("#loginView").hidden = true; $("#editor").hidden = false; $("#saveBar").hidden = false; }
 function setStatus(text, cls = "") { const s = $("#status"); s.textContent = text; s.className = "status " + cls; }
+let loadedAt = 0; // когда админка получила данные: отзывы с сайта, пришедшие позже, сервер подмешает при сохранении
 function markDirty() { dirty = true; setStatus("Изменения не сохранены"); }
 
 const previews = {};
@@ -560,6 +568,7 @@ function checkSbp(el, v) {
 
 function renderList(key) {
   const sec = SECTIONS[key], list = data[key] || (data[key] = []);
+  if (key === "reviews") { const n = list.filter(r => r.fromSite && r.hidden).length; const tb = document.querySelector('[data-tab="reviews"]'); if (tb) tb.textContent = n ? `Отзывы · ${n} нов.` : "Отзывы"; }
   const box = $("#list-" + key);
   box.innerHTML = list.length ? list.map((item, i) => `
     <div class="panel entry${item.hidden ? " is-hidden" : ""}" data-key="${key}" data-i="${i}">
@@ -764,7 +773,8 @@ async function loadHistory() {
     if (!items.length) { box.textContent = "Версий пока нет — они появляются после каждого сохранения."; return; }
     const f = t => new Date(t * 1000).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     box.innerHTML = `<div class="scroll"><table class="stats"><tr><th>Когда</th><th>Спектакли</th><th>Показы</th><th>Актёры</th><th>Отзывы</th><th>Фото</th><th></th></tr>
-      ${items.map(it => `<tr><td>${f(it.time)}</td><td class="n">${it.plays}</td><td class="n">${it.events}</td><td class="n">${it.actors}</td><td class="n">${it.reviews}</td><td class="n">${it.gallery}</td><td><button class="btn ghost sm" data-restore="${esc(it.id)}">Вернуть</button></td></tr>`).join("")}</table></div>`;
+      ${items.map((it, i) => `<tr><td>${f(it.time)}</td><td class="n">${it.plays}</td><td class="n">${it.events}</td><td class="n">${it.actors}</td><td class="n">${it.reviews}</td><td class="n">${it.gallery}</td><td style="white-space:nowrap"><button class="btn ghost sm" data-diff="${esc(it.id)}" data-prev="${esc(items[i + 1] ? items[i + 1].id : "")}" title="Что изменилось по сравнению с ${i === 0 ? "текущим состоянием" : "предыдущей версией"}">Что изменилось</button> <button class="btn ghost sm" data-restore="${esc(it.id)}">Вернуть</button></td></tr><tr class="diffrow" hidden><td colspan="7"><div class="diff"></div></td></tr>`).join("")}</table></div>
+      <p class="help">«Что изменилось» у верхней версии сравнивает её с тем, что на сайте сейчас; у остальных — с версией выше по списку (то есть что поменяло следующее сохранение).</p>`;
   } catch (err) { box.textContent = err.message; }
 }
 $("#pwChange").onclick = async () => {
@@ -778,6 +788,50 @@ $("#pwChange").onclick = async () => {
 };
 $("#visitsRefresh").onclick = loadVisits;
 $("#historyRefresh").onclick = loadHistory;
+/* ---- «что изменилось»: сравнение двух версий данных по записям и полям ---- */
+const DIFF_KEYS = { plays: ["Спектакли", p => p.id || p.title, p => p.title], events: ["Показы", e => e.date + "_" + e.time + "_" + e.playId, e => (SECTIONS.events.label ? SECTIONS.events.label(e) : e.date)], actors: ["Актёры", a => a.name, a => a.name], reviews: ["Отзывы", r => r.id || r.text.slice(0, 60), r => (r.author || "Зритель") + ": " + r.text.slice(0, 40) + "…"], gallery: ["Фото бэкстейджа", g => g.photo, g => g.caption || g.photo] };
+const FIELD_RU = { title: "название", genre: "жанр", description: "описание", poster: "постер", duration: "длительность", age: "возраст", cast: "состав", ticketUrl: "ссылка на билеты", afishaShowId: "ID в Афише", voices: "голоса", media: "фото и видео", hidden: "черновик", date: "дата", time: "время", playId: "спектакль", venue: "площадка", price: "цена", afishaSessionId: "ID сеанса", note: "примечание", badges: "стикеры", name: "имя", golos: "в голосовании", role: "роль", scene: "сцена", bio: "био", roles: "роли", photo: "фото", sbp: "ссылка СБП", phone: "телефон", bank: "банк", text: "текст", author: "автор", source: "источник", url: "ссылка", caption: "подпись", alt: "alt", tagline: "слоган", about: "о театре", address: "адрес", instagram: "Instagram", telegram: "Telegram", vk: "VK", email: "почта", ticketsUrl: "ссылка на билеты", heroVideo: "видео шапки", heroPoster: "фото шапки", mapCoords: "координаты", marquee: "бегущая строка", afishaPartnerId: "ID партнёра Афиши", theatre: "название", dates: "даты", heading1: "заголовок 1", heading2: "заголовок 2", lead: "подводка", thanks: "спасибо", thanksNote: "подпись к спасибо" };
+const normV = v => (v === undefined || v === null || v === false || v === "" || (Array.isArray(v) && !v.length) || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length)) ? "" : JSON.stringify(v); // пустое, false и отсутствующее поле считаем одинаковыми
+const FIELD_DEFAULT = { golos: true };
+const same = (a, b, f) => normV(a ?? FIELD_DEFAULT[f]) === normV(b ?? FIELD_DEFAULT[f]);
+function diffData(oldD, newD) {
+  const out = [];
+  for (const [key, [ru, keyOf, labelOf]] of Object.entries(DIFF_KEYS)) {
+    const A = oldD[key] || [], B = newD[key] || [], mapA = new Map(A.map(x => [keyOf(x), x])), mapB = new Map(B.map(x => [keyOf(x), x])), lines = [];
+    for (const [k, x] of mapB) if (!mapA.has(k)) lines.push(`➕ добавлено: «${esc(labelOf(x))}»`);
+    for (const [k, x] of mapA) if (!mapB.has(k)) lines.push(`➖ удалено: «${esc(labelOf(x))}»`);
+    for (const [k, x] of mapB) { const y = mapA.get(k); if (!y) continue; const fields = [...new Set([...Object.keys(x), ...Object.keys(y)])].filter(f => !same(x[f], y[f], f)); if (fields.length) lines.push(`✏️ «${esc(labelOf(x))}»: ${fields.map(f => FIELD_RU[f] || f).join(", ")}`); }
+    if (!lines.length && A.length === B.length && A.some((x, i) => keyOf(x) !== keyOf(B[i]))) lines.push("↕️ изменён порядок");
+    if (lines.length) out.push(`<b>${ru}</b><ul>${lines.map(l => `<li>${l}</li>`).join("")}</ul>`);
+  }
+  for (const sec of ["theatre", "show"]) {
+    const x = newD[sec] || {}, y = oldD[sec] || {}; const fields = [...new Set([...Object.keys(x), ...Object.keys(y)])].filter(f => !same(x[f], y[f], f));
+    if (fields.length) out.push(`<b>${sec === "theatre" ? "О театре и контакты" : "Тексты голосования"}</b><ul><li>✏️ ${fields.map(f => FIELD_RU[f] || f).join(", ")}</li></ul>`);
+  }
+  return out.length ? out.join("") : "Данные не отличаются.";
+}
+$("#historyBody").addEventListener("click", async e => {
+  const b = e.target.closest("[data-diff]"); if (!b) return;
+  const row = b.closest("tr").nextElementSibling, box = row.querySelector(".diff");
+  if (!row.hidden) { row.hidden = true; return; }
+  row.hidden = false; box.textContent = "Сравниваю…";
+  try {
+    const snap = async id => (await api(apiPath("api.php?a=snapshot&id=" + id, "/api/snapshot?id=" + id))).data;
+    const older = await snap(b.dataset.diff);
+    const tr = b.closest("tr"), isTop = tr === tr.closest("table").rows[1];
+    const newer = isTop ? await backend.load() : await snap(tr.previousElementSibling.previousElementSibling.querySelector("[data-diff]").dataset.diff);
+    box.innerHTML = diffData(older, newer);
+  } catch (err) { box.textContent = err.message; }
+});
+/* ---- журнал обновлений сайта (changelog.json в корне) ---- */
+async function loadChangelog() {
+  const box = $("#changelogBody"); if (!box) return;
+  try {
+    const log = await (await fetch("changelog.json?t=" + Date.now())).json();
+    box.innerHTML = log.map(d => `<h3 style="margin:14px 0 6px;font-size:15px">${new Date(d.date).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}</h3><ul style="margin:0;padding-left:18px">${d.items.map(i => `<li style="margin-bottom:4px">${esc(i)}</li>`).join("")}</ul>`).join("");
+  } catch (err) { box.textContent = "Журнал не загрузился: " + err.message; }
+}
+loadChangelog();
 $("#historyBody").addEventListener("click", async e => {
   const b = e.target.closest("[data-restore]"); if (!b) return;
   if (!confirm("Вернуть данные сайта к этой версии? Текущее состояние сохранится в историю.")) return;
@@ -998,7 +1052,7 @@ $("#save").onclick = async () => {
   if (problems.length && !confirm(`Будут пропущены: ${problems.join(", ")}. Продолжить?`)) return;
   $("#save").disabled = true; setStatus("Сохраняю…");
   try {
-    data = normalize(await backend.save(data)); dirty = false; renderAll();
+    data = normalize(await backend.save(data)); dirty = false; loadedAt = Math.floor(Date.now() / 1000); renderAll();
     setStatus(backend.name === "github" ? "Сохранено ✓ GitHub Pages обновит сайт через 1–2 минуты" : "Сохранено ✓ Сайт обновлён", "ok");
   } catch (err) { setStatus(err.message, "err"); }
   $("#save").disabled = false;
@@ -1014,7 +1068,7 @@ window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); 
 function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; d.reviews ||= []; d.gallery ||= []; return d; }
 async function load() {
   if (!(await backend.me())) return showLogin();
-  data = normalize(await backend.load());
+  data = normalize(await backend.load()); loadedAt = Math.floor(Date.now() / 1000);
   showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
   loadVisits(); loadHistory(); loadPush();
 }

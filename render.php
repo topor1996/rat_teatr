@@ -27,16 +27,16 @@ function rat_render(string $file, ?string $playId = null): void {
     $next = null; foreach ($upcoming as $ev) if (($ev['playId'] ?? '') === $play['id']) { $next = $ev; break; }
     $title = $play['title'] . ' — ' . $name;
     $desc = trim(($play['genre'] ? $play['genre'] . '. ' : '') . ($next ? 'Ближайший показ ' . $fmt($next) . '. ' : '') . mb_substr($play['description'] ?? '', 0, 180));
-    $image = !empty($play['poster']) ? $base . $play['poster'] : $base . 'assets/og-cover.png';
+    $image = $base . 'og.php?id=' . rawurlencode($play['id']) . ($next ? '&d=' . $next['date'] : '');
     $url = $base . 'play.html?id=' . rawurlencode($play['id']);
   } else {
     $next = $upcoming[0] ?? null;
     $title = $name;
     $desc = trim(($th['tagline'] ?? '') . ($next ? ' Ближайший показ: ' . (($byId[$next['playId'] ?? ''] ?? null)['title'] ?? 'спектакль') . ', ' . $fmt($next) . '.' : ''));
-    $image = $base . 'assets/og-cover.png';
+    $image = $base . 'og.php' . ($next ? '?d=' . $next['date'] : '');
     $url = $base;
   }
-  $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
+  $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n<meta property=\"og:image:width\" content=\"1200\">\n<meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:type\" content=\"image/png\">\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
   // og:video: Telegram и VK показывают ролик прямо в превью. На странице спектакля — первое видео из медиа, на главной — видео шапки
   $video = null;
   if ($play) { foreach ($play['media'] ?? [] as $m) if (($m['type'] ?? '') === 'video' && empty($m['hidden']) && !empty($m['src'])) { $video = $m['src']; break; } }
@@ -73,6 +73,8 @@ function rat_render(string $file, ?string $playId = null): void {
     }
   }
   $ld = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@graph' => $graph], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
+  // постер спектакля — самый крупный элемент страницы: подсказываем браузеру грузить его сразу
+  if ($play && !empty($play['poster'])) $ld = '<link rel="preload" as="image" href="' . $e($play['poster']) . '" fetchpriority="high">' . "\n" . $ld;
   $html = str_replace('</head>', $ld . "\n</head>", $html);
   header('Content-Type: text/html; charset=utf-8');
   echo $html;

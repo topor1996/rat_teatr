@@ -1,3 +1,8 @@
+/* Rubik Spray Paint latin/cyrillic урезаны до базовых букв (fontTools subset), оригиналы в Google Fonts.
+   запасные шрифты с подогнанными метриками: пока грузятся настоящие, текст занимает почти то же место (меньше CLS) */
+@font-face{font-family:"Oswald Fallback";src:local("Arial Narrow"),local("Roboto Condensed"),local("Arial");size-adjust:86%;ascent-override:118%;descent-override:29%;line-gap-override:0%}
+@font-face{font-family:"Spray Fallback";src:local("Impact"),local("Arial Black"),local("Roboto");size-adjust:112%;ascent-override:95%;descent-override:25%;line-gap-override:0%}
+@font-face{font-family:"PT Mono Fallback";src:local("Menlo"),local("Courier New"),local("Roboto Mono");size-adjust:100%}
 /* cyrillic-ext */
 @font-face {
   font-family: 'Oswald';
@@ -86,7 +91,7 @@
   font-weight: 400;
   font-display: swap;
   src: url(rubik-spray-paint-400-cyrillic.woff2) format('woff2');
-  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  unicode-range: U+0401, U+0410-044F, U+0451, U+2116;
 }
 /* latin-ext */
 @font-face {
@@ -104,5 +109,5 @@
   font-weight: 400;
   font-display: swap;
   src: url(rubik-spray-paint-400-latin.woff2) format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range: U+0020-007E, U+00A0, U+00AB, U+00BB, U+2013-2014, U+2019, U+201C-201D, U+2022, U+2026;
 }

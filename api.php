@@ -96,6 +96,7 @@ function sanitize(array $in): array {
   foreach ($lst('reviews', 100) as $r) {
     if (!is_array($r)) continue;
     $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40), 'hidden' => !empty($r['hidden'])];
+    if (!empty($r['fromSite'])) { $item['fromSite'] = true; $item['id'] = preg_replace('~[^\w-]~', '', (string)($r['id'] ?? '')); $item['date'] = str($r['date'] ?? '', 10); }
     if ($item['text'] !== '') $reviews[] = $item;
   }
   foreach ($lst('gallery', 200) as $g) {
@@ -326,11 +327,42 @@ switch ($a) {
     if ($method !== 'PUT' && $method !== 'POST') fail('PUT only', 405);
     requireAuth();
     $data = sanitize(body());
+    // отзывы с сайта, которые пришли, пока админка была открыта: не даём их затереть (since — момент загрузки админки)
+    $since = (int)($_GET['since'] ?? 0);
+    if ($since > 0) {
+      $have = []; foreach ($data['reviews'] as $r) if (!empty($r['id'])) $have[$r['id']] = true;
+      foreach (readData($DATA_FILE)['reviews'] ?? [] as $r) if (!empty($r['fromSite']) && !empty($r['id']) && empty($have[$r['id']]) && (int)substr($r['id'], 1, 10) > $since) $data['reviews'][] = $r;
+    }
     snapshot($DATA_FILE, $HISTORY_DIR);
     $tmp = $DATA_FILE . '.tmp';
     if (file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) === false) fail('Не удалось записать data/data.json — проверьте права на папку data', 500);
     rename($tmp, $DATA_FILE);
     out(['ok' => true, 'data' => $data]);
+
+  case 'review':
+    // отзыв зрителя с сайта: попадает в черновики, публикует админ. Ловушка для ботов + не больше 5 в день с одного адреса
+    if ($method !== 'POST') fail('POST only', 405);
+    $b = body();
+    if (trim((string)($b['site'] ?? '')) !== '') out(['ok' => true]); // бот заполнил скрытое поле — делаем вид, что приняли
+    $text = str($b['text'] ?? '', 800); $author = str($b['author'] ?? '', 60); $playId = preg_replace('~[^\w-]~', '', (string)($b['playId'] ?? ''));
+    if (mb_strlen($text) < 20) fail('Напишите хотя бы пару предложений');
+    if (preg_match('~https?://|www\.~i', $text)) fail('Ссылки в отзывах не публикуем');
+    $rateFile = $DATA_DIR . '/reviews-rate.json'; $rate = readJson($rateFile, []); $day = date('Y-m-d'); $rate = array_filter($rate, fn($v, $k) => strpos($k, $day) === 0, ARRAY_FILTER_USE_BOTH);
+    $rk = $day . '-' . substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 12);
+    if (($rate[$rk] ?? 0) >= 5) fail('Слишком много отзывов за день, спасибо! Остальное — завтра', 429);
+    $rate[$rk] = ($rate[$rk] ?? 0) + 1; writeJson($rateFile, $rate);
+    $data = readData($DATA_FILE);
+    $data['reviews'][] = ['text' => $text, 'author' => $author, 'source' => 'с сайта', 'url' => '', 'playId' => $playId, 'hidden' => true, 'fromSite' => true, 'id' => 'r' . time() . '-' . bin2hex(random_bytes(2)), 'date' => $day];
+    $tmp = $DATA_FILE . '.tmp'; file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); rename($tmp, $DATA_FILE);
+    out(['ok' => true]);
+
+  case 'snapshot':
+    // содержимое одной версии из истории — для сравнения «что изменилось»
+    requireAuth();
+    $id = preg_replace('~[^0-9-]~', '', (string)($_GET['id'] ?? ''));
+    $f = $HISTORY_DIR . '/' . $id . '.json';
+    if ($id === '' || !is_file($f)) fail('Версия не найдена', 404);
+    out(['ok' => true, 'data' => json_decode((string)file_get_contents($f), true) ?: []]);
 
   case 'history':
     // список сохранённых версий (последние 20)
@@ -360,7 +392,7 @@ switch ($a) {
     foreach ([$DATA_DIR => 'data', $PHOTOS_DIR => 'photos'] as $dir => $name) {
       foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)) as $file) {
         $rel = $name . '/' . substr($file->getPathname(), strlen($dir) + 1);
-        if (in_array(basename($rel), ['password.txt', 'password.json', 'push-keys.json', 'push.json', 'waitlist.json'], true)) continue;
+        if (in_array(basename($rel), ['password.txt', 'password.json', 'push-keys.json', 'push.json', 'waitlist.json', 'reviews-rate.json'], true) || strpos($rel, 'data/og/') === 0) continue;
         $zip->addFile($file->getPathname(), $rel);
       }
     }

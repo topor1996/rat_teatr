@@ -1,7 +1,8 @@
 /* Заставка «старый телевизор»: подключается на всех страницах, разметка — в начале <body>, логика — мини-скрипт под ней */
 /* ---------- заставка: старый телевизор, в экран которого «въезжаем» ---------- */
 html.tv-on{overflow:hidden}
-.tv-intro{position:fixed;inset:0;z-index:100000;background:#050505;display:grid;place-items:center;cursor:pointer;animation:tvOut .5s ease-in 2.55s both}
+.tv-intro{position:fixed;inset:0;z-index:100000;background:rgba(5,5,5,.985);display:grid;place-items:center;cursor:pointer;animation:tvOut .5s ease-in 2.55s both}
+.tv-intro.pre,.tv-intro.pre *,.tv-intro.pre::after{animation-play-state:paused!important} /* пока не загрузилась картинка телевизора */
 @keyframes tvOut{from{opacity:1;visibility:visible}to{opacity:0;visibility:hidden}}
 .tv-intro::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;animation:tvFlash .6s ease-out 2.4s both}
 @keyframes tvFlash{0%{opacity:0}35%{opacity:.9}100%{opacity:0}}
@@ -18,16 +19,16 @@ html.tv-on{overflow:hidden}
 @keyframes tvNoise{0%,16%{opacity:.95}28%,58%{opacity:.14}100%{opacity:.9}}
 .tv-pic{position:absolute;inset:0;display:grid;place-items:center;text-align:center;transform:scale(1,0);animation:tvPic .55s ease-out .5s forwards}
 @keyframes tvPic{0%{transform:scale(1,.004);filter:brightness(6)}45%{transform:scale(1,.012);filter:brightness(4)}62%{transform:scale(1,1);filter:brightness(2.2)}100%{transform:none;filter:none}}
-.tv-pic span{display:block;color:#c9ff3d;font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:46px;line-height:.9;animation:tvFlick 1.6s steps(2) infinite;text-shadow:0 0 12px rgba(201,255,61,.55)}
-.tv-pic small{display:block;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.32em;color:#fff;margin-bottom:8px;text-transform:uppercase;opacity:.85}
+.tv-pic span{display:block;color:#c9ff3d;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:46px;line-height:.9;animation:tvFlick 1.6s steps(2) infinite;text-shadow:0 0 12px rgba(201,255,61,.55)}
+.tv-pic small{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:12px;letter-spacing:.32em;color:#fff;margin-bottom:8px;text-transform:uppercase;opacity:.85}
 .tv-pic .rat{width:34px;height:34px;color:#fff;margin-top:8px}
 @keyframes tvFlick{0%{opacity:1;transform:none}50%{opacity:.86;transform:translateX(1px)}}
 .tv-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px);pointer-events:none}
-.tv-roll{position:absolute;left:0;right:0;height:28px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.2),transparent);animation:tvRoll 1.1s linear infinite;pointer-events:none}
-@keyframes tvRoll{from{top:-30px}to{top:100%}}
+.tv-roll{position:absolute;left:0;right:0;top:0;height:28px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.2),transparent);animation:tvRoll 1.1s linear infinite;pointer-events:none;will-change:transform}
+@keyframes tvRoll{from{transform:translateY(-30px)}to{transform:translateY(240px)}}
 /* стекло: блик слева сверху и затемнение к краям — так экран читается выпуклым */
 .tv-glass{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 60% 45% at 28% 18%,rgba(255,255,255,.16),rgba(255,255,255,.04) 45%,transparent 70%),radial-gradient(ellipse 105% 100% at 50% 50%,transparent 62%,rgba(0,0,0,.6) 100%)}
 @media (max-width:480px){.tv-wrap{transform:scale(.74)}@keyframes tvIn{from{transform:scale(.42) rotate(-4deg);opacity:0}to{transform:scale(.74);opacity:1}}}
-.tv-skip{position:absolute;right:18px;bottom:18px;background:none;border:1px solid #555;color:#999;font:12px "PT Mono",monospace;padding:8px 12px;cursor:pointer}
+.tv-skip{position:absolute;right:18px;bottom:18px;background:none;border:1px solid #555;color:#999;font:12px "PT Mono","PT Mono Fallback",monospace;padding:8px 12px;cursor:pointer}
 @media (prefers-reduced-motion:reduce){.tv-intro{display:none}}
 @keyframes tvGrain{0%{transform:translate(0,0)}33%{transform:translate(-8%,5%)}66%{transform:translate(6%,-9%)}100%{transform:translate(0,0)}}

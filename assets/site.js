@@ -242,10 +242,10 @@ window.RAT = (function () {
 
   /* ---------- труппа: карточки с переворотом ---------- */
   function actorCard(a) {
-    return '<div class="flip rv" tabindex="0" role="button" aria-label="' + esc(a.name) + '"><div class="inner">' +
+    return '<div class="flip rv" tabindex="0" role="button"><div class="inner">' +
       '<div class="face front"><span class="tape"></span><div class="ph">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="' + esc(a.name) + '" loading="lazy">' : '<div class="in">' + esc(initials(a.name)) + "</div>") + "</div>" +
       '<div class="n">' + esc(a.name) + "</div>" + (a.bio ? '<div class="r">' + esc(a.bio) + "</div>" : "") + '<span class="hint">нажми ↻</span></div>' +
-      '<div class="face back"><span class="big">' + esc(initials(a.name)) + '</span><div class="n">' + esc(a.name) + "</div>" +
+      '<div class="face back" data-ini="' + esc(initials(a.name)) + '"><div class="n">' + esc(a.name) + "</div>" +
       (a.roles ? '<div class="roles">' + esc(a.roles) + "</div>" : "") + '<div class="bio">' + esc(a.bio || "") + "</div>" + '<span class="hint">↻</span></div>' +
       "</div></div>";
   }
@@ -556,7 +556,38 @@ window.RAT = (function () {
       b.onclick = function () { if (!deferred) return; deferred.prompt(); deferred.userChoice.then(function () { b.remove(); deferred = null; }); };
     });
   }
-  function fx() { glitch(); spray(); marqLive(); }
+  /* ---------- отзыв с сайта: уходит в черновики админки ---------- */
+  function reviewForm(playId) {
+    return '<form class="revform rv" data-review novalidate><span class="tape"></span><h3>Оставить отзыв</h3>' +
+      '<textarea name="text" maxlength="800" rows="4" placeholder="Что вы почувствовали? Пара предложений, без ссылок" required></textarea>' +
+      '<div class="row"><input name="author" maxlength="60" placeholder="Как вас подписать (необязательно)" autocomplete="name"><input name="site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"></div>' +
+      '<input type="hidden" name="playId" value="' + esc(playId || "") + '">' +
+      '<div class="row"><button class="btn" type="submit">Отправить</button><small>Появится на сайте после проверки театром.</small></div></form>';
+  }
+  function reviewInit() {
+    document.addEventListener("submit", function (ev) {
+      var f = ev.target.closest("[data-review]"); if (!f) return; ev.preventDefault();
+      var text = f.text.value.trim(); if (text.length < 20) { toast("Напишите хотя бы пару предложений", true); f.text.focus(); return; }
+      var btn = f.querySelector("button"); btn.disabled = true;
+      apiJson("review", "review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text, author: f.author.value.trim(), playId: f.playId.value, site: f.site.value }) })
+        .then(function () { f.innerHTML = '<span class="tape"></span><h3>Спасибо!</h3><p>Отзыв получен. Театр прочитает и опубликует.</p>'; toast("Отзыв отправлен"); })
+        .catch(function (err) { toast(err.message || "Не получилось отправить", true); btn.disabled = false; });
+    });
+  }
+  /* ---------- подписка на календарь: живая ссылка, даты обновляются сами ---------- */
+  function calendarLinks() {
+    var ics = siteUrl().replace(/\/$/, "") + "/calendar.ics", webcal = ics.replace(/^https?:/, "webcal:");
+    return '<p class="calsub">📅 <a href="' + esc(webcal) + '">Подписаться на календарь театра</a> <span class="hint">— даты появятся в вашем календаре сами. Google Calendar: «Добавить по URL» → <button type="button" class="copy" data-copy="' + esc(ics) + '">скопировать ссылку</button></span></p>';
+  }
+  function copyInit() {
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-copy]"); if (!b) return;
+      var done = function () { toast("Ссылка скопирована"); };
+      if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(done, function () { prompt("Скопируйте ссылку:", b.dataset.copy); });
+      else prompt("Скопируйте ссылку:", b.dataset.copy);
+    });
+  }
+  function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); }
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
@@ -600,6 +631,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();
