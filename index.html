@@ -22,10 +22,31 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Театр RAT">
-<link href="fonts/fonts.css?v=20260913f" rel="stylesheet">
-<link href="assets/site.css?v=20260913f" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913g" rel="stylesheet">
+<link href="assets/site.css?v=20260913g" rel="stylesheet">
 </head>
 <body>
+
+<!-- заставка: старый телевизор, показывается раз в 6 часов; ?intro в адресе — показать принудительно; клик — пропустить -->
+<div class="tv-intro" id="tvIntro" aria-hidden="true">
+  <div class="tv-wrap"><div class="tv">
+    <i class="tv-ant"></i><i class="tv-ant r"></i>
+    <div class="tv-body">
+      <div class="tv-screen">
+        <div class="tv-noise"></div>
+        <div class="tv-pic"><div><small>канал 3 · в эфире</small><span>Театр<br>RAT</span><svg class="rat" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="41" r="2.5" fill="currentColor"/></svg></div></div>
+        <div class="tv-roll"></div><div class="tv-scan"></div><div class="tv-glass"></div>
+      </div>
+      <div class="tv-side"><i class="knob"></i><i class="knob"></i><i class="grill"></i></div>
+    </div>
+    <div class="tv-legs"></div>
+  </div></div>
+  <button class="tv-skip" type="button">пропустить →</button>
+</div>
+<script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search);
+try{if(!force&&(Date.now()-(+localStorage.getItem("rat_intro")||0)<6*36e5||matchMedia("(prefers-reduced-motion: reduce)").matches)){el.parentNode.removeChild(el);return}localStorage.setItem("rat_intro",Date.now())}catch(e){}
+h.classList.add("tv-on");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
+el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);setTimeout(done,4500)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">
@@ -137,7 +158,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913f"></script>
+<script src="assets/site.js?v=20260913g"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 var FALLBACK = { theatre: { name: "Театр RAT", tagline: "Актёрская шоу-лаборатория." }, plays: [], events: [], actors: [] };

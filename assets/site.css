@@ -348,12 +348,12 @@ html.afisha-open body{position:fixed!important;width:100%!important}
 /* глитч заголовков: два клона заголовка (красный и голубой канал) на долю секунды рвутся полосками */
 h2.sec .gl{position:absolute;left:0;top:0;width:100%;pointer-events:none;opacity:0;white-space:inherit;user-select:none;will-change:transform,clip-path}
 h2.sec .gl em{color:inherit;transform:rotate(-2deg)}
-h2.sec .gl.r{color:#ff3b2f;animation:glR 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
-h2.sec .gl.c{color:#4df0ff;animation:glC 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
-h2.sec .gt{display:inline-block;animation:glB 6.5s steps(1,end) infinite;animation-delay:var(--gd,0s)}
-@keyframes glR{0%,29.9%,32.5%,100%{opacity:0}30%{opacity:.9;transform:translate(-5px,1px);clip-path:inset(8% 0 62% 0)}30.5%{transform:translate(6px,-2px);clip-path:inset(45% 0 30% 0)}31%{transform:translate(-3px,0);clip-path:inset(70% 0 5% 0)}31.6%{transform:translate(4px,2px);clip-path:inset(20% 0 55% 0)}32.1%{transform:translate(-6px,0);clip-path:inset(55% 0 20% 0)}}
-@keyframes glC{0%,29.9%,32.5%,100%{opacity:0}30%{opacity:.9;transform:translate(5px,-1px);clip-path:inset(50% 0 22% 0)}30.5%{transform:translate(-6px,2px);clip-path:inset(10% 0 70% 0)}31%{transform:translate(3px,0);clip-path:inset(30% 0 40% 0)}31.6%{transform:translate(-4px,-2px);clip-path:inset(65% 0 10% 0)}32.1%{transform:translate(6px,0);clip-path:inset(15% 0 60% 0)}}
-@keyframes glB{0%,29.9%,32.5%,100%{transform:none}30%{transform:translate(2px,0)}30.5%{transform:translate(-2px,1px)}31.2%{transform:translate(1px,-1px)}32%{transform:translate(-1px,0)}}
+h2.sec .gl.r{color:#ff3b2f;animation:glR 3s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+h2.sec .gl.c{color:#4df0ff;animation:glC 3s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+h2.sec .gt{display:inline-block;animation:glB 3s steps(1,end) infinite;animation-delay:var(--gd,0s)}
+@keyframes glR{0%,39.9%,48%,100%{opacity:0}40%{opacity:.95;transform:translate(-9px,2px);clip-path:inset(5% 0 60% 0)}41.3%{transform:translate(10px,-3px);clip-path:inset(42% 0 28% 0)}42.6%{transform:translate(-6px,0);clip-path:inset(70% 0 4% 0)}44%{transform:translate(8px,3px);clip-path:inset(18% 0 52% 0)}45.3%{transform:translate(-10px,-1px);clip-path:inset(55% 0 15% 0)}46.6%{transform:translate(5px,0);clip-path:inset(30% 0 45% 0)}}
+@keyframes glC{0%,39.9%,48%,100%{opacity:0}40%{opacity:.95;transform:translate(9px,-2px);clip-path:inset(48% 0 20% 0)}41.3%{transform:translate(-10px,3px);clip-path:inset(8% 0 72% 0)}42.6%{transform:translate(6px,0);clip-path:inset(28% 0 40% 0)}44%{transform:translate(-8px,-3px);clip-path:inset(62% 0 8% 0)}45.3%{transform:translate(10px,1px);clip-path:inset(12% 0 60% 0)}46.6%{transform:translate(-5px,0);clip-path:inset(40% 0 35% 0)}}
+@keyframes glB{0%,39.9%,48%,100%{transform:none;filter:none}40%{transform:translate(3px,0) skewX(-4deg)}41.3%{transform:translate(-3px,1px);filter:brightness(1.6)}42.6%{transform:translate(2px,-1px) skewX(3deg)}44%{transform:translate(-2px,0);filter:contrast(1.5)}45.3%{transform:translate(3px,1px) skewX(-2deg)}46.6%{transform:translate(-1px,0)}}
 
 /* стикеры «шлёпаются» на карточку при появлении, карточка вздрагивает */
 .badge{--rot:-3deg;transform:rotate(var(--rot))}
@@ -427,11 +427,49 @@ h2.sec .gt{display:inline-block;animation:glB 6.5s steps(1,end) infinite;animati
   .marq-rat.dash{animation:none}
 }
 
-/* переход между страницами: старая темнеет, новая опускается чёрной шторкой с рваным краем (View Transitions, где поддерживается) */
+/* переход между страницами: старая страница «выключается» как кинескоп — схлопывается в яркую полосу, затем сверху опускается новая с рваным краем (View Transitions, где поддерживается) */
 @property --ty{syntax:"<percentage>";inherits:false;initial-value:-12%}
 @view-transition{navigation:auto}
-::view-transition-old(root){animation:vtOut .32s ease-in both}
-::view-transition-new(root){animation:vtIn .42s cubic-bezier(.7,0,.3,1) both;--ty:-12%;clip-path:polygon(0 0,100% 0,100% calc(var(--ty) - 6%),94% calc(var(--ty) + 2%),88% calc(var(--ty) - 3%),81% calc(var(--ty) + 4%),74% calc(var(--ty) - 1%),66% calc(var(--ty) + 5%),58% calc(var(--ty) - 4%),50% calc(var(--ty) + 1%),42% calc(var(--ty) - 5%),34% calc(var(--ty) + 3%),26% calc(var(--ty) - 2%),18% calc(var(--ty) + 5%),10% calc(var(--ty) - 4%),4% calc(var(--ty) + 2%),0 calc(var(--ty) - 6%))}
-@keyframes vtOut{to{filter:brightness(.1)}}
-@keyframes vtIn{from{--ty:-12%}to{--ty:118%}}
+::view-transition{background:#050505}
+::view-transition-old(root){animation:vtOff .5s cubic-bezier(.7,0,.9,.5) both;transform-origin:50% 50%;mix-blend-mode:normal}
+@keyframes vtOff{0%{transform:none;filter:none;opacity:1}55%{transform:scaleY(.012) scaleX(1.06);filter:brightness(3.5) saturate(2);opacity:1}80%{transform:scaleY(.006) scaleX(.5);filter:brightness(8);opacity:1}100%{transform:scaleY(.004) scaleX(.02);filter:brightness(10);opacity:0}}
+::view-transition-new(root){animation:vtIn .6s cubic-bezier(.75,0,.25,1) .38s both;--ty:-12%;clip-path:polygon(0 0,100% 0,100% calc(var(--ty) - 6%),94% calc(var(--ty) + 2%),88% calc(var(--ty) - 3%),81% calc(var(--ty) + 4%),74% calc(var(--ty) - 1%),66% calc(var(--ty) + 5%),58% calc(var(--ty) - 4%),50% calc(var(--ty) + 1%),42% calc(var(--ty) - 5%),34% calc(var(--ty) + 3%),26% calc(var(--ty) - 2%),18% calc(var(--ty) + 5%),10% calc(var(--ty) - 4%),4% calc(var(--ty) + 2%),0 calc(var(--ty) - 6%))}
+@keyframes vtIn{0%{--ty:-12%;filter:brightness(2.4) contrast(1.3)}40%{filter:brightness(1.3)}100%{--ty:118%;filter:none}}
 @media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+
+/* ---------- заставка: старый телевизор, в экран которого «въезжаем» ---------- */
+html.tv-on{overflow:hidden}
+.tv-intro{position:fixed;inset:0;z-index:100000;background:#050505;display:grid;place-items:center;cursor:pointer;animation:tvOut .5s ease-in 2.55s both}
+@keyframes tvOut{from{opacity:1;visibility:visible}to{opacity:0;visibility:hidden}}
+.tv-intro::after{content:"";position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;animation:tvFlash .6s ease-out 2.4s both}
+@keyframes tvFlash{0%{opacity:0}35%{opacity:.9}100%{opacity:0}}
+.tv-wrap{animation:tvIn .5s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes tvIn{from{transform:scale(.6) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:480px){.tv-wrap{transform:scale(.78)}@keyframes tvIn{from{transform:scale(.45) rotate(-4deg);opacity:0}to{transform:scale(.78);opacity:1}}}
+.tv{position:relative;width:340px;height:260px;transform-origin:140px 118px;animation:tvZoom 1.15s cubic-bezier(.75,0,.95,.35) 1.45s forwards}
+@keyframes tvZoom{to{transform:scale(18)}}
+.tv-body{position:absolute;inset:0;background:linear-gradient(180deg,#6b3f22,#3d2213);border-radius:22px;box-shadow:0 30px 60px rgba(0,0,0,.7),inset 0 2px 0 rgba(255,255,255,.15)}
+.tv-screen{position:absolute;left:22px;top:22px;width:236px;height:192px;background:#0b0b0b;border-radius:26px/30px;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,.9),0 0 0 8px #171717,0 0 0 10px #2a2a2a}
+.tv-noise{position:absolute;inset:-100% 0 0 -100%;width:300%;height:300%;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");animation:grain .25s steps(4) infinite,tvNoise 2.7s linear both}
+@keyframes tvNoise{0%,16%{opacity:.95}28%,58%{opacity:.14}100%{opacity:.9}}
+.tv-pic{position:absolute;inset:0;display:grid;place-items:center;text-align:center;transform:scale(1,0);animation:tvPic .55s ease-out .5s forwards}
+@keyframes tvPic{0%{transform:scale(1,.004);filter:brightness(6)}45%{transform:scale(1,.012);filter:brightness(4)}62%{transform:scale(1,1);filter:brightness(2.2)}100%{transform:none;filter:none}}
+.tv-pic span{display:block;color:var(--acid);font-family:"Rubik Spray Paint",Impact,sans-serif;font-size:46px;line-height:.9;animation:tvFlick 1.6s steps(2) infinite}
+.tv-pic small{display:block;font-family:"Oswald",sans-serif;font-size:13px;letter-spacing:.32em;color:#fff;margin-bottom:8px;text-transform:uppercase}
+.tv-pic .rat{width:36px;height:36px;color:#fff;margin-top:8px}
+@keyframes tvFlick{0%{opacity:1;transform:none}50%{opacity:.86;transform:translateX(1px)}}
+.tv-scan{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.38) 0 2px,transparent 2px 4px);pointer-events:none}
+.tv-roll{position:absolute;left:0;right:0;height:28px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.2),transparent);animation:tvRoll 1.1s linear infinite;pointer-events:none}
+@keyframes tvRoll{from{top:-30px}to{top:100%}}
+.tv-glass{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.14),transparent 55%);pointer-events:none}
+.tv-side{position:absolute;right:18px;top:30px;width:44px;display:grid;gap:14px;justify-items:center}
+.tv-side .knob{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#8a8a8a,#1e1e1e);box-shadow:0 2px 4px rgba(0,0,0,.6)}
+.tv-side .knob::after{content:"";display:block;width:3px;height:12px;background:#ddd;margin:3px auto 0}
+.tv-side .grill{width:36px;height:74px;background:repeating-linear-gradient(0deg,#2b1a10 0 3px,#4a2d1b 3px 6px);border-radius:4px}
+.tv-legs::before,.tv-legs::after{content:"";position:absolute;bottom:-26px;width:16px;height:30px;background:#2a170d;transform:skewX(-14deg)}
+.tv-legs::before{left:40px} .tv-legs::after{right:40px;transform:skewX(14deg)}
+.tv-ant{position:absolute;top:-62px;left:50%;width:4px;height:70px;background:linear-gradient(180deg,#ccc,#777);transform-origin:bottom;transform:rotate(-28deg)}
+.tv-ant.r{transform:rotate(24deg)}
+.tv-ant::before{content:"";position:absolute;top:-6px;left:-3px;width:10px;height:10px;border-radius:50%;background:#ddd}
+.tv-skip{position:absolute;right:18px;bottom:18px;background:none;border:1px solid #555;color:#999;font:12px "PT Mono",monospace;padding:8px 12px;cursor:pointer}
+@media (prefers-reduced-motion:reduce){.tv-intro{display:none}}
