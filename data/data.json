@@ -11,7 +11,8 @@
     "email": "rat_theater@mail.ru",
     "phone": "",
     "ticketsUrl": "https://www.teatrdoc.ru/performances/",
-    "mapCoords": "55.7820, 37.5935"
+    "mapCoords": "55.7820, 37.5935",
+    "afishaPartnerId": "37"
   },
   "plays": [
     {
@@ -22,7 +23,8 @@
       "poster": "",
       "duration": "1 час 30 минут",
       "age": "18+",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/",
+      "afishaShowId": "179397"
     },
     {
       "id": "poh",
@@ -32,7 +34,8 @@
       "poster": "",
       "duration": "1 час 10 минут",
       "age": "18+",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/",
+      "afishaShowId": ""
     }
   ],
   "events": [
@@ -42,7 +45,8 @@
       "playId": "dead-wave",
       "venue": "ДОК на Лесной (Верхний зал)",
       "price": "от 1500 ₽",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1",
+      "afishaSessionId": "1367614"
     },
     {
       "date": "2026-09-25",
@@ -50,7 +54,8 @@
       "playId": "dead-wave",
       "venue": "ДОК на Лесной (Верхний зал)",
       "price": "от 1500 ₽",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1",
+      "afishaSessionId": "1367745"
     },
     {
       "date": "2026-10-09",
@@ -58,7 +63,8 @@
       "playId": "dead-wave",
       "venue": "ДОК на Лесной (Верхний зал)",
       "price": "от 1500 ₽",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1",
+      "afishaSessionId": "1392185"
     },
     {
       "date": "2026-10-21",
@@ -66,7 +72,8 @@
       "playId": "dead-wave",
       "venue": "ДОК на Лесной (Верхний зал)",
       "price": "от 1500 ₽",
-      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1"
+      "ticketUrl": "https://www.teatrdoc.ru/performances/?afisha_open_widget=1",
+      "afishaSessionId": "1392198"
     }
   ],
   "show": {

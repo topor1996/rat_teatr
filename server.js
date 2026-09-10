@@ -51,18 +51,18 @@ function sanitize(input) {
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
     title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
-    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl),
+    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
-    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
+    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
   const reviews = arr(input.reviews).slice(0, 100).map(r => ({ text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
   const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), playId: str(g.playId, 40) })).filter(g => g.photo);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
                instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),
-               heroVideo: media(th.heroVideo), heroPoster: img(th.heroPoster), mapCoords: str(th.mapCoords, 40), marquee: str(th.marquee, 300) },
+               heroVideo: media(th.heroVideo), heroPoster: img(th.heroPoster), mapCoords: str(th.mapCoords, 40), marquee: str(th.marquee, 300), afishaPartnerId: str(th.afishaPartnerId, 20).replace(/\D/g, "") },
     plays, events, reviews, gallery,
     show: { theatre: str(show.theatre, 100), title: str(show.title, 100), dates: str(show.dates, 100), heading1: str(show.heading1, 40), heading2: str(show.heading2, 40), lead: str(show.lead, 400), marquee: str(show.marquee, 300), thanks: str(show.thanks, 80), thanksNote: str(show.thanksNote, 200) },
     actors,

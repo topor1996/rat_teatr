@@ -17,8 +17,8 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260911" rel="stylesheet">
-<link href="assets/site.css?v=20260911" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260911b" rel="stylesheet">
+<link href="assets/site.css?v=20260911b" rel="stylesheet">
 </head>
 <body>
 
@@ -131,7 +131,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260911"></script>
+<script src="assets/site.js?v=20260911b"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 var FALLBACK = { theatre: { name: "Театр RAT", tagline: "Актёрская шоу-лаборатория." }, plays: [], events: [], actors: [] };
@@ -155,9 +155,9 @@ function render(d) {
     document.getElementById("next").hidden = false;
     document.getElementById("nextWhat").textContent = p ? p.title : (next.note || "Спектакль");
     document.getElementById("nextWhen").textContent = R.fmtLong(next) + " · " + (next.venue || th.venue || "");
-    var b = document.getElementById("nextBtn"), u = R.ticket(next, p, th);
+    var b = document.getElementById("nextBtn");
     if (R.hasBadge(next, "soldout")) { b.textContent = "Билетов нет"; b.href = "#afisha"; b.removeAttribute("target"); }
-    else { b.href = u || "#afisha"; if (!u) { b.textContent = "Смотреть афишу"; b.removeAttribute("target"); } }
+    else if (!R.applyBuy(b, next, p, th)) { b.textContent = "Смотреть афишу"; b.href = "#afisha"; b.removeAttribute("target"); }
   }
 
   /* афиша */
@@ -171,7 +171,7 @@ function render(d) {
       '<div class="body"><h3 class="title"><a href="' + href + '">' + esc(p.title) + "</a></h3>" + (p.genre ? '<span class="genre">' + esc(p.genre) + "</span>" : "") +
       '<p class="desc">' + esc(p.description) + "</p>" +
       '<div class="meta">' + (p.duration ? "<b>" + esc(p.duration) + "</b>" : "") + (nextOf ? " · ближайший показ <b>" + R.fmtLong(nextOf) + "</b>" : " · дат пока нет") + "</div>" +
-      '<div class="row">' + (u && !R.hasBadge(nextOf || {}, "soldout") ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener">Купить билет</a>' : "") + '<a class="btn ghost" href="' + href + '">Подробнее</a></div>' +
+      '<div class="row">' + (!R.hasBadge(nextOf || {}, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет") : "") + '<a class="btn ghost" href="' + href + '">Подробнее</a></div>' +
       "</div></div></article>";
   }).join("") : '<div class="empty">Спектакли появятся здесь.</div>';
 

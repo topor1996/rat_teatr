@@ -30,6 +30,7 @@ window.RAT = (function () {
     }, Promise.resolve(null)).then(function (d) {
       if (!d) { d = fallback || {}; var g = document.getElementById("diag"); if (g) g.textContent = "Данные не загрузились, показана заглушка. Обновите страницу.\n" + log.join("\n"); }
       d.theatre = d.theatre || {}; d.plays = d.plays || []; d.events = d.events || []; d.actors = d.actors || []; d.reviews = d.reviews || []; d.gallery = d.gallery || [];
+      afishaInit(d.theatre);
       return d;
     });
   }
@@ -37,6 +38,56 @@ window.RAT = (function () {
   var upcoming = function (d) { var t = todayStr(); return d.events.filter(function (e) { return e.date >= t; }).sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); }); };
   var ticket = function (e, p, th) { return (e && e.ticketUrl) || (p && p.ticketUrl) || (th && th.ticketsUrl) || ""; };
   var hasBadge = function (e, b) { return Array.isArray(e.badges) && e.badges.indexOf(b) >= 0; };
+
+  /* ---------- виджет билетов «Афиши» (tickets.afisha.ru), как на teatrdoc.ru ----------
+     Партнёрский ID театра-площадки задаётся в админке; у показа — ID сеанса, у спектакля — ID спектакля.
+     Кнопка открывает окно виджета прямо на сайте; если виджет не загрузился — переход по обычной ссылке. */
+  var afisha = { partner: "", widget: null, loading: null };
+  function afishaAttrs(e, p, th) {
+    if (!(th && th.afishaPartnerId)) return "";
+    if (e && e.afishaSessionId) return ' data-afisha-session="' + esc(e.afishaSessionId) + '"';
+    if (p && p.afishaShowId) return ' data-afisha-show="' + esc(p.afishaShowId) + '"';
+    return "";
+  }
+  function buyBtn(e, p, th, label, cls) {
+    var u = ticket(e, p, th), a = afishaAttrs(e, p, th);
+    if (!u && !a) return "";
+    return '<a class="btn ' + (cls || "") + '" href="' + (u ? esc(u) : "#") + '"' + (a ? a : ' target="_blank" rel="noopener"') + a + ">" + label + "</a>";
+  }
+  function applyBuy(el, e, p, th) {
+    var u = ticket(e, p, th), sess = e && e.afishaSessionId, show = p && p.afishaShowId;
+    el.href = u || "#";
+    if (th && th.afishaPartnerId && (sess || show)) { if (sess) el.setAttribute("data-afisha-session", sess); else el.setAttribute("data-afisha-show", show); el.removeAttribute("target"); return true; }
+    if (u) { el.target = "_blank"; el.rel = "noopener"; }
+    return !!u;
+  }
+  function afishaLoad() {
+    if (afisha.widget) return Promise.resolve(afisha.widget);
+    if (afisha.loading) return afisha.loading;
+    afisha.loading = new Promise(function (res, rej) {
+      var sc = document.createElement("script");
+      sc.src = "https://tickets.afisha.ru/wl/embed/widget.js?" + Date.now(); sc.async = true;
+      sc.onload = function () { try { afisha.widget = new AfishaWidget(afisha.partner, "events"); res(afisha.widget); } catch (err) { rej(err); } };
+      sc.onerror = function () { rej(new Error("widget load failed")); };
+      document.head.appendChild(sc);
+    });
+    return afisha.loading;
+  }
+  function afishaInit(th) {
+    afisha.partner = (th && th.afishaPartnerId) || "";
+    if (!afisha.partner) return;
+    var idle = window.requestIdleCallback || function (f) { setTimeout(f, 2500); };
+    idle(function () { afishaLoad().catch(function () {}); });
+  }
+  document.addEventListener("click", function (ev) {
+    var a = ev.target.closest && ev.target.closest("[data-afisha-session],[data-afisha-show]");
+    if (!a || !afisha.partner) return;
+    ev.preventDefault();
+    var sess = a.getAttribute("data-afisha-session"), show = a.getAttribute("data-afisha-show"), href = a.getAttribute("href");
+    var label = a.textContent; a.textContent = "Открываем…";
+    afishaLoad().then(function (w) { a.textContent = label; w.openModal(sess ? Number(sess) : { shows_id: Number(show) }); })
+      .catch(function () { a.textContent = label; if (href && href !== "#") window.open(href, "_blank", "noopener"); });
+  });
 
   /* ---------- бегущая лента ---------- */
   function marquee(items) {
@@ -74,7 +125,7 @@ window.RAT = (function () {
       '<div><h3 class="t">' + titleHtml + "</h3>" +
       '<div class="m"><b>' + esc(e.venue || th.venue || "") + "</b>" + (p && p.duration ? " · " + esc(p.duration) : "") + (p && p.age ? " · " + esc(p.age) : "") + (e.note && p ? " · " + esc(e.note) : "") + "</div>" +
       (e.price ? '<div class="p">' + esc(e.price) + "</div>" : "") + "</div>" +
-      '<div class="buy">' + (sold ? '<span class="btn disabled">Билетов нет</span>' : u ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener">Купить билет</a>' : '<span class="btn disabled">Скоро в продаже</span>') +
+      '<div class="buy">' + (sold ? '<span class="btn disabled">Билетов нет</span>' : (buyBtn(e, p, th, "Купить билет") || '<span class="btn disabled">Скоро в продаже</span>')) +
       '<a class="cal" href="' + icsHref(e, p, th) + '" download="' + esc((p ? p.title : "show") + "-" + e.date) + '.ics">+ в календарь</a></div></div>';
   }
 
@@ -95,7 +146,7 @@ window.RAT = (function () {
       box.innerHTML = '<div class="wrap"><span class="lbl">' + (live ? "Спектакль идёт" : "Сегодня играем") + '</span>' +
         '<span class="txt"><b>' + esc(name) + "</b> · " + esc(ev.time || "") + " · " + esc(ev.venue || d.theatre.venue || "") + (when ? " · " + when : "") + "</span>" +
         (live ? '<a class="btn" href="' + (golosHref || "golos") + '">Голосуй рублём</a>'
-              : (hasBadge(ev, "soldout") ? '<span class="btn disabled">Билетов нет</span>' : '<a class="btn" href="' + esc(ticket(ev, p, d.theatre) || "#afisha") + '" target="_blank" rel="noopener">Билеты</a>')) + "</div>";
+              : (hasBadge(ev, "soldout") ? '<span class="btn disabled">Билетов нет</span>' : (buyBtn(ev, p, d.theatre, "Билеты") || '<a class="btn" href="#afisha">Билеты</a>'))) + "</div>";
       box.hidden = false;
     };
     tick(); setInterval(tick, 60e3);
@@ -179,5 +230,5 @@ window.RAT = (function () {
   }
 
   return { esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
-    marquee: marquee, eventRow: eventRow, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
+    marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260911" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260911b" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -155,6 +155,7 @@
         <div class="row">
           <div><label>Название</label><input data-th="name"></div>
           <div><label>Общая ссылка на билеты</label><input data-th="ticketsUrl" placeholder="https://www.teatrdoc.ru/performances/"></div>
+          <div><label>ID партнёра в Афише (tickets.afisha.ru)</label><input data-th="afishaPartnerId" placeholder="37"><p class="hint">У Театра.doc — 37. Если пусто, кнопки «Купить билет» просто ведут по ссылкам. Как найти ID: на teatrdoc.ru правой кнопкой → «Посмотреть код», Ctrl+F «openModal».</p></div>
         </div>
         <label>Слоган (под заголовком на главной)</label><input data-th="tagline">
         <label>О театре</label><textarea data-th="about" style="min-height:120px"></textarea>
@@ -322,7 +323,7 @@ async function detectBackend() {
 const SECTIONS = {
   events: {
     img: null, label: e => (playTitle(e.playId) || "Показ") + (e.date ? " · " + e.date : ""),
-    blank: () => ({ date: "", time: "20:00", playId: data.plays[0]?.id || "", venue: data.theatre.venue || "", price: "", ticketUrl: "", note: "" }),
+    blank: () => ({ date: "", time: "20:00", playId: data.plays[0]?.id || "", venue: data.theatre.venue || "", price: "", ticketUrl: "", afishaSessionId: "", note: "" }),
     form: e => `
       <div class="row3">
         <div><label>Дата</label><input type="date" data-f="date" value="${esc(e.date)}"></div>
@@ -333,14 +334,17 @@ const SECTIONS = {
         <div><label>Площадка</label><input data-f="venue" value="${esc(e.venue)}"></div>
         <div><label>Цена</label><input data-f="price" value="${esc(e.price)}" placeholder="от 1500 ₽"></div>
       </div>
-      <label>Ссылка на билеты для этого показа</label><input data-f="ticketUrl" value="${esc(e.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">
+      <div class="row">
+        <div><label>Ссылка на билеты для этого показа</label><input data-f="ticketUrl" value="${esc(e.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
+        <div><label>ID сеанса в Афише (виджет)</label><input data-f="afishaSessionId" value="${esc(e.afishaSessionId || "")}" placeholder="1367614"><p class="hint">Число из кода teatrdoc.ru: openModal(1367614). Если пусто — откроется окно спектакля со всеми датами.</p></div>
+      </div>
       <label>Пометка (название события, если «другое»)</label><input data-f="note" value="${esc(e.note || "")}">
       <label>Стикеры на афише</label>
       <div class="checks">${Object.entries(BADGES).map(([k, v]) => `<label class="chk"><input type="checkbox" data-badge="${k}" ${(e.badges || []).includes(k) ? "checked" : ""}> ${v}</label>`).join("")}</div>`,
   },
   plays: {
     img: "poster", label: p => p.title || "Новый спектакль",
-    blank: () => ({ id: "play-" + Date.now().toString(36), title: "", genre: "", description: "", poster: "", duration: "", age: "18+", ticketUrl: "" }),
+    blank: () => ({ id: "play-" + Date.now().toString(36), title: "", genre: "", description: "", poster: "", duration: "", age: "18+", ticketUrl: "", afishaShowId: "" }),
     form: p => `
       <div class="row">
         <div><label>Название</label><input data-f="title" value="${esc(p.title)}"></div>
@@ -353,7 +357,10 @@ const SECTIONS = {
         <div><label>Идентификатор</label><input data-f="id" value="${esc(p.id)}"></div>
       </div>
       <label>Кто играет (строкой, для страницы спектакля)</label><input data-f="cast" value="${esc(p.cast || "")}" placeholder="Иван Петров, Мария Соколова, ...">
-      <label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/...">`,
+      <div class="row">
+        <div><label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
+        <div><label>ID спектакля в Афише (виджет)</label><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="179397"><p class="hint">Число из кода teatrdoc.ru: openModal({shows_id: 179397}). Открывает окно с датами и оплатой прямо на сайте.</p></div>
+      </div>`,
   },
   actors: {
     img: "photo", label: a => a.name || "Новый актёр",
