@@ -27,7 +27,7 @@
 </head>
 <body>
 
-<!-- заставка: старый телевизор, показывается раз в 6 часов; ?intro в адресе — показать принудительно; клик — пропустить -->
+<!-- заставка: старый телевизор, показывается при каждом открытии главной; клик — пропустить -->
 <div class="tv-intro" id="tvIntro" aria-hidden="true">
   <div class="tv-wrap"><div class="tv">
     <i class="tv-ant"></i><i class="tv-ant r"></i>
@@ -44,7 +44,7 @@
   <button class="tv-skip" type="button">пропустить →</button>
 </div>
 <script>(function(){var el=document.getElementById("tvIntro"),h=document.documentElement,force=/[?&]intro/.test(location.search);
-try{if(!force&&(Date.now()-(+localStorage.getItem("rat_intro")||0)<6*36e5||matchMedia("(prefers-reduced-motion: reduce)").matches)){el.parentNode.removeChild(el);return}localStorage.setItem("rat_intro",Date.now())}catch(e){}
+try{if(!force&&matchMedia("(prefers-reduced-motion: reduce)").matches){el.parentNode.removeChild(el);return}}catch(e){}
 h.classList.add("tv-on");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
 el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);setTimeout(done,4500)})();</script>
 
