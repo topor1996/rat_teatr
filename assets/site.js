@@ -272,6 +272,27 @@ window.RAT = (function () {
       box.querySelector(".vbar").addEventListener("click", function (e) { var r = e.currentTarget.getBoundingClientRect(); if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration; });
     });
   }
+  /* ---------- слайдер фото и видео спектакля ---------- */
+  function mediaSlider(list) {
+    var slides = (list || []).map(function (m, i) {
+      if (m.type === "video") return '<div class="slide video"><video controls playsinline preload="metadata" src="' + esc(m.src) + '"></video>' + (m.caption ? '<div class="scap">' + esc(m.caption) + "</div>" : "") + "</div>";
+      return '<div class="slide shot" data-src="' + esc(m.src) + '" data-cap="' + esc(m.caption || "") + '"><img src="' + esc(m.src) + '" alt="' + esc(m.alt || m.caption || "") + '" loading="' + (i < 2 ? "eager" : "lazy") + '">' + (m.caption ? '<div class="scap">' + esc(m.caption) + "</div>" : "") + "</div>";
+    }).join("");
+    return '<div class="slider"><button class="snav prev" type="button" aria-label="Назад">‹</button><div class="strip">' + slides + '</div><button class="snav next" type="button" aria-label="Вперёд">›</button><div class="sdots"></div></div>';
+  }
+  function sliders(root) {
+    [].slice.call((root || document).querySelectorAll(".slider")).forEach(function (sl) {
+      var strip = sl.querySelector(".strip"), items = strip.children, dots = sl.querySelector(".sdots"), n = items.length;
+      if (n < 2) { sl.querySelector(".prev").hidden = sl.querySelector(".next").hidden = true; }
+      dots.innerHTML = Array.prototype.map.call(items, function (_, i) { return '<i' + (i ? "" : ' class="on"') + "></i>"; }).join("");
+      var cur = function () { return Math.round(strip.scrollLeft / Math.max(1, items[0].offsetWidth + 14)); };
+      var go = function (i) { i = Math.max(0, Math.min(n - 1, i)); strip.scrollTo({ left: i * (items[0].offsetWidth + 14), behavior: "smooth" }); };
+      sl.querySelector(".prev").addEventListener("click", function () { go(cur() - 1); });
+      sl.querySelector(".next").addEventListener("click", function () { go(cur() + 1); });
+      strip.addEventListener("scroll", function () { var c = cur(); Array.prototype.forEach.call(dots.children, function (d, i) { d.className = i === c ? "on" : ""; }); [].forEach.call(strip.querySelectorAll("video"), function (v) { if (!v.paused && Array.prototype.indexOf.call(items, v.parentNode) !== c) v.pause(); }); }, { passive: true });
+      dots.addEventListener("click", function (e) { var i = Array.prototype.indexOf.call(dots.children, e.target); if (i >= 0) go(i); });
+    });
+  }
   function lightbox() {
     var lb = document.getElementById("lightbox"); if (!lb) return;
     document.addEventListener("click", function (e) {
@@ -312,6 +333,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

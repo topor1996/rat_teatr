@@ -17,8 +17,8 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260912c" rel="stylesheet">
-<link href="assets/site.css?v=20260912c" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913a" rel="stylesheet">
+<link href="assets/site.css?v=20260913a" rel="stylesheet">
 </head>
 <body>
 
@@ -69,6 +69,11 @@
     <div class="afisha" id="datesList"></div>
   </section>
 
+  <section id="media" hidden>
+    <h2 class="sec">Фото и <em>видео</em><span class="stamp-deco">со сцены</span></h2>
+    <div id="mediaBox"></div>
+  </section>
+
   <section id="voices" hidden>
     <h2 class="sec">Голо<em>са</em><span class="stamp-deco">слушай</span></h2>
     <p class="sec-sub">Актёры о спектакле, своими словами. Минута, не больше.</p>
@@ -108,7 +113,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260912c"></script>
+<script src="assets/site.js?v=20260913a"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
@@ -140,6 +145,7 @@ function render(d) {
   document.getElementById("datesList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, p, th, { link: false }); }).join("") : '<div class="empty">Ближайших дат пока нет. Следите в соцсетях.</div>';
 
   var revs = d.reviews.filter(function (r) { return !r.playId || r.playId === p.id; });
+  if (p.media && p.media.length) { document.getElementById("media").hidden = false; document.getElementById("mediaBox").innerHTML = R.mediaSlider(p.media); R.sliders(document.getElementById("mediaBox")); }
   if (p.voices && p.voices.length) { document.getElementById("voices").hidden = false; document.getElementById("voicesList").innerHTML = R.voicesHtml(p.voices); R.voicePlayers(document.getElementById("voicesList")); }
   if (revs.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join(""); }
   var shots = d.gallery.filter(function (x) { return x.playId === p.id; });

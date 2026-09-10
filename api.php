@@ -40,6 +40,17 @@ function readData(string $file): array {
 function str($v, int $max = 500): string { return mb_substr(trim((string)($v ?? '')), 0, $max); }
 function url($v): string { $v = str($v, 500); return preg_match('~^https?://\S+$~', $v) ? $v : ''; }
 function img($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
+function playMedia($v): array {
+  $out = [];
+  foreach (array_slice(is_array($v) ? $v : [], 0, 40) as $x) {
+    if (!is_array($x)) continue;
+    $src = media($x['src'] ?? '');
+    if ($src === '') continue;
+    $type = preg_match('~\.(mp4|webm|mov)$~i', $src) ? 'video' : 'photo';
+    $out[] = ['type' => $type, 'src' => $src, 'caption' => str($x['caption'] ?? '', 140), 'alt' => str($x['alt'] ?? '', 200)];
+  }
+  return $out;
+}
 function voices($v): array {
   $out = [];
   foreach (array_slice(is_array($v) ? $v : [], 0, 10) as $x) {
@@ -65,7 +76,7 @@ function sanitize(array $in): array {
     if (!is_array($p)) continue;
     $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
     $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 3000),
-             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null)];
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null), 'media' => playMedia($p['media'] ?? null)];
     if ($item['title'] !== '') $plays[] = $item;
   }
   $BADGES = ['premiere', 'last', 'few', 'soldout'];
@@ -288,6 +299,33 @@ switch ($a) {
     $res = ['ok' => true, 'updated' => time(), 'sessions' => $sessions];
     @file_put_contents($cacheFile, json_encode($res, JSON_UNESCAPED_UNICODE));
     out($res);
+
+  case 'afisha_shows':
+    // все спектакли партнёра в Афише: id, название, постер — чтобы ID подставлялся по названию
+    requireAuth();
+    $data = readData($DATA_FILE);
+    $partner = preg_replace('~\D~', '', (string)($data['theatre']['afishaPartnerId'] ?? '')) ?: '37';
+    $j = http_get("https://tickets.afisha.ru/wl/{$partner}/api/shows?lang=ru");
+    $d = $j ? json_decode($j, true) : null;
+    if (!is_array($d) || !isset($d['shows'])) fail('Афиша не ответила', 502);
+    $shows = [];
+    foreach ($d['shows'] as $s) if (!empty($s['id'])) $shows[] = ['id' => (string)$s['id'], 'name' => (string)($s['name'] ?? ''), 'image' => (string)($s['image'] ?? ''), 'age' => (int)($s['age_limit'] ?? 0)];
+    out(['ok' => true, 'shows' => $shows]);
+
+  case 'afisha_poster':
+    // скачать постер спектакля из Афиши в photos/
+    requireAuth();
+    $u = url($_GET['url'] ?? '');
+    if ($u === '' || !preg_match('~^https://(store\.rambler\.ru|[a-z0-9.-]*afisha\.ru)/~', $u)) fail('Недопустимый адрес картинки');
+    $bin = http_get($u, 30);
+    if (!$bin) fail('Не удалось скачать постер');
+    $tmp = tempnam(sys_get_temp_dir(), 'poster'); file_put_contents($tmp, $bin);
+    $info = @getimagesize($tmp);
+    $ext = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'][$info['mime'] ?? ''] ?? null;
+    if (!$ext) { @unlink($tmp); fail('Постер не картинка'); }
+    $name = time() . '-' . bin2hex(random_bytes(3)) . $ext;
+    rename($tmp, $PHOTOS_DIR . '/' . $name);
+    out(['ok' => true, 'photo' => 'photos/' . $name]);
 
   case 'afisha_import':
     // даты спектакля из Афиши: q — ID спектакля в Афише или ссылка на страницу спектакля на teatrdoc.ru

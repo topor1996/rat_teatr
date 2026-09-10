@@ -54,7 +54,7 @@ function sanitize(input) {
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
     title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
-    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio),
+    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio), media: arr(p.media).slice(0, 40).map(x => ({ src: media(x.src), caption: str(x.caption, 140), alt: str(x.alt, 200) })).filter(x => x.src).map(x => ({ type: /\.(mp4|webm|mov)$/i.test(x.src) ? "video" : "photo", ...x })),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
@@ -219,6 +219,18 @@ app.get("/api/afisha_status", async (req, res) => {
   if (!ok) return res.json(cache || { ok: false, updated: 0, sessions: {} });
   const out = { ok: true, updated: Math.floor(Date.now() / 1000), sessions }; try { fs.writeFileSync(STATUS_FILE, JSON.stringify(out)); } catch {}
   res.json(out);
+});
+app.get("/api/afisha_shows", requireAuth, async (req, res) => {
+  try { const partner = str(readData().theatre?.afishaPartnerId, 20).replace(/\D/g, "") || "37"; const j = JSON.parse(await httpGet(`https://tickets.afisha.ru/wl/${partner}/api/shows?lang=ru`));
+    res.json({ ok: true, shows: (j.shows || []).filter(s => s.id).map(s => ({ id: String(s.id), name: String(s.name || ""), image: String(s.image || ""), age: Number(s.age_limit || 0) })) }); }
+  catch (e) { res.status(502).json({ error: "Афиша не ответила: " + e.message }); }
+});
+app.get("/api/afisha_poster", requireAuth, async (req, res) => {
+  try { const u = url(req.query.url); if (!u || !/^https:\/\/(store\.rambler\.ru|[a-z0-9.-]*afisha\.ru)\//.test(u)) return res.status(400).json({ error: "Недопустимый адрес картинки" });
+    const r = await fetch(u, { signal: AbortSignal.timeout(30000) }); const ct = r.headers.get("content-type") || ""; const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[ct.split(";")[0]];
+    if (!r.ok || !ext) return res.status(400).json({ error: "Постер не картинка" });
+    const name = `${Date.now()}-${crypto.randomBytes(3).toString("hex")}${ext}`; fs.writeFileSync(path.join(PHOTOS_DIR, name), Buffer.from(await r.arrayBuffer())); res.json({ ok: true, photo: "photos/" + name }); }
+  catch (e) { res.status(502).json({ error: "Не удалось скачать постер: " + e.message }); }
 });
 app.get("/api/afisha_import", requireAuth, async (req, res) => {
   try {

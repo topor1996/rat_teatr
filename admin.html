@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260912c" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913a" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -65,6 +65,12 @@
   table.stats tr.total td{color:var(--acid);font-weight:700}
   .scroll{overflow-x:auto}
   .voices-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .media-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .media-row{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:start}
+  .mthumb{width:120px;aspect-ratio:3/2;background:#000;border:1px solid var(--line);overflow:hidden;position:relative}
+  .mthumb img,.mthumb video{width:100%;height:100%;object-fit:cover;display:block}
+  .mtag{position:absolute;left:4px;bottom:4px;background:var(--red);color:#fff;font-size:10px;padding:1px 5px;text-transform:uppercase}
+  @media (max-width:640px){.media-row{grid-template-columns:1fr}}
   .voice-row{display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:8px;align-items:center}
   .voice-row audio{height:34px;max-width:220px}
   @media (max-width:640px){.voice-row{grid-template-columns:1fr}}
@@ -395,8 +401,15 @@ const SECTIONS = {
       <label>Кто играет (строкой, для страницы спектакля)</label><input data-f="cast" value="${esc(p.cast || "")}" placeholder="Иван Петров, Мария Соколова, ...">
       <div class="row">
         <div><label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
-        <div><label>ID спектакля в Афише (виджет)</label><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="179397"><p class="hint">Число из кода teatrdoc.ru: openModal({shows_id: 179397}). Открывает окно с датами и оплатой прямо на сайте.</p></div>
+        <div><label>ID спектакля в Афише (виджет)</label><div class="tools" style="flex-wrap:nowrap"><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="подставится сам"><button class="btn ghost sm" data-act="findshow" style="white-space:nowrap">Найти в Афише</button></div><p class="hint">Ищется по названию среди спектаклей площадки в Афише. Если не нашлось — впишите вручную или укажите точное название, как у площадки.</p></div>
       </div>
+      <label>Фото и видео спектакля (слайдер на странице спектакля)</label>
+      <div class="media-admin">${(p.media || []).map((m, mi) => `<div class="media-row" data-mi="${mi}">
+        <div class="mthumb">${m.type === "video" ? `<video src="${backend.photoUrl(m.src)}" preload="metadata" muted></video><span class="mtag">видео</span>` : `<img src="${previews[m.src] || backend.photoUrl(m.src)}" alt="">`}</div>
+        <div><input data-mf="caption" value="${esc(m.caption || "")}" placeholder="Подпись"><input data-mf="alt" value="${esc(m.alt || "")}" placeholder="Alt-текст (что на кадре)" style="margin-top:6px"></div>
+        <div class="tools" style="flex-direction:column"><button class="btn ghost sm" data-mact="up">↑</button><button class="btn ghost sm" data-mact="down">↓</button><button class="btn danger sm" data-mact="del">Убрать</button></div>
+      </div>`).join("")}</div>
+      <div class="tools" style="margin-top:6px"><label class="btn ghost sm" style="margin:0">+ Добавить фото или видео<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple data-pmedia="1" hidden></label><span class="hint" style="margin:0;align-self:center">Можно сразу несколько. Фото сжимаются сами, видео до 10 МБ (короткий ролик). Подписи заполняются автоматически.</span></div>
       <label>Голоса актёров (аудио на странице спектакля)</label>
       <div class="voices-admin">${(p.voices || []).map((v, vi) => `<div class="voice-row" data-vi="${vi}">
         <input data-vf="name" value="${esc(v.name || "")}" placeholder="Кто говорит">
@@ -531,23 +544,26 @@ async function imageLook(src) { // ориентация и тональност�
 const pick = a => a[Math.floor(Math.random() * a.length)];
 async function autoCaption(i, file, force) {
   const g = data.gallery[i]; if (!g) return;
-  const p = data.plays.find(x => x.id === g.playId); const play = p ? p.title : "";
+  await captionItem(g, file, data.plays.find(x => x.id === g.playId), force);
+  markDirty(); if (force) { renderList("gallery"); setStatus("Подпись обновлена — поправьте при желании и сохраните"); }
+}
+async function captionItem(g, file, p, force, mode) {
+  const play = p ? p.title : "";
   const buf = file && /jpe?g$/i.test(file.name) ? await file.arrayBuffer().catch(() => null) : null;
   const date = buf ? exifDate(buf) : null;
-  const src = (file && URL.createObjectURL(file)) || previews[g.photo] || backend.photoUrl(g.photo);
+  const src = (file && URL.createObjectURL(file)) || previews[g.photo || g.src] || backend.photoUrl(g.photo || g.src);
   const look = await imageLook(src);
   const th = data.theatre.name || "Театр RAT";
   const mon = date ? MONTHS_NOM[date.getMonth()] : "", monGen = date ? MONTHS_GEN[date.getMonth()] : "";
   const q = play ? `«${play}»` : "";
-  let pool = play ? [`За кулисами ${q}`, `Гримёрка перед ${q}`, `${q}: пять минут до выхода`, `Репетиция ${q}`, `Перед ${q}`, `${q}. Между сценами`, `${q}, ещё без света`, `Разбор после ${q}`] :
+  let pool = mode === "scene" ? [`Сцена из ${q}`, `${q}. Из спектакля`, `${q}, на сцене`, `${q}: свет, звук, начали`, `Кадр из ${q}`, `${q}. Зал уже здесь`, `${q}, финал близко`] : play ? [`За кулисами ${q}`, `Гримёрка перед ${q}`, `${q}: пять минут до выхода`, `Репетиция ${q}`, `Перед ${q}`, `${q}. Между сценами`, `${q}, ещё без света`, `Разбор после ${q}`] :
     ["Гримёрка. Перед выходом", "Репетиция. Тишина не входит в план", "Пять минут до начала", "Между сценами", "Свет ещё не поставили", "Бэкстейдж, как есть", "Разбор после прогона", "Реквизит ждёт своего выхода"];
   if (look.dark) pool = pool.concat(play ? [`${q} в темноте до третьего звонка`, `Свет выключен. ${q} ещё идёт`] : ["В темноте до третьего звонка", "Свет выключен, работа нет"]);
   if (look.portrait) pool = pool.concat(play ? [`Крупно: ${q}`] : ["Крупно. Гримёрка"]);
   if (mon) pool = pool.concat(play ? [`${q}, ${mon}`] : [`Бэкстейдж, ${mon}`]);
-  const alt = `Бэкстейдж театра ${th.replace(/^Театр\s+/i, "")}${play ? `, спектакль ${q}` : ""}: ${look.portrait ? "вертикальный" : look.wide ? "широкий" : "горизонтальный"}${look.dark ? " тёмный" : look.bright ? " светлый" : ""}${look.mono ? " чёрно-белый" : ""} кадр${date ? `, ${date.getDate()} ${monGen} ${date.getFullYear()}` : ""}`;
+  const alt = `${mode === "scene" ? "Сцена из спектакля" : "Бэкстейдж театра " + th.replace(/^Театр\s+/i, "") + (play ? ", спектакль" : "")}${play ? ` ${q}` : ""}: ${look.portrait ? "вертикальный" : look.wide ? "широкий" : "горизонтальный"}${look.dark ? " тёмный" : look.bright ? " светлый" : ""}${look.mono ? " чёрно-белый" : ""} кадр${date ? `, ${date.getDate()} ${monGen} ${date.getFullYear()}` : ""}`;
   if (force || !g.caption) g.caption = pick(pool);
   if (force || !g.alt) g.alt = alt;
-  markDirty(); if (force) { renderList("gallery"); setStatus("Подпись обновлена — поправьте при желании и сохраните"); }
 }
 
 /* ---- посещения и история ---- */
@@ -595,11 +611,33 @@ $("#historyBody").addEventListener("click", async e => {
 });
 
 /* ---- импорт дат из Афиши ---- */
+const norm = s => String(s || "").toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").trim();
+let afishaShowsCache = null;
+async function afishaShows() {
+  if (afishaShowsCache) return afishaShowsCache;
+  const r = await api(apiPath("api.php?a=afisha_shows", "/api/afisha_shows"));
+  return afishaShowsCache = r.shows || [];
+}
+async function findAfishaShow(i, quiet) {
+  const p = data.plays[i];
+  if (backend.name === "github") { if (!quiet) alert("Поиск в Афише работает на InfinityFree или с server.js."); return null; }
+  try {
+    const shows = await afishaShows(); const t = norm(p.title);
+    let hit = shows.find(s => norm(s.name) === t) || shows.find(s => t && (norm(s.name).includes(t) || t.includes(norm(s.name))));
+    if (!hit) { if (!quiet) setStatus(`В Афише не нашлось спектакля «${p.title}». Есть: ${shows.map(s => s.name).join(", ")}`, "err"); return null; }
+    p.afishaShowId = hit.id; if (!p.age && hit.age) p.age = hit.age + "+";
+    if (!p.poster && hit.image) { try { const r = await api(apiPath("api.php?a=afisha_poster&url=", "/api/afisha_poster?url=") + encodeURIComponent(hit.image)); p.poster = r.photo; } catch {} }
+    markDirty(); renderList("plays");
+    if (!quiet) setStatus(`Нашлось: «${hit.name}», ID ${hit.id}${p.poster ? ", постер подтянут" : ""}. Не забудьте сохранить`, "ok");
+    return hit;
+  } catch (err) { if (!quiet) setStatus(err.message, "err"); return null; }
+}
 async function importAfisha(i) {
   const p = data.plays[i];
   if (backend.name === "github") { alert("Импорт дат работает на InfinityFree или с server.js — на GitHub Pages нет сервера."); return; }
   let q = (p.afishaShowId || "").trim();
-  if (!q) { q = prompt("ID спектакля в Афише или ссылка на страницу спектакля на teatrdoc.ru:", "https://teatrdoc.ru/performances/"); if (!q) return; }
+  if (!q) { const hit = await findAfishaShow(i, true); if (hit) q = hit.id; }
+  if (!q) { q = prompt("В Афише не нашлось спектакля с таким названием. Вставьте ссылку на страницу спектакля на teatrdoc.ru или ID:", "https://teatrdoc.ru/performances/"); if (!q) return; }
   setStatus("Запрашиваю Афишу…");
   try {
     const url = backend.name === "php" ? "api.php?a=afisha_import&q=" : "/api/afisha_import?q=";
@@ -624,8 +662,17 @@ $("#tabs").addEventListener("click", e => {
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + b.dataset.tab));
 });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-mact]"); if (!b) return;
+  const el = b.closest(".entry"); const p = data.plays[el.dataset.i]; const list = p.media || (p.media = []); const mi = +b.closest(".media-row").dataset.mi;
+  if (b.dataset.mact === "del") list.splice(mi, 1);
+  if (b.dataset.mact === "up" && mi > 0) [list[mi - 1], list[mi]] = [list[mi], list[mi - 1]];
+  if (b.dataset.mact === "down" && mi < list.length - 1) [list[mi + 1], list[mi]] = [list[mi], list[mi + 1]];
+  markDirty(); renderList("plays");
+});
 document.addEventListener("input", e => {
   const t = e.target;
+  if (t.dataset.mf) { const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const m = (p.media || [])[+t.closest(".media-row").dataset.mi]; if (m) { m[t.dataset.mf] = t.value; markDirty(); } return; }
   if (t.dataset.vf) { const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const v = (p.voices || [])[+t.closest(".voice-row").dataset.vi]; if (v) { v[t.dataset.vf] = t.value; markDirty(); } return; }
   if (t.dataset.th !== undefined) { data.theatre[t.dataset.th] = t.value; markDirty(); return; }
   if (t.dataset.show !== undefined) { data.show[t.dataset.show] = t.value; markDirty(); return; }
@@ -655,6 +702,7 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
   if (b.dataset.act === "import") { importAfisha(i); return; }
   if (b.dataset.act === "autocap") { autoCaption(i, null, true); return; }
+  if (b.dataset.act === "findshow") { findAfishaShow(i); return; }
   if (b.dataset.act === "vdel") { (list[i].voices || []).splice(+b.dataset.vi, 1); }
   markDirty(); renderList(key);
 });
@@ -681,6 +729,21 @@ document.addEventListener("change", async e => {
     try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); data.theatre[t.dataset.thFile] = path; renderStatic(); markDirty(); setStatus("Загружено — не забудьте сохранить"); }
     catch (err) { setStatus(err.message, "err"); }
     t.value = ""; return;
+  }
+  if (t.dataset.pmedia && t.files.length) {
+    const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const files = [...t.files]; let n = 0; p.media = p.media || [];
+    for (const file of files) {
+      const isVideo = /^video\//.test(file.type);
+      if (isVideo && file.size > 10 * 1024 * 1024) { setStatus(`«${file.name}»: видео больше 10 МБ, пропущено`, "err"); continue; }
+      setStatus(`Загружаю ${isVideo ? "видео" : "фото"} ${++n} из ${files.length}…`);
+      try {
+        const src = await uploadFile(file); if (backend.name === "github") previews[src] = URL.createObjectURL(file);
+        const item = { type: isVideo ? "video" : "photo", src, caption: "", alt: "" };
+        if (!isVideo) await captionItem(item, file, p, false, "scene"); else { item.caption = `Видео: «${p.title}»`; item.alt = `Видео со спектакля «${p.title}»`; }
+        p.media.push(item);
+      } catch (err) { setStatus(err.message, "err"); break; }
+    }
+    markDirty(); renderList("plays"); setStatus(`Загружено: ${n}. Не забудьте сохранить`); t.value = ""; return;
   }
   if (t.dataset.vfile && t.files[0]) {
     const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const file = t.files[0];
