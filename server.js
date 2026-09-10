@@ -54,14 +54,14 @@ function sanitize(input) {
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
     title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
-    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio), media: arr(p.media).slice(0, 40).map(x => ({ src: media(x.src), caption: str(x.caption, 140), alt: str(x.alt, 200) })).filter(x => x.src).map(x => ({ type: /\.(mp4|webm|mov)$/i.test(x.src) ? "video" : "photo", ...x })),
+    hidden: !!p.hidden, poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio), media: arr(p.media).slice(0, 40).map(x => ({ src: media(x.src), caption: str(x.caption, 140), alt: str(x.alt, 200), poster: img(x.poster), hidden: !!x.hidden })).filter(x => x.src).map(x => ({ type: /\.(mp4|webm|mov)$/i.test(x.src) ? "video" : "photo", ...x })),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
-    price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
+    hidden: !!e.hidden, price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
-  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
-  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40) })).filter(g => g.photo);
+  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
+  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden })).filter(g => g.photo);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
                instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),
@@ -187,6 +187,7 @@ app.get("/api/backup", requireAuth, (req, res) => {
   const cd = Buffer.concat(central), end = Buffer.alloc(22); end.writeUInt32LE(0x06054b50, 0); end.writeUInt16LE(files.length, 8); end.writeUInt16LE(files.length, 10); end.writeUInt32LE(cd.length, 12); end.writeUInt32LE(offset, 16);
   res.set("Content-Type", "application/zip").set("Content-Disposition", `attachment; filename="rat-theater-backup-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.zip"`).send(Buffer.concat([...parts, cd, end]));
 });
+app.get("/api/sizes", requireAuth, (req, res) => { const sizes = {}; for (const n of fs.readdirSync(PHOTOS_DIR)) { const p = path.join(PHOTOS_DIR, n); if (fs.statSync(p).isFile()) sizes["photos/" + n] = fs.statSync(p).size; } res.json({ ok: true, sizes }); });
 app.get("/api/hit", (req, res) => {
   const page = str(req.query.p, 60).toLowerCase().replace(/[^a-z0-9:_-]/g, ""); if (!page) return res.status(400).json({ error: "no page" });
   const day = today(), h = crypto.createHash("sha256").update(`${req.ip}|${req.headers["user-agent"] || ""}|${day}`).digest("hex").slice(0, 12);

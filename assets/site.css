@@ -307,3 +307,14 @@ html.afisha-open body{position:fixed!important;width:100%!important}
 .sdots i{width:9px;height:9px;background:rgba(255,255,255,.25);cursor:pointer;transform:rotate(45deg)}
 .sdots i.on{background:var(--acid)}
 @media (max-width:640px){.slide{flex-basis:88%}.snav{display:none}}
+
+/* ---------- видео по клику, «смотреть все фото» ---------- */
+.slide .vwrap{position:relative;background:#000}
+.slide .vwrap img,.slide .vph{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;background:repeating-linear-gradient(135deg,#151515 0 14px,#1d1d1d 14px 28px)}
+.vbig{position:absolute;left:50%;top:50%;width:72px;height:72px;transform:translate(-50%,-50%);border:3px solid #000;background:var(--acid);cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 10px 24px rgba(0,0,0,.5);transition:transform .15s}
+.vbig::after{content:"";width:0;height:0;border-left:24px solid #000;border-top:14px solid transparent;border-bottom:14px solid transparent;margin-left:6px}
+.vbig:hover{transform:translate(-50%,-50%) scale(1.08)}
+.sall-row{text-align:center;margin-top:12px}
+.slider.grid .strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px 14px;overflow:visible;scroll-snap-type:none}
+.slider.grid .slide{flex:auto}
+.slider.grid .snav,.slider.grid .sdots{display:none}

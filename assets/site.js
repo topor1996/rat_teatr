@@ -30,6 +30,12 @@ window.RAT = (function () {
     }, Promise.resolve(null)).then(function (d) {
       if (!d) { d = fallback || {}; var g = document.getElementById("diag"); if (g) g.textContent = "Данные не загрузились, показана заглушка. Обновите страницу.\n" + log.join("\n"); }
       d.theatre = d.theatre || {}; d.plays = d.plays || []; d.events = d.events || []; d.actors = d.actors || []; d.reviews = d.reviews || []; d.gallery = d.gallery || [];
+      /* черновики (галочка «скрыть» в админке) на сайт не попадают */
+      d.plays = d.plays.filter(function (p) { return !p.hidden; });
+      var visible = {}; d.plays.forEach(function (p) { visible[p.id] = true; p.media = (p.media || []).filter(function (m) { return !m.hidden; }); });
+      d.events = d.events.filter(function (e) { return !e.hidden && (!e.playId || visible[e.playId]); });
+      d.reviews = d.reviews.filter(function (r) { return !r.hidden && (!r.playId || visible[r.playId]); });
+      d.gallery = d.gallery.filter(function (g) { return !g.hidden && (!g.playId || visible[g.playId]); });
       afishaInit(d.theatre);
       return applyLive(d);
     });
@@ -274,11 +280,17 @@ window.RAT = (function () {
   }
   /* ---------- слайдер фото и видео спектакля ---------- */
   function mediaSlider(list) {
-    var slides = (list || []).map(function (m, i) {
-      if (m.type === "video") return '<div class="slide video"><video controls playsinline preload="metadata" src="' + esc(m.src) + '"></video>' + (m.caption ? '<div class="scap">' + esc(m.caption) + "</div>" : "") + "</div>";
-      return '<div class="slide shot" data-src="' + esc(m.src) + '" data-cap="' + esc(m.caption || "") + '"><img src="' + esc(m.src) + '" alt="' + esc(m.alt || m.caption || "") + '" loading="' + (i < 2 ? "eager" : "lazy") + '">' + (m.caption ? '<div class="scap">' + esc(m.caption) + "</div>" : "") + "</div>";
+    list = list || [];
+    var slides = list.map(function (m, i) {
+      var cap = m.caption ? '<div class="scap">' + esc(m.caption) + "</div>" : "";
+      if (m.type === "video") {
+        /* видео не грузится, пока не нажали: показываем обложку (кадр из ролика) или тёмную заглушку */
+        return '<div class="slide video" data-video="' + esc(m.src) + '"><div class="vwrap">' + (m.poster ? '<img src="' + esc(m.poster) + '" alt="' + esc(m.alt || m.caption || "Видео") + '" loading="' + (i < 2 ? "eager" : "lazy") + '"' + (i === 0 ? ' fetchpriority="high"' : "") + ">" : '<div class="vph"></div>') + '<button class="vbig" type="button" aria-label="Смотреть видео"></button></div>' + cap + "</div>";
+      }
+      return '<div class="slide shot" data-src="' + esc(m.src) + '" data-cap="' + esc(m.caption || "") + '"><img src="' + esc(m.src) + '" alt="' + esc(m.alt || m.caption || "") + '" loading="' + (i < 2 ? "eager" : "lazy") + '"' + (i === 0 ? ' fetchpriority="high"' : "") + ">" + cap + "</div>";
     }).join("");
-    return '<div class="slider"><button class="snav prev" type="button" aria-label="Назад">‹</button><div class="strip">' + slides + '</div><button class="snav next" type="button" aria-label="Вперёд">›</button><div class="sdots"></div></div>';
+    var all = list.length > 3 ? '<div class="sall-row"><button class="btn ghost onDark sall" type="button">Смотреть все фото</button></div>' : "";
+    return '<div class="slider"><button class="snav prev" type="button" aria-label="Назад">‹</button><div class="strip">' + slides + '</div><button class="snav next" type="button" aria-label="Вперёд">›</button><div class="sdots"></div>' + all + "</div>";
   }
   function sliders(root) {
     [].slice.call((root || document).querySelectorAll(".slider")).forEach(function (sl) {
@@ -291,6 +303,15 @@ window.RAT = (function () {
       sl.querySelector(".next").addEventListener("click", function () { go(cur() + 1); });
       strip.addEventListener("scroll", function () { var c = cur(); Array.prototype.forEach.call(dots.children, function (d, i) { d.className = i === c ? "on" : ""; }); [].forEach.call(strip.querySelectorAll("video"), function (v) { if (!v.paused && Array.prototype.indexOf.call(items, v.parentNode) !== c) v.pause(); }); }, { passive: true });
       dots.addEventListener("click", function (e) { var i = Array.prototype.indexOf.call(dots.children, e.target); if (i >= 0) go(i); });
+      /* видео по клику: вместо обложки вставляем плеер и запускаем */
+      sl.addEventListener("click", function (e) {
+        var vb = e.target.closest && e.target.closest(".vbig"); if (!vb) return;
+        var slide = vb.closest(".slide"), wrap = slide.querySelector(".vwrap");
+        [].forEach.call(strip.querySelectorAll("video"), function (v) { v.pause(); });
+        wrap.innerHTML = '<video controls autoplay playsinline preload="auto" src="' + slide.getAttribute("data-video") + '"></video>';
+      });
+      var sall = sl.querySelector(".sall");
+      if (sall) sall.addEventListener("click", function () { var on = sl.classList.toggle("grid"); sall.textContent = on ? "Свернуть в ленту" : "Смотреть все фото"; if (!on) strip.scrollTo({ left: 0 }); });
     });
   }
   function lightbox() {
@@ -314,7 +335,17 @@ window.RAT = (function () {
   }
 
   /* ---------- schema.org (если сервер не вставил свою) ---------- */
-  function jsonLd(d) {
+  function mediaLd(p, base) {
+    var out = [];
+    (p.media || []).forEach(function (m) {
+      var ts = (m.src.match(/\/(\d{10})-/) || [])[1], up = ts ? new Date(ts * 1000).toISOString().slice(0, 10) : undefined;
+      if (m.type === "video") out.push({ "@type": "VideoObject", "name": m.caption || ("Видео: " + p.title), "description": m.alt || ("Видео со спектакля «" + p.title + "»"), "thumbnailUrl": base + (m.poster || (p.poster || "assets/og-cover.png")), "contentUrl": base + m.src, "uploadDate": up, "inLanguage": "ru" });
+      else out.push({ "@type": "ImageObject", "contentUrl": base + m.src, "name": m.caption || p.title, "caption": m.alt || m.caption || p.title, "representativeOfPage": false });
+    });
+    if (p.poster) out.unshift({ "@type": "ImageObject", "contentUrl": base + p.poster, "name": p.title, "caption": "Постер спектакля «" + p.title + "»", "representativeOfPage": true });
+    return out;
+  }
+  function jsonLd(d, play) {
     if (document.querySelector('script[type="application/ld+json"]')) return;
     var th = d.theatre, map = byId(d), base = siteUrl();
     var events = upcoming(d).slice(0, 20).map(function (e) {
@@ -329,7 +360,9 @@ window.RAT = (function () {
       };
     });
     var s = document.createElement("script"); s.type = "application/ld+json";
-    s.textContent = JSON.stringify({ "@context": "https://schema.org", "@graph": [{ "@type": "TheaterGroup", "name": th.name || "Театр RAT", "url": base, "description": th.tagline || "" }].concat(events) });
+    var graph = [{ "@type": "TheaterGroup", "name": th.name || "Театр RAT", "url": base, "description": th.tagline || "" }].concat(events);
+    if (play) graph = graph.concat(mediaLd(play, base));
+    s.textContent = JSON.stringify({ "@context": "https://schema.org", "@graph": graph });
     document.head.appendChild(s);
   }
 

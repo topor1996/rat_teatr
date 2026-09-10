@@ -6,7 +6,10 @@ function rat_render(string $file, ?string $playId = null): void {
   $root = __DIR__;
   $html = (string)file_get_contents($root . '/' . $file);
   $d = json_decode((string)@file_get_contents($root . '/data/data.json'), true) ?: [];
-  $th = $d['theatre'] ?? []; $plays = $d['plays'] ?? []; $events = $d['events'] ?? [];
+  $th = $d['theatre'] ?? [];
+  $plays = array_values(array_filter($d['plays'] ?? [], fn($p) => empty($p['hidden'])));
+  $vis = []; foreach ($plays as $p) $vis[$p['id']] = true;
+  $events = array_values(array_filter($d['events'] ?? [], fn($ev) => empty($ev['hidden']) && (empty($ev['playId']) || isset($vis[$ev['playId']]))));
   $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
   $base = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/') . '/';
   $e = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
@@ -51,6 +54,15 @@ function rat_render(string $file, ?string $playId = null): void {
     if (!empty($p['poster'])) $item['image'] = $base . $p['poster'];
     if ($ticket) $item['offers'] = ['@type' => 'Offer', 'url' => $ticket, 'priceCurrency' => 'RUB', 'availability' => in_array('soldout', $ev['badges'] ?? [], true) ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock'];
     $graph[] = $item;
+  }
+  if ($play) {
+    if (!empty($play['poster'])) $graph[] = ['@type' => 'ImageObject', 'contentUrl' => $base . $play['poster'], 'name' => $play['title'], 'caption' => 'Постер спектакля «' . $play['title'] . '»', 'representativeOfPage' => true];
+    foreach ($play['media'] ?? [] as $m) {
+      if (!empty($m['hidden']) || empty($m['src'])) continue;
+      $ts = preg_match('~/(\d{10})-~', $m['src'], $mm) ? date('Y-m-d', (int)$mm[1]) : null;
+      if (($m['type'] ?? '') === 'video') $graph[] = array_filter(['@type' => 'VideoObject', 'name' => $m['caption'] ?: 'Видео: ' . $play['title'], 'description' => $m['alt'] ?: 'Видео со спектакля «' . $play['title'] . '»', 'thumbnailUrl' => $base . ($m['poster'] ?: ($play['poster'] ?: 'assets/og-cover.png')), 'contentUrl' => $base . $m['src'], 'uploadDate' => $ts, 'inLanguage' => 'ru']);
+      else $graph[] = ['@type' => 'ImageObject', 'contentUrl' => $base . $m['src'], 'name' => $m['caption'] ?: $play['title'], 'caption' => $m['alt'] ?: ($m['caption'] ?: $play['title'])];
+    }
   }
   $ld = '<script type="application/ld+json">' . json_encode(['@context' => 'https://schema.org', '@graph' => $graph], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . '</script>';
   $html = str_replace('</head>', $ld . "\n</head>", $html);

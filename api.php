@@ -47,7 +47,7 @@ function playMedia($v): array {
     $src = media($x['src'] ?? '');
     if ($src === '') continue;
     $type = preg_match('~\.(mp4|webm|mov)$~i', $src) ? 'video' : 'photo';
-    $out[] = ['type' => $type, 'src' => $src, 'caption' => str($x['caption'] ?? '', 140), 'alt' => str($x['alt'] ?? '', 200)];
+    $out[] = ['type' => $type, 'src' => $src, 'caption' => str($x['caption'] ?? '', 140), 'alt' => str($x['alt'] ?? '', 200), 'poster' => img($x['poster'] ?? ''), 'hidden' => !empty($x['hidden'])];
   }
   return $out;
 }
@@ -76,7 +76,7 @@ function sanitize(array $in): array {
     if (!is_array($p)) continue;
     $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
     $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 3000),
-             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null), 'media' => playMedia($p['media'] ?? null)];
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null), 'media' => playMedia($p['media'] ?? null), 'hidden' => !empty($p['hidden'])];
     if ($item['title'] !== '') $plays[] = $item;
   }
   $BADGES = ['premiere', 'last', 'few', 'soldout'];
@@ -86,17 +86,17 @@ function sanitize(array $in): array {
     if (!preg_match('~^\d{4}-\d{2}-\d{2}$~', $date)) continue;
     $badges = array_values(array_filter(is_array($e['badges'] ?? null) ? $e['badges'] : [], fn($b) => in_array($b, $BADGES, true)));
     $events[] = ['date' => $date, 'time' => str($e['time'] ?? '', 5), 'playId' => str($e['playId'] ?? '', 40), 'venue' => str($e['venue'] ?? '', 120),
-                 'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'afishaSessionId' => preg_replace('~\D~', '', str($e['afishaSessionId'] ?? '', 40)), 'note' => str($e['note'] ?? '', 120), 'badges' => $badges];
+                 'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'afishaSessionId' => preg_replace('~\D~', '', str($e['afishaSessionId'] ?? '', 40)), 'note' => str($e['note'] ?? '', 120), 'badges' => $badges, 'hidden' => !empty($e['hidden'])];
   }
   usort($events, fn($x, $y) => strcmp($x['date'] . $x['time'], $y['date'] . $y['time']));
   foreach ($lst('reviews', 100) as $r) {
     if (!is_array($r)) continue;
-    $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40)];
+    $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40), 'hidden' => !empty($r['hidden'])];
     if ($item['text'] !== '') $reviews[] = $item;
   }
   foreach ($lst('gallery', 200) as $g) {
     if (!is_array($g)) continue;
-    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40)];
+    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40), 'hidden' => !empty($g['hidden'])];
     if ($item['photo'] !== '') $gallery[] = $item;
   }
   return [
@@ -235,6 +235,13 @@ switch ($a) {
     header('Content-Disposition: attachment; filename="rat-theater-backup-' . date('Y-m-d-Hi') . '.zip"');
     header('Content-Length: ' . filesize($zipPath));
     readfile($zipPath); @unlink($zipPath); exit;
+
+  case 'sizes':
+    // размеры файлов в photos/ — для проверки веса страниц в админке
+    requireAuth();
+    $sizes = [];
+    foreach (glob($PHOTOS_DIR . '/*') ?: [] as $f) if (is_file($f)) $sizes['photos/' . basename($f)] = filesize($f);
+    out(['ok' => true, 'sizes' => $sizes]);
 
   case 'hit':
     // счётчик посещений без cookie: страница + день; уникальность — по усечённому хэшу IP+браузера, IP не хранится

@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913a" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913b" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -66,6 +66,17 @@
   .scroll{overflow-x:auto}
   .voices-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
   .media-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .entry.is-hidden{opacity:.55;border-style:dashed}
+  .draft-tag{font-family:"PT Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:var(--red);color:#fff;padding:2px 6px;vertical-align:middle;margin-left:8px}
+  .chk.draft{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;margin-right:6px}
+  .chk.draft input{width:auto;accent-color:var(--red)}
+  .media-row.m-hidden .mthumb{opacity:.45}
+  .mtools{display:flex;flex-direction:column;gap:4px}
+  .checklist{list-style:none;margin:0;padding:0}
+  .checklist li{padding:8px 10px;border-left:3px solid var(--red);background:#111;margin-bottom:6px;font-size:13px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .checklist li.warn{border-color:#e0a030}
+  .checklist li.ok{border-color:var(--ok);color:var(--muted)}
+  .checklist li a{white-space:nowrap}
   .media-row{display:grid;grid-template-columns:120px 1fr auto;gap:10px;align-items:start}
   .mthumb{width:120px;aspect-ratio:3/2;background:#000;border:1px solid var(--line);overflow:hidden;position:relative}
   .mthumb img,.mthumb video{width:100%;height:100%;object-fit:cover;display:block}
@@ -125,6 +136,7 @@
       <button data-tab="gallery">Бэкстейдж</button>
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
+      <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
       <button data-tab="history">История</button>
     </div>
@@ -212,6 +224,15 @@
     </div>
 
     <!-- Голосование -->
+    <!-- Проверка -->
+    <div class="tab" id="tab-check">
+      <div class="panel">
+        <h2>Проверка перед публикацией <span class="tools"><button class="btn ghost sm" id="checkRefresh">Проверить снова</button></span></h2>
+        <p class="help">Что стоит доделать, чтобы сайт выглядел законченно и быстро открывался. Считается по текущим данным, включая несохранённые.</p>
+        <div id="checkBody" class="hint">Загружаю…</div>
+      </div>
+    </div>
+
     <!-- Посещения -->
     <div class="tab" id="tab-visits">
       <div class="panel">
@@ -404,10 +425,10 @@ const SECTIONS = {
         <div><label>ID спектакля в Афише (виджет)</label><div class="tools" style="flex-wrap:nowrap"><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="подставится сам"><button class="btn ghost sm" data-act="findshow" style="white-space:nowrap">Найти в Афише</button></div><p class="hint">Ищется по названию среди спектаклей площадки в Афише. Если не нашлось — впишите вручную или укажите точное название, как у площадки.</p></div>
       </div>
       <label>Фото и видео спектакля (слайдер на странице спектакля)</label>
-      <div class="media-admin">${(p.media || []).map((m, mi) => `<div class="media-row" data-mi="${mi}">
-        <div class="mthumb">${m.type === "video" ? `<video src="${backend.photoUrl(m.src)}" preload="metadata" muted></video><span class="mtag">видео</span>` : `<img src="${previews[m.src] || backend.photoUrl(m.src)}" alt="">`}</div>
+      <div class="media-admin">${(p.media || []).map((m, mi) => `<div class="media-row${m.hidden ? " m-hidden" : ""}" data-mi="${mi}">
+        <div class="mthumb">${m.type === "video" ? (m.poster ? `<img src="${previews[m.poster] || backend.photoUrl(m.poster)}" alt="">` : `<video src="${backend.photoUrl(m.src)}" preload="metadata" muted></video>`) + `<span class="mtag">видео</span>` : `<img src="${previews[m.src] || backend.photoUrl(m.src)}" alt="">`}</div>
         <div><input data-mf="caption" value="${esc(m.caption || "")}" placeholder="Подпись"><input data-mf="alt" value="${esc(m.alt || "")}" placeholder="Alt-текст (что на кадре)" style="margin-top:6px"></div>
-        <div class="tools" style="flex-direction:column"><button class="btn ghost sm" data-mact="up">↑</button><button class="btn ghost sm" data-mact="down">↓</button><button class="btn danger sm" data-mact="del">Убрать</button></div>
+        <div class="mtools"><button class="btn ghost sm" data-mact="up">↑</button><button class="btn ghost sm" data-mact="down">↓</button>${m.type === "video" ? `<button class="btn ghost sm" data-mact="poster" title="Кадр из ролика как обложка">${m.poster ? "Обложка ✓" : "Сделать обложку"}</button>` : ""}<label class="chk draft" style="margin:0"><input type="checkbox" data-mact="hide" ${m.hidden ? "checked" : ""}> Скрыть</label><button class="btn danger sm" data-mact="del">Убрать</button></div>
       </div>`).join("")}</div>
       <div class="tools" style="margin-top:6px"><label class="btn ghost sm" style="margin:0">+ Добавить фото или видео<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple data-pmedia="1" hidden></label><span class="hint" style="margin:0;align-self:center">Можно сразу несколько. Фото сжимаются сами, видео до 10 МБ (короткий ролик). Подписи заполняются автоматически.</span></div>
       <label>Голоса актёров (аудио на странице спектакля)</label>
@@ -488,10 +509,10 @@ function renderList(key) {
   const sec = SECTIONS[key], list = data[key] || (data[key] = []);
   const box = $("#list-" + key);
   box.innerHTML = list.length ? list.map((item, i) => `
-    <div class="panel entry" data-key="${key}" data-i="${i}">
+    <div class="panel entry${item.hidden ? " is-hidden" : ""}" data-key="${key}" data-i="${i}">
       <span class="num">${i + 1}</span>
-      <h2><span class="title">${esc(sec.label(item))}</span>
-        <span class="tools"><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
+      <h2><span class="title">${esc(sec.label(item))}${item.hidden ? ' <span class="draft-tag">черновик</span>' : ""}</span>
+        <span class="tools"><label class="chk draft" title="Не показывать на сайте, пока не будет готово"><input type="checkbox" data-hidden ${item.hidden ? "checked" : ""}> Скрыть</label><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
       <div class="item ${sec.img ? "" : "noimg"}">
         ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img])}</div>
           <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить<input type="file" accept="image/jpeg,image/png,image/webp" data-file="${sec.img}"></label>
@@ -565,6 +586,53 @@ async function captionItem(g, file, p, force, mode) {
   if (force || !g.caption) g.caption = pick(pool);
   if (force || !g.alt) g.alt = alt;
 }
+
+/* ---- проверка перед публикацией ---- */
+const fmtMB = b => (b / 1048576).toFixed(1).replace(".0", "") + " МБ";
+async function loadCheck() {
+  const box = $("#checkBody"); const items = []; const add = (level, text, tab) => items.push({ level, text, tab });
+  let sizes = {};
+  if (backend.name !== "github") { try { sizes = (await api(apiPath("api.php?a=sizes", "/api/sizes"))).sizes || {}; } catch {} }
+  const sz = f => sizes[f] || 0, today = new Date().toISOString().slice(0, 10);
+  const th = data.theatre;
+  if (!th.address && !th.mapCoords) add("warn", "Нет адреса и координат площадки — карта в контактах не покажется", "theatre");
+  if (!th.telegram && !th.vk) add("warn", "Нет Telegram и VK в контактах — зрителям некуда подписаться", "theatre");
+  data.plays.forEach(p => {
+    const t = `Спектакль «${p.title || "без названия"}»`;
+    if (p.hidden) { add("ok", `${t}: черновик, на сайте не показывается`, "plays"); return; }
+    if (!p.poster) add("bad", `${t}: нет постера — карточка с заглушкой`, "plays");
+    if (!p.description) add("bad", `${t}: нет описания`, "plays");
+    if (th.afishaPartnerId && !p.afishaShowId) add("warn", `${t}: нет ID в Афише — кнопка «Купить билет» ведёт по ссылке, а не открывает виджет`, "plays");
+    const media = (p.media || []).filter(m => !m.hidden);
+    const noAlt = media.filter(m => m.type === "photo" && !m.alt).length; if (noAlt) add("warn", `${t}: у ${noAlt} фото нет alt-текста`, "plays");
+    const noPoster = media.filter(m => m.type === "video" && !m.poster); if (noPoster.length) add("bad", `${t}: у ${noPoster.length} видео нет обложки — ролики грузятся сразу и тормозят страницу`, "plays");
+    if (Object.keys(sizes).length) {
+      const weight = sz(p.poster) + media.reduce((s, m) => s + (m.type === "video" ? sz(m.poster) : sz(m.src)), 0);
+      const heavyVideo = media.filter(m => m.type === "video" && !m.poster).reduce((s, m) => s + sz(m.src), 0);
+      if (weight + heavyVideo > 6 * 1048576) add("warn", `${t}: страница весит около ${fmtMB(weight + heavyVideo)} до нажатия на видео — лучше держать до 6 МБ`, "plays");
+      media.forEach(m => { if (m.type === "photo" && sz(m.src) > 700 * 1024) add("warn", `${t}: фото ${m.src.replace("photos/", "")} весит ${fmtMB(sz(m.src))} — загрузите заново, оно сожмётся`, "plays"); });
+    }
+    if (!data.events.some(e => !e.hidden && e.playId === p.id && e.date >= today)) add("warn", `${t}: нет ближайших показов`, "events");
+  });
+  data.events.forEach(e => {
+    if (e.hidden) return;
+    const p = data.plays.find(x => x.id === e.playId); const t = `Показ ${e.date || "без даты"}${p ? " «" + p.title + "»" : ""}`;
+    if (e.playId && !p) add("bad", `${t}: спектакль не найден`, "events");
+    if (!e.playId && !e.note) add("bad", `${t}: не выбран спектакль и нет названия`, "events");
+    if (!e.price) add("warn", `${t}: нет цены`, "events");
+    if (e.date && e.date < today) add("ok", `${t}: уже прошёл, на сайте не показывается — можно удалить`, "events");
+    if (p && p.hidden) add("warn", `${t}: спектакль скрыт, поэтому и показ не виден`, "events");
+  });
+  const gNoAlt = data.gallery.filter(g => !g.hidden && !g.alt).length; if (gNoAlt) add("warn", `Бэкстейдж: у ${gNoAlt} фото нет alt-текста`, "gallery");
+  data.actors.forEach(a => { if (!a.photo) add("warn", `Актёр ${a.name}: нет фото`, "actors"); if (!a.sbp) add("warn", `Актёр ${a.name}: нет ссылки СБП — кнопка перевода на голосовании неактивна`, "actors"); });
+  data.reviews.forEach(r => { if (!r.hidden && !r.text) add("bad", "Отзыв без текста", "reviews"); });
+  const bad = items.filter(i => i.level === "bad").length, warn = items.filter(i => i.level === "warn").length;
+  box.innerHTML = (items.length ? `<p class="hint" style="margin:0 0 10px">Серьёзных: ${bad}, желательных: ${warn}.</p>` : "") +
+    (items.length ? `<ul class="checklist">${items.map(i => `<li class="${i.level}"><span>${esc(i.text)}</span><a href="#" data-goto="${i.tab}">открыть →</a></li>`).join("")}</ul>` : '<p style="color:var(--ok)">Всё на месте. Можно публиковать.</p>');
+}
+$("#checkRefresh").onclick = loadCheck;
+$("#checkBody").addEventListener("click", e => { const a = e.target.closest("[data-goto]"); if (!a) return; e.preventDefault(); $(`#tabs [data-tab=${a.dataset.goto}]`).click(); window.scrollTo(0, 0); });
+$("#tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab=check]"); if (b) loadCheck(); });
 
 /* ---- посещения и история ---- */
 const PAGE_NAMES = { home: "Главная", golos: "Голосование" };
@@ -662,9 +730,41 @@ $("#tabs").addEventListener("click", e => {
   document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".tab").forEach(t => t.classList.toggle("on", t.id === "tab-" + b.dataset.tab));
 });
-document.addEventListener("click", e => {
-  const b = e.target.closest("[data-mact]"); if (!b) return;
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.matches("[data-hidden]")) { const el = t.closest(".entry"); data[el.dataset.key][el.dataset.i].hidden = t.checked; markDirty(); renderList(el.dataset.key); return; }
+  if (t.matches("[data-mact=hide]")) { const el = t.closest(".entry"); const m = (data.plays[el.dataset.i].media || [])[+t.closest(".media-row").dataset.mi]; if (m) { m.hidden = t.checked; markDirty(); renderList("plays"); } }
+});
+async function videoPoster(fileOrUrl) { // кадр из ролика → webp
+  return new Promise(res => {
+    const v = document.createElement("video"); v.muted = true; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
+    let finished = false; const done = f => { if (finished) return; finished = true; res(f); v.removeAttribute("src"); };
+    const timer = setTimeout(() => done(null), 20000);
+    v.addEventListener("loadeddata", () => { try { v.currentTime = Math.min(1.5, (v.duration || 2) * 0.15); } catch { done(null); } });
+    v.addEventListener("seeked", () => {
+      try {
+        const k = Math.min(1, 1280 / Math.max(v.videoWidth, v.videoHeight)); const c = document.createElement("canvas"); c.width = Math.round(v.videoWidth * k); c.height = Math.round(v.videoHeight * k);
+        c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+        c.toBlob(b => { clearTimeout(timer); done(b ? new File([b], "poster.webp", { type: b.type }) : null); }, "image/webp", 0.8);
+      } catch { clearTimeout(timer); done(null); }
+    });
+    v.addEventListener("error", () => { clearTimeout(timer); done(null); });
+    v.src = typeof fileOrUrl === "string" ? fileOrUrl : URL.createObjectURL(fileOrUrl);
+  });
+}
+async function attachPoster(item, fileOrUrl) {
+  const pf = await videoPoster(fileOrUrl); if (!pf) return false;
+  item.poster = await uploadFile(pf); if (backend.name === "github") previews[item.poster] = URL.createObjectURL(pf); return true;
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-mact]"); if (!b || b.dataset.mact === "hide") return;
   const el = b.closest(".entry"); const p = data.plays[el.dataset.i]; const list = p.media || (p.media = []); const mi = +b.closest(".media-row").dataset.mi;
+  if (b.dataset.mact === "poster") {
+    setStatus("Делаю обложку из ролика…");
+    try { if (await attachPoster(list[mi], backend.photoUrl(list[mi].src))) { markDirty(); renderList("plays"); setStatus("Обложка готова — не забудьте сохранить", "ok"); } else setStatus("Не удалось взять кадр: браузер не смог прочитать это видео", "err"); }
+    catch (err) { setStatus(err.message, "err"); }
+    return;
+  }
   if (b.dataset.mact === "del") list.splice(mi, 1);
   if (b.dataset.mact === "up" && mi > 0) [list[mi - 1], list[mi]] = [list[mi], list[mi - 1]];
   if (b.dataset.mact === "down" && mi < list.length - 1) [list[mi + 1], list[mi]] = [list[mi], list[mi + 1]];
@@ -739,7 +839,7 @@ document.addEventListener("change", async e => {
       try {
         const src = await uploadFile(file); if (backend.name === "github") previews[src] = URL.createObjectURL(file);
         const item = { type: isVideo ? "video" : "photo", src, caption: "", alt: "" };
-        if (!isVideo) await captionItem(item, file, p, false, "scene"); else { item.caption = `Видео: «${p.title}»`; item.alt = `Видео со спектакля «${p.title}»`; }
+        if (!isVideo) await captionItem(item, file, p, false, "scene"); else { item.caption = `Видео: «${p.title}»`; item.alt = `Видео со спектакля «${p.title}»`; setStatus("Делаю обложку из ролика…"); await attachPoster(item, file).catch(() => false); }
         p.media.push(item);
       } catch (err) { setStatus(err.message, "err"); break; }
     }
