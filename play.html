@@ -17,8 +17,8 @@
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link href="fonts/fonts.css?v=20260912b" rel="stylesheet">
-<link href="assets/site.css?v=20260912b" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260912c" rel="stylesheet">
+<link href="assets/site.css?v=20260912c" rel="stylesheet">
 </head>
 <body>
 
@@ -69,6 +69,12 @@
     <div class="afisha" id="datesList"></div>
   </section>
 
+  <section id="voices" hidden>
+    <h2 class="sec">Голо<em>са</em><span class="stamp-deco">слушай</span></h2>
+    <p class="sec-sub">Актёры о спектакле, своими словами. Минута, не больше.</p>
+    <div class="voices" id="voicesList"></div>
+  </section>
+
   <section id="reviews" hidden>
     <h2 class="sec">Гово<em>рят</em></h2>
     <div class="reviews" id="reviewsList"></div>
@@ -102,7 +108,7 @@
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260912b"></script>
+<script src="assets/site.js?v=20260912c"></script>
 <script>
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
@@ -134,6 +140,7 @@ function render(d) {
   document.getElementById("datesList").innerHTML = events.length ? events.map(function (e) { return R.eventRow(e, p, th, { link: false }); }).join("") : '<div class="empty">Ближайших дат пока нет. Следите в соцсетях.</div>';
 
   var revs = d.reviews.filter(function (r) { return !r.playId || r.playId === p.id; });
+  if (p.voices && p.voices.length) { document.getElementById("voices").hidden = false; document.getElementById("voicesList").innerHTML = R.voicesHtml(p.voices); R.voicePlayers(document.getElementById("voicesList")); }
   if (revs.length) { document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join(""); }
   var shots = d.gallery.filter(function (x) { return x.playId === p.id; });
   if (shots.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = shots.map(R.shot).join(""); }

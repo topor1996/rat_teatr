@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260912b" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260912c" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -64,6 +64,10 @@
   table.stats td.n{text-align:right;font-family:"Oswald",sans-serif;font-size:15px}
   table.stats tr.total td{color:var(--acid);font-weight:700}
   .scroll{overflow-x:auto}
+  .voices-admin{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .voice-row{display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:8px;align-items:center}
+  .voice-row audio{height:34px;max-width:220px}
+  @media (max-width:640px){.voice-row{grid-template-columns:1fr}}
   [hidden]{display:none!important}
   .empty{color:var(--muted);text-align:center;padding:24px}
   .help{font-size:12px;color:var(--muted);margin:0 0 14px}
@@ -393,6 +397,14 @@ const SECTIONS = {
         <div><label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
         <div><label>ID спектакля в Афише (виджет)</label><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="179397"><p class="hint">Число из кода teatrdoc.ru: openModal({shows_id: 179397}). Открывает окно с датами и оплатой прямо на сайте.</p></div>
       </div>
+      <label>Голоса актёров (аудио на странице спектакля)</label>
+      <div class="voices-admin">${(p.voices || []).map((v, vi) => `<div class="voice-row" data-vi="${vi}">
+        <input data-vf="name" value="${esc(v.name || "")}" placeholder="Кто говорит">
+        <input data-vf="note" value="${esc(v.note || "")}" placeholder="О чём: «про что спектакль», «как репетировали»">
+        <audio controls preload="none" src="${backend.photoUrl(v.audio)}"></audio>
+        <button class="btn danger sm" data-act="vdel" data-vi="${vi}">Убрать</button>
+      </div>`).join("")}</div>
+      <div class="tools" style="margin-top:6px"><label class="btn ghost sm" style="margin:0">+ Добавить голос (mp3, m4a, до 10 МБ)<input type="file" accept="audio/*" data-vfile="1" hidden></label><span class="hint" style="margin:0;align-self:center">Запись на телефон 30–60 секунд: актёр говорит, про что спектакль.</span></div>
       <div class="tools" style="margin-top:10px"><button class="btn sm" data-act="import">Обновить даты из Афиши</button><span class="hint" style="margin:0;align-self:center">Подтянет все даты, время, цены и номера сеансов. Можно вставить ссылку на спектакль на teatrdoc.ru, если ID ещё не известен.</span></div>`,
   },
   actors: {
@@ -426,12 +438,14 @@ const SECTIONS = {
   },
   gallery: {
     img: "photo", label: g => g.caption || "Фото",
-    blank: () => ({ photo: "", caption: "", playId: "" }),
+    blank: () => ({ photo: "", caption: "", alt: "", playId: "" }),
     form: g => `
       <div class="row">
         <div><label>Подпись</label><input data-f="caption" value="${esc(g.caption)}" placeholder="Гримёрка перед «ПОХ»"></div>
         <div><label>Спектакль</label><select data-f="playId"><option value="" ${!g.playId ? "selected" : ""}>— общий бэкстейдж —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === g.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
-      </div>`,
+      </div>
+      <label>Alt-текст (описание для незрячих и поисковиков)</label><input data-f="alt" value="${esc(g.alt || "")}" placeholder="Актёры в гримёрке перед спектаклем, тёмный кадр">
+      <div class="tools" style="margin-top:8px"><button class="btn ghost sm" data-act="autocap">Придумать подпись заново</button><span class="hint" style="margin:0;align-self:center">Подпись и alt заполняются сами при загрузке: по спектаклю, дате съёмки и самому кадру. Поправьте, если не то.</span></div>`,
   },
 };
 const BADGES = { premiere: "Премьера", last: "Последний показ", few: "Мало билетов", soldout: "Sold out" };
@@ -482,6 +496,59 @@ function renderStatic() {
   document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
 }
 function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); }
+
+/* ---- автоподпись к фото: без внешних сервисов, по спектаклю, дате съёмки и самому кадру ---- */
+const MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const MONTHS_NOM = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+function exifDate(buf) { // DateTimeOriginal из JPEG, если есть
+  try {
+    const v = new DataView(buf); if (v.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o < v.byteLength - 4) {
+      const marker = v.getUint16(o); const len = v.getUint16(o + 2);
+      if (marker === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) { // "Exif"
+        const t = o + 10, le = v.getUint16(t) === 0x4949, g16 = x => v.getUint16(x, le), g32 = x => v.getUint32(x, le);
+        const ifd0 = t + g32(t + 4); let exif = 0;
+        for (let i = 0, n = g16(ifd0); i < n; i++) { const e = ifd0 + 2 + i * 12; if (g16(e) === 0x8769) exif = t + g32(e + 8); }
+        if (!exif) return null;
+        for (let i = 0, n = g16(exif); i < n; i++) { const e = exif + 2 + i * 12; if (g16(e) === 0x9003 || g16(e) === 0x9004) { const p = t + g32(e + 8); let s = ""; for (let k = 0; k < 19; k++) s += String.fromCharCode(v.getUint8(p + k)); const m = s.match(/^(\d{4}):(\d{2}):(\d{2})/); if (m) return new Date(+m[1], +m[2] - 1, +m[3]); } }
+        return null;
+      }
+      if ((marker & 0xFF00) !== 0xFF00) break; o += 2 + len;
+    }
+  } catch {} return null;
+}
+async function imageLook(src) { // ориентация и тональность кадра
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+    const c = document.createElement("canvas"); c.width = 24; c.height = 24; const cx = c.getContext("2d"); cx.drawImage(img, 0, 0, 24, 24);
+    const d = cx.getImageData(0, 0, 24, 24).data; let lum = 0, sat = 0;
+    for (let i = 0; i < d.length; i += 4) { const r = d[i], g = d[i + 1], b = d[i + 2]; lum += 0.299 * r + 0.587 * g + 0.114 * b; const mx = Math.max(r, g, b), mn = Math.min(r, g, b); sat += mx ? (mx - mn) / mx : 0; }
+    const n = d.length / 4; lum /= n; sat /= n;
+    return { portrait: img.naturalHeight > img.naturalWidth * 1.15, wide: img.naturalWidth > img.naturalHeight * 1.6, dark: lum < 70, bright: lum > 170, mono: sat < 0.12 };
+  } catch { return {}; }
+}
+const pick = a => a[Math.floor(Math.random() * a.length)];
+async function autoCaption(i, file, force) {
+  const g = data.gallery[i]; if (!g) return;
+  const p = data.plays.find(x => x.id === g.playId); const play = p ? p.title : "";
+  const buf = file && /jpe?g$/i.test(file.name) ? await file.arrayBuffer().catch(() => null) : null;
+  const date = buf ? exifDate(buf) : null;
+  const src = (file && URL.createObjectURL(file)) || previews[g.photo] || backend.photoUrl(g.photo);
+  const look = await imageLook(src);
+  const th = data.theatre.name || "Театр RAT";
+  const mon = date ? MONTHS_NOM[date.getMonth()] : "", monGen = date ? MONTHS_GEN[date.getMonth()] : "";
+  const q = play ? `«${play}»` : "";
+  let pool = play ? [`За кулисами ${q}`, `Гримёрка перед ${q}`, `${q}: пять минут до выхода`, `Репетиция ${q}`, `Перед ${q}`, `${q}. Между сценами`, `${q}, ещё без света`, `Разбор после ${q}`] :
+    ["Гримёрка. Перед выходом", "Репетиция. Тишина не входит в план", "Пять минут до начала", "Между сценами", "Свет ещё не поставили", "Бэкстейдж, как есть", "Разбор после прогона", "Реквизит ждёт своего выхода"];
+  if (look.dark) pool = pool.concat(play ? [`${q} в темноте до третьего звонка`, `Свет выключен. ${q} ещё идёт`] : ["В темноте до третьего звонка", "Свет выключен, работа нет"]);
+  if (look.portrait) pool = pool.concat(play ? [`Крупно: ${q}`] : ["Крупно. Гримёрка"]);
+  if (mon) pool = pool.concat(play ? [`${q}, ${mon}`] : [`Бэкстейдж, ${mon}`]);
+  const alt = `Бэкстейдж театра ${th.replace(/^Театр\s+/i, "")}${play ? `, спектакль ${q}` : ""}: ${look.portrait ? "вертикальный" : look.wide ? "широкий" : "горизонтальный"}${look.dark ? " тёмный" : look.bright ? " светлый" : ""}${look.mono ? " чёрно-белый" : ""} кадр${date ? `, ${date.getDate()} ${monGen} ${date.getFullYear()}` : ""}`;
+  if (force || !g.caption) g.caption = pick(pool);
+  if (force || !g.alt) g.alt = alt;
+  markDirty(); if (force) { renderList("gallery"); setStatus("Подпись обновлена — поправьте при желании и сохраните"); }
+}
 
 /* ---- посещения и история ---- */
 const PAGE_NAMES = { home: "Главная", golos: "Голосование" };
@@ -559,6 +626,7 @@ $("#tabs").addEventListener("click", e => {
 });
 document.addEventListener("input", e => {
   const t = e.target;
+  if (t.dataset.vf) { const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const v = (p.voices || [])[+t.closest(".voice-row").dataset.vi]; if (v) { v[t.dataset.vf] = t.value; markDirty(); } return; }
   if (t.dataset.th !== undefined) { data.theatre[t.dataset.th] = t.value; markDirty(); return; }
   if (t.dataset.show !== undefined) { data.show[t.dataset.show] = t.value; markDirty(); return; }
   const el = t.closest(".entry"); if (!el || !t.dataset.f) return;
@@ -586,6 +654,8 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "down" && i < list.length - 1) [list[i + 1], list[i]] = [list[i], list[i + 1]];
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
   if (b.dataset.act === "import") { importAfisha(i); return; }
+  if (b.dataset.act === "autocap") { autoCaption(i, null, true); return; }
+  if (b.dataset.act === "vdel") { (list[i].voices || []).splice(+b.dataset.vi, 1); }
   markDirty(); renderList(key);
 });
 /* сжатие фото перед загрузкой: до 1600px по длинной стороне, WebP (или JPEG, если браузер не умеет WebP) */
@@ -612,11 +682,20 @@ document.addEventListener("change", async e => {
     catch (err) { setStatus(err.message, "err"); }
     t.value = ""; return;
   }
+  if (t.dataset.vfile && t.files[0]) {
+    const el = t.closest(".entry"); const p = data.plays[el.dataset.i]; const file = t.files[0];
+    if (!/^audio\//.test(file.type)) { setStatus("Нужен аудиофайл: mp3, m4a, ogg или wav", "err"); t.value = ""; return; }
+    if (file.size > 10 * 1024 * 1024) { setStatus("Аудио больше 10 МБ — сожмите или обрежьте", "err"); t.value = ""; return; }
+    setStatus("Загружаю аудио…");
+    try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); (p.voices = p.voices || []).push({ name: "", note: "", audio: path }); markDirty(); renderList("plays"); setStatus("Аудио загружено — впишите, кто говорит, и сохраните"); }
+    catch (err) { setStatus(err.message, "err"); }
+    t.value = ""; return;
+  }
   if (t.dataset.multi && t.files.length) {
     const files = [...t.files]; let n = 0;
     for (const file of files) {
       setStatus(`Загружаю фото ${++n} из ${files.length}…`);
-      try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); data[t.dataset.multi].push({ photo: path, caption: "", playId: "" }); }
+      try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); const item = { photo: path, caption: "", alt: "", playId: "" }; data[t.dataset.multi].push(item); if (t.dataset.multi === "gallery") await autoCaption(data.gallery.length - 1, file, false); }
       catch (err) { setStatus(err.message, "err"); break; }
     }
     markDirty(); renderList(t.dataset.multi); setStatus(`Загружено: ${n}. Не забудьте сохранить`); t.value = ""; return;
@@ -628,6 +707,7 @@ document.addEventListener("change", async e => {
     const photo = await uploadFile(file);
     if (backend.name === "github") previews[photo] = URL.createObjectURL(file);
     data[key][i][t.dataset.file] = photo; el.querySelector(".photo").innerHTML = photoHtml(photo); markDirty();
+    if (key === "gallery") { await autoCaption(i, file, false); renderList("gallery"); }
     setStatus("Фото загружено — не забудьте сохранить");
   } catch (err) { setStatus(err.message, "err"); }
   t.value = "";

@@ -54,14 +54,14 @@ function sanitize(input) {
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
     title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
-    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""),
+    poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
     price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
   const reviews = arr(input.reviews).slice(0, 100).map(r => ({ text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40) })).filter(r => r.text);
-  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), playId: str(g.playId, 40) })).filter(g => g.photo);
+  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40) })).filter(g => g.photo);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
                instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),
@@ -101,12 +101,12 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: PHOTOS_DIR,
     filename: (req, file, cb) => {
-      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov" }[file.mimetype] || ".jpg";
+      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/x-wav": ".wav" }[file.mimetype] || ".jpg";
       cb(null, `${Date.now()}-${crypto.randomBytes(3).toString("hex")}${ext}`);
     },
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => cb(null, /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime))$/.test(file.mimetype)),
+  fileFilter: (req, file, cb) => cb(null, /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|x-m4a|aac|ogg|wav|x-wav))$/.test(file.mimetype)),
 });
 
 // ---------- приложение ----------

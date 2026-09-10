@@ -248,7 +248,29 @@ window.RAT = (function () {
   /* ---------- бэкстейдж ---------- */
   var ROT = [-3, 2, -1.5, 3, -2.5, 1, 2.5, -2];
   function shot(g, i) {
-    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '"><span class="tape"></span><img src="' + esc(g.photo) + '" alt="' + esc(g.caption || "") + '" loading="lazy">' + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
+    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '"><span class="tape"></span><img src="' + esc(g.photo) + '" alt="' + esc(g.alt || g.caption || "") + '" loading="lazy">' + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
+  }
+  /* ---------- голоса актёров: аудио на странице спектакля ---------- */
+  function voicesHtml(list) {
+    return (list || []).map(function (v, i) {
+      return '<div class="voice rv"><button class="vplay" type="button" aria-label="Слушать"><span class="ico"></span></button>' +
+        '<div class="vbody"><div class="vname">' + esc(v.name || "Голос " + (i + 1)) + "</div>" + (v.note ? '<div class="vnote">' + esc(v.note) + "</div>" : "") +
+        '<div class="vbar"><div class="vfill"></div></div></div><div class="vtime">–:––</div><audio preload="metadata" src="' + esc(v.audio) + '"></audio></div>';
+    }).join("");
+  }
+  function voicePlayers(root) {
+    var fmt = function (s) { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ":" + (s % 60 < 10 ? "0" : "") + s % 60; };
+    var all = [].slice.call((root || document).querySelectorAll(".voice"));
+    all.forEach(function (box) {
+      var a = box.querySelector("audio"), btn = box.querySelector(".vplay"), fill = box.querySelector(".vfill"), time = box.querySelector(".vtime");
+      btn.addEventListener("click", function () { if (a.paused) { all.forEach(function (o) { if (o !== box) o.querySelector("audio").pause(); }); a.play(); } else a.pause(); });
+      a.addEventListener("play", function () { box.classList.add("playing"); });
+      a.addEventListener("pause", function () { box.classList.remove("playing"); });
+      a.addEventListener("ended", function () { box.classList.remove("playing"); fill.style.width = "0%"; time.textContent = fmt(a.duration); });
+      a.addEventListener("loadedmetadata", function () { time.textContent = fmt(a.duration); });
+      a.addEventListener("timeupdate", function () { if (a.duration) { fill.style.width = (a.currentTime / a.duration * 100) + "%"; time.textContent = fmt(a.duration - a.currentTime); } });
+      box.querySelector(".vbar").addEventListener("click", function (e) { var r = e.currentTarget.getBoundingClientRect(); if (a.duration) a.currentTime = (e.clientX - r.left) / r.width * a.duration; });
+    });
   }
   function lightbox() {
     var lb = document.getElementById("lightbox"); if (!lb) return;
@@ -290,6 +312,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

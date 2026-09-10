@@ -40,6 +40,15 @@ function readData(string $file): array {
 function str($v, int $max = 500): string { return mb_substr(trim((string)($v ?? '')), 0, $max); }
 function url($v): string { $v = str($v, 500); return preg_match('~^https?://\S+$~', $v) ? $v : ''; }
 function img($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
+function voices($v): array {
+  $out = [];
+  foreach (array_slice(is_array($v) ? $v : [], 0, 10) as $x) {
+    if (!is_array($x)) continue;
+    $item = ['name' => str($x['name'] ?? '', 100), 'note' => str($x['note'] ?? '', 200), 'audio' => media($x['audio'] ?? '')];
+    if ($item['audio'] !== '') $out[] = $item;
+  }
+  return $out;
+}
 function media($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
 function sanitize(array $in): array {
   $show = is_array($in['show'] ?? null) ? $in['show'] : [];
@@ -56,7 +65,7 @@ function sanitize(array $in): array {
     if (!is_array($p)) continue;
     $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
     $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 3000),
-             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40))];
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null)];
     if ($item['title'] !== '') $plays[] = $item;
   }
   $BADGES = ['premiere', 'last', 'few', 'soldout'];
@@ -76,7 +85,7 @@ function sanitize(array $in): array {
   }
   foreach ($lst('gallery', 200) as $g) {
     if (!is_array($g)) continue;
-    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'playId' => str($g['playId'] ?? '', 40)];
+    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40)];
     if ($item['photo'] !== '') $gallery[] = $item;
   }
   return [
@@ -250,7 +259,7 @@ switch ($a) {
     if ($ext) { if ($f['size'] > 8 * 1024 * 1024) fail('Фото больше 8 МБ'); }
     else {
       $mime = function_exists('mime_content_type') ? (string)@mime_content_type($f['tmp_name']) : '';
-      $ext = ['video/mp4' => '.mp4', 'video/webm' => '.webm', 'video/quicktime' => '.mov'][$mime] ?? null;
+      $ext = ['video/mp4' => '.mp4', 'video/webm' => '.webm', 'video/quicktime' => '.mov', 'audio/mpeg' => '.mp3', 'audio/mp4' => '.m4a', 'audio/x-m4a' => '.m4a', 'audio/aac' => '.aac', 'audio/ogg' => '.ogg', 'audio/wav' => '.wav', 'audio/x-wav' => '.wav'][$mime] ?? null;
       if (!$ext) fail('Нужен файл JPG, PNG, WebP или видео MP4/WebM');
       if ($f['size'] > 10 * 1024 * 1024) fail('Видео больше 10 МБ — сожмите его (5–10 секунд, 720p)');
     }
