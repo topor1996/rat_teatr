@@ -107,7 +107,7 @@ window.RAT = (function () {
   function marqRat() {
     var box = document.querySelector(".marq-outer"); if (!box || box.querySelector(".marq-rat")) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M2 20c6-2 10-3 14-2l-2-6c0-4 4-6 8-5 3 1 5 4 9 5h9c6 0 11 2 15 5 1 1 3 2 5 2 2 0 3-1 3-2-2-2-4-3-7-4-4-3-9-5-16-5h-8c-3-3-6-6-11-6-7 0-12 5-11 11l-8 5z" fill="#000"/><circle cx="46" cy="14" r="1.6" fill="#c9ff3d"/><path d="M30 8c-2-3-1-6 1-7 1 1 1 4 0 7z" fill="#000"/></svg>');
+    box.insertAdjacentHTML("beforeend", '<svg class="marq-rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M21 17c0-8 8-11 16-11 7 0 11 2 14 5l11 6-11 4c-3 3-7 4-14 4-8 0-16-1-16-8z" fill="#000"/><circle cx="48" cy="8" r="3.2" fill="#000"/><path d="M21 17C13 15 9 25 1 21" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><path d="M28 24l-2 4M34 25v3M43 25l-1 3M48 23l2 5" stroke="#000" stroke-width="2.6" stroke-linecap="round"/><circle cx="54" cy="15" r="1.4" fill="#c9ff3d"/><path d="M57 14l5-3M57 18l5 3" stroke="#000" stroke-width="1" stroke-linecap="round" opacity=".8"/></svg>');
     var rat = box.querySelector(".marq-rat");
     var run = function () { rat.classList.remove("run"); rat.classList.remove("dash"); rat.style.removeProperty("--x"); void rat.offsetWidth; rat.classList.add("run"); setTimeout(run, 40000 + Math.random() * 50000); };
     rat.addEventListener("click", function () {
