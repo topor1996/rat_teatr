@@ -188,7 +188,7 @@ app.post("/api/review", (req, res) => {
   writeData(data); res.json({ ok: true });
 });
 app.get("/api/snapshot", requireAuth, (req, res) => {
-  const id = String(req.query.id || "").replace(/[^0-9-]/g, ""), p = path.join(HISTORY_DIR, id + ".json");
+  const id = String(req.query.id || "").replace(/[^0-9.-]/g, "").replace(/\.\./g, ""), p = path.join(HISTORY_DIR, id + ".json");
   if (!id || !fs.existsSync(p)) return res.status(404).json({ error: "Версия не найдена" });
   try { res.json({ ok: true, data: JSON.parse(fs.readFileSync(p, "utf8")) }); } catch { res.status(500).json({ error: "Файл версии повреждён" }); }
 });

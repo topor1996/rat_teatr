@@ -265,10 +265,11 @@ function pushRun(): array {
 }
 function snapshot(string $dataFile, string $dir): void {
   if (!is_file($dataFile)) return;
-  @copy($dataFile, $dir . '/' . date('Y-m-d-His') . '-' . substr((string)microtime(true), -3) . '.json');
+  @copy($dataFile, $dir . '/' . date('Y-m-d-His') . '-' . sprintf('%03d', (int)fmod(microtime(true) * 1000, 1000)) . '.json');
   $files = glob($dir . '/*.json') ?: []; sort($files);
   while (count($files) > 20) @unlink(array_shift($files));
 }
+function historyId(string $id): string { $id = preg_replace('~[^0-9.\-]~', '', $id); return strpos($id, '..') === false ? $id : ''; } // имя файла версии: цифры, дефисы, точка; без выхода из папки
 function historyList(string $dir): array {
   $out = [];
   foreach (array_reverse(glob($dir . '/*.json') ?: []) as $f) {
@@ -359,9 +360,9 @@ switch ($a) {
   case 'snapshot':
     // содержимое одной версии из истории — для сравнения «что изменилось»
     requireAuth();
-    $id = preg_replace('~[^0-9-]~', '', (string)($_GET['id'] ?? ''));
+    $id = historyId((string)($_GET['id'] ?? ''));
     $f = $HISTORY_DIR . '/' . $id . '.json';
-    if ($id === '' || !is_file($f)) fail('Версия не найдена', 404);
+    if ($id === '' || !is_file($f)) fail('Версия не найдена: ' . $id, 404);
     out(['ok' => true, 'data' => json_decode((string)file_get_contents($f), true) ?: []]);
 
   case 'history':
@@ -373,9 +374,9 @@ switch ($a) {
     // вернуть версию: текущая перед этим тоже сохраняется в историю
     requireAuth();
     if ($method !== 'POST') fail('POST only', 405);
-    $id = preg_replace('~[^0-9-]~', '', (string)(body()['id'] ?? ''));
+    $id = historyId((string)(body()['id'] ?? ''));
     $f = $HISTORY_DIR . '/' . $id . '.json';
-    if ($id === '' || !is_file($f)) fail('Версия не найдена');
+    if ($id === '' || !is_file($f)) fail('Версия не найдена: ' . $id);
     $restored = json_decode((string)file_get_contents($f), true);
     if (!is_array($restored)) fail('Файл версии повреждён');
     snapshot($DATA_FILE, $HISTORY_DIR);
