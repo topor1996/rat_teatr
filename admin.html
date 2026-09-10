@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913c" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913d" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -85,6 +85,35 @@
   .voice-row{display:grid;grid-template-columns:1fr 1.4fr auto auto;gap:8px;align-items:center}
   .voice-row audio{height:34px;max-width:220px}
   @media (max-width:640px){.voice-row{grid-template-columns:1fr}}
+  /* ---- телефон: вкладки внизу под большим пальцем, крупные кнопки, без зума полей ---- */
+  .drag{cursor:grab;touch-action:none;user-select:none;padding:6px 10px;font-size:18px;line-height:1;color:var(--muted);border:2px solid var(--line);background:transparent}
+  .drag:active{cursor:grabbing}
+  .entry.dragging{opacity:.5;outline:2px dashed var(--acid)}
+  .cam{display:none}
+  @media (pointer:coarse){.cam{display:inline-flex}}
+  @media (max-width:700px){
+    .wrap{padding:12px 10px 170px}
+    h1{font-size:22px}
+    .bar{margin-bottom:10px}
+    .tabs{position:fixed;left:0;right:0;bottom:0;z-index:12;background:#000;border-top:1px solid var(--line);border-bottom:0;margin:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:0}
+    .tabs::-webkit-scrollbar{display:none}
+    .tabs button{flex:none;padding:12px 12px;font-size:14px;border-bottom:0;border-top:3px solid transparent;margin:0}
+    .tabs button.on{border-top-color:var(--acid)}
+    .save{bottom:calc(62px + env(safe-area-inset-bottom));padding:10px 12px}
+    .btn{min-height:44px;padding:10px 14px}
+    .btn.sm{min-height:40px}
+    input,textarea,select{font-size:16px;padding:12px}
+    .panel{padding:12px}
+    .panel h2{flex-wrap:wrap;font-size:16px}
+    .tools{gap:8px}
+    .num{width:28px;height:28px;font-size:13px;top:-8px;left:-8px}
+    .item{grid-template-columns:1fr}
+    .photo{width:100%;max-width:220px}
+    .media-row{grid-template-columns:1fr}
+    .mtools{flex-direction:row;flex-wrap:wrap}
+    .checklist li{flex-wrap:wrap}
+    .login{margin-top:6vh}
+  }
   [hidden]{display:none!important}
   .empty{color:var(--muted);text-align:center;padding:24px}
   .help{font-size:12px;color:var(--muted);margin:0 0 14px}
@@ -176,6 +205,7 @@
     <div class="tab" id="tab-gallery">
       <p class="help"><b>Стена в гримёрке.</b> Можно выбрать сразу много фото — каждое станет отдельной карточкой. Фото сжимаются автоматически. Если привязать к спектаклю, попадёт и на его страницу.</p>
       <label class="btn ghost" style="margin-bottom:14px">+ Загрузить фото<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-multi="gallery" style="display:none"></label>
+      <label class="btn ghost cam" style="margin:0 0 14px 8px">📷 Снять<input type="file" accept="image/*" capture="environment" data-multi="gallery" style="display:none"></label>
       <div id="list-gallery"></div>
     </div>
 
@@ -248,6 +278,16 @@
         <h2>Резервная копия</h2>
         <p class="help">Архив со всеми данными сайта и фото. Хостинг сам ничего не хранит, скачивайте раз в неделю и после больших правок.</p>
         <a class="btn" id="backupLink" href="api.php?a=backup">Скачать всё архивом</a>
+      </div>
+      <div class="panel" id="pwPanel">
+        <h2>Пароль админки</h2>
+        <p class="help">Новый пароль начнёт действовать сразу и заменит тот, что в config.php. Не короче 8 символов.</p>
+        <div class="row3">
+          <div><label>Текущий пароль</label><input type="password" id="pwCur" autocomplete="current-password"></div>
+          <div><label>Новый пароль</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+          <div><label>Ещё раз новый</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
+        </div>
+        <button class="btn" id="pwChange" style="margin-top:10px">Сменить пароль</button>
       </div>
       <div class="panel">
         <h2>История версий <span class="tools"><button class="btn ghost sm" id="historyRefresh">Обновить</button></span></h2>
@@ -430,7 +470,7 @@ const SECTIONS = {
         <div><input data-mf="caption" value="${esc(m.caption || "")}" placeholder="Подпись"><input data-mf="alt" value="${esc(m.alt || "")}" placeholder="Alt-текст (что на кадре)" style="margin-top:6px"></div>
         <div class="mtools"><button class="btn ghost sm" data-mact="up">↑</button><button class="btn ghost sm" data-mact="down">↓</button>${m.type === "video" ? `<button class="btn ghost sm" data-mact="poster" title="Кадр из ролика как обложка">${m.poster ? "Обложка ✓" : "Сделать обложку"}</button>` : ""}<label class="chk draft" style="margin:0"><input type="checkbox" data-mact="hide" ${m.hidden ? "checked" : ""}> Скрыть</label><button class="btn danger sm" data-mact="del">Убрать</button></div>
       </div>`).join("")}</div>
-      <div class="tools" style="margin-top:6px"><label class="btn ghost sm" style="margin:0">+ Добавить фото или видео<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple data-pmedia="1" hidden></label><span class="hint" style="margin:0;align-self:center">Можно сразу несколько. Фото сжимаются сами, видео до 10 МБ (короткий ролик). Подписи заполняются автоматически.</span></div>
+      <div class="tools" style="margin-top:6px"><label class="btn ghost sm" style="margin:0">+ Добавить фото или видео<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" multiple data-pmedia="1" hidden></label><label class="btn ghost sm cam" style="margin:0">📷 Снять<input type="file" accept="image/*,video/*" capture="environment" data-pmedia="1" hidden></label><span class="hint" style="margin:0;align-self:center">Можно сразу несколько. Фото сжимаются сами, видео до 10 МБ (короткий ролик). Подписи заполняются автоматически.</span></div>
       <label>Голоса актёров (аудио на странице спектакля)</label>
       <div class="voices-admin">${(p.voices || []).map((v, vi) => `<div class="voice-row" data-vi="${vi}">
         <input data-vf="name" value="${esc(v.name || "")}" placeholder="Кто говорит">
@@ -515,7 +555,7 @@ function renderList(key) {
     <div class="panel entry${item.hidden ? " is-hidden" : ""}" data-key="${key}" data-i="${i}">
       <span class="num">${i + 1}</span>
       <h2><span class="title">${esc(sec.label(item))}${item.hidden ? ' <span class="draft-tag">черновик</span>' : ""}</span>
-        <span class="tools"><label class="chk draft" title="Не показывать на сайте, пока не будет готово"><input type="checkbox" data-hidden ${item.hidden ? "checked" : ""}> Скрыть</label><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
+        <span class="tools"><label class="chk draft" title="Не показывать на сайте, пока не будет готово"><input type="checkbox" data-hidden ${item.hidden ? "checked" : ""}> Скрыть</label><span class="drag" title="Перетащить" aria-label="Перетащить">≡</span><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
       <div class="item ${sec.img ? "" : "noimg"}">
         ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img])}</div>
           <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить<input type="file" accept="image/jpeg,image/png,image/webp" data-file="${sec.img}"></label>
@@ -590,6 +630,33 @@ async function captionItem(g, file, p, force, mode) {
   if (force || !g.alt) g.alt = alt;
 }
 
+/* ---- перетаскивание записей: пальцем на телефоне, мышью на компьютере ---- */
+(() => {
+  let drag = null;
+  document.addEventListener("pointerdown", e => {
+    const h = e.target.closest(".drag"); if (!h) return;
+    const el = h.closest(".entry"); if (!el) return;
+    drag = { el, list: el.parentElement, key: el.dataset.key }; el.classList.add("dragging"); h.setPointerCapture && h.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  document.addEventListener("pointermove", e => {
+    if (!drag) return; e.preventDefault();
+    const over = document.elementFromPoint(e.clientX, e.clientY)?.closest?.(".entry");
+    if (!over || over === drag.el || over.parentElement !== drag.list) { autoScroll(e.clientY); return; }
+    const r = over.getBoundingClientRect(); const after = e.clientY > r.top + r.height / 2;
+    drag.list.insertBefore(drag.el, after ? over.nextSibling : over);
+    autoScroll(e.clientY);
+  });
+  const autoScroll = y => { const m = 70; if (y < m) window.scrollBy(0, -12); else if (y > innerHeight - m - 60) window.scrollBy(0, 12); };
+  const finish = () => {
+    if (!drag) return;
+    const order = [...drag.list.querySelectorAll(".entry")].map(el => +el.dataset.i); const arr = data[drag.key];
+    const changed = order.some((v, i) => v !== i);
+    if (changed) { data[drag.key] = order.map(i => arr[i]); markDirty(); }
+    drag.el.classList.remove("dragging"); const key = drag.key; drag = null; if (changed) renderList(key);
+  };
+  document.addEventListener("pointerup", finish); document.addEventListener("pointercancel", finish);
+})();
+
 /* ---- проверка перед публикацией ---- */
 const fmtMB = b => (b / 1048576).toFixed(1).replace(".0", "") + " МБ";
 async function loadCheck() {
@@ -659,6 +726,7 @@ async function loadVisits() {
 async function loadHistory() {
   const box = $("#historyBody");
   $("#backupLink").href = apiPath("api.php?a=backup", "/api/backup");
+  $("#pwPanel").hidden = backend.name === "github";
   if (backend.name === "github") { box.textContent = "На GitHub Pages история хранится в самом репозитории (вкладка History на GitHub), а архив — кнопка Code → Download ZIP."; $("#backupLink").hidden = true; return; }
   try {
     const items = (await api(apiPath("api.php?a=history", "/api/history"))).items || [];
@@ -668,6 +736,15 @@ async function loadHistory() {
       ${items.map(it => `<tr><td>${f(it.time)}</td><td class="n">${it.plays}</td><td class="n">${it.events}</td><td class="n">${it.actors}</td><td class="n">${it.reviews}</td><td class="n">${it.gallery}</td><td><button class="btn ghost sm" data-restore="${esc(it.id)}">Вернуть</button></td></tr>`).join("")}</table></div>`;
   } catch (err) { box.textContent = err.message; }
 }
+$("#pwChange").onclick = async () => {
+  const cur = $("#pwCur").value, next = $("#pwNew").value, next2 = $("#pwNew2").value;
+  if (!cur || !next) { setStatus("Заполните текущий и новый пароль", "err"); return; }
+  if (next !== next2) { setStatus("Новый пароль введён по-разному", "err"); return; }
+  if (next.length < 8) { setStatus("Новый пароль короче 8 символов", "err"); return; }
+  setStatus("Меняю пароль…");
+  try { await api(apiPath("api.php?a=password", "/api/password"), { method: "POST", body: JSON.stringify({ current: cur, next }) }); $("#pwCur").value = $("#pwNew").value = $("#pwNew2").value = ""; setStatus("Пароль изменён ✓ Запомните его: старый больше не подходит", "ok"); }
+  catch (err) { setStatus(err.message, "err"); }
+};
 $("#visitsRefresh").onclick = loadVisits;
 $("#historyRefresh").onclick = loadHistory;
 $("#historyBody").addEventListener("click", async e => {

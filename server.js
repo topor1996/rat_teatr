@@ -11,6 +11,10 @@ const DATA_DIR = path.join(ROOT, "data");
 const DATA_FILE = path.join(DATA_DIR, "data.json");
 const HISTORY_DIR = path.join(DATA_DIR, "history");
 const VISITS_FILE = path.join(DATA_DIR, "visits.json");
+const PW_FILE = path.join(DATA_DIR, "password.json");
+const pwHash = () => { try { return JSON.parse(fs.readFileSync(PW_FILE, "utf8")).hash || ""; } catch { return ""; } };
+const pwVerify = (given, hash) => { const [, salt, h] = hash.split("$"); const k = crypto.scryptSync(given, salt, 32).toString("hex"); return k.length === h.length && crypto.timingSafeEqual(Buffer.from(k), Buffer.from(h)); };
+const pwMake = pw => { const salt = crypto.randomBytes(12).toString("hex"); return "scrypt$" + salt + "$" + crypto.scryptSync(pw, salt, 32).toString("hex"); };
 const PHOTOS_DIR = path.join(ROOT, "photos");
 const PORT = process.env.PORT || 3000;
 
@@ -133,7 +137,8 @@ app.post("/api/login", (req, res) => {
   const ip = req.ip;
   const att = loginAttempts.get(ip) || { count: 0, until: 0 };
   if (att.until > Date.now()) return res.status(429).json({ error: "Слишком много попыток, подождите минуту" });
-  if (safeEqual(req.body?.password || "", PASSWORD)) {
+  const h = pwHash();
+  if (h ? pwVerify(req.body?.password || "", h) : safeEqual(req.body?.password || "", PASSWORD)) {
     loginAttempts.delete(ip);
     const token = crypto.randomBytes(24).toString("base64url");
     sessions.set(token, Date.now() + SESSION_TTL);
@@ -144,6 +149,13 @@ app.post("/api/login", (req, res) => {
   if (att.count >= 5) { att.count = 0; att.until = Date.now() + 60_000; }
   loginAttempts.set(ip, att);
   res.status(401).json({ error: "Неверный пароль" });
+});
+app.post("/api/password", requireAuth, (req, res) => {
+  const cur = str(req.body?.current, 200), next = str(req.body?.next, 200), h = pwHash();
+  if (!(h ? pwVerify(cur, h) : safeEqual(cur, PASSWORD))) return res.status(401).json({ error: "Текущий пароль неверный" });
+  if (next.length < 8) return res.status(400).json({ error: "Новый пароль короче 8 символов" });
+  if (next === cur) return res.status(400).json({ error: "Новый пароль совпадает с текущим" });
+  writeJson(PW_FILE, { hash: pwMake(next), changed: new Date().toISOString() }); res.json({ ok: true });
 });
 app.post("/api/logout", (req, res) => {
   sessions.delete(parseCookies(req).rat_admin);
@@ -172,7 +184,7 @@ app.post("/api/restore", requireAuth, (req, res) => {
 });
 app.get("/api/backup", requireAuth, (req, res) => {
   // zip без сжатия (store), без внешних зависимостей
-  const files = []; const walk = (dir, base) => { for (const n of fs.readdirSync(dir)) { const p = path.join(dir, n); if (fs.statSync(p).isDirectory()) walk(p, base + n + "/"); else if (n !== "password.txt") files.push([base + n, fs.readFileSync(p)]); } };
+  const files = []; const walk = (dir, base) => { for (const n of fs.readdirSync(dir)) { const p = path.join(dir, n); if (fs.statSync(p).isDirectory()) walk(p, base + n + "/"); else if (n !== "password.txt" && n !== "password.json") files.push([base + n, fs.readFileSync(p)]); } };
   walk(DATA_DIR, "data/"); walk(PHOTOS_DIR, "photos/");
   const crcTable = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
   const crc32 = b => { let c = 0xFFFFFFFF; for (const x of b) c = crcTable[(c ^ x) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };

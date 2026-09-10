@@ -3,3 +3,4 @@ data/password.txt
 .DS_Store
 config.php
 deploy-*.zip
+data/password.json

@@ -9,6 +9,7 @@ $DATA_DIR = $ROOT . '/data';
 $DATA_FILE = $DATA_DIR . '/data.json';
 $HISTORY_DIR = $DATA_DIR . '/history';
 $VISITS_FILE = $DATA_DIR . '/visits.json';
+$PW_FILE = $DATA_DIR . '/password.json'; // хэш пароля, заданного из админки (приоритетнее config.php)
 $PHOTOS_DIR = $ROOT . '/photos';
 $DEFAULT_PASSWORD = 'смените-меня';
 
@@ -168,10 +169,12 @@ switch ($a) {
 
   case 'login':
     if ($method !== 'POST') fail('POST only', 405);
-    if ($PASSWORD === '' || $PASSWORD === $DEFAULT_PASSWORD) fail('Сначала задайте пароль в файле config.php на хостинге', 403);
+    $pwHash = is_file($PW_FILE) ? (string)(json_decode((string)file_get_contents($PW_FILE), true)['hash'] ?? '') : '';
+    if ($pwHash === '' && ($PASSWORD === '' || $PASSWORD === $DEFAULT_PASSWORD)) fail('Сначала задайте пароль в файле config.php на хостинге', 403);
     $_SESSION['attempts'] = (int)($_SESSION['attempts'] ?? 0);
     if ($_SESSION['attempts'] >= 5 && time() - (int)($_SESSION['blocked_at'] ?? 0) < 60) fail('Слишком много попыток, подождите минуту', 429);
-    if (hash_equals($PASSWORD, (string)(body()['password'] ?? ''))) {
+    $given = (string)(body()['password'] ?? '');
+    if ($pwHash !== '' ? password_verify($given, $pwHash) : hash_equals($PASSWORD, $given)) {
       session_regenerate_id(true);
       $_SESSION['authed'] = true; $_SESSION['attempts'] = 0;
       out(['ok' => true]);
@@ -180,6 +183,20 @@ switch ($a) {
     if ($_SESSION['attempts'] >= 5) $_SESSION['blocked_at'] = time();
     sleep(1);
     fail('Неверный пароль', 401);
+
+  case 'password':
+    // смена пароля из админки: хэш хранится в data/password.json, config.php больше не нужен
+    requireAuth();
+    if ($method !== 'POST') fail('POST only', 405);
+    $b = body(); $cur = (string)($b['current'] ?? ''); $next = (string)($b['next'] ?? '');
+    $pwHash = is_file($PW_FILE) ? (string)(json_decode((string)file_get_contents($PW_FILE), true)['hash'] ?? '') : '';
+    $okCur = $pwHash !== '' ? password_verify($cur, $pwHash) : hash_equals($PASSWORD, $cur);
+    if (!$okCur) { sleep(1); fail('Текущий пароль неверный', 401); }
+    if (mb_strlen($next) < 8) fail('Новый пароль короче 8 символов');
+    if ($next === $cur) fail('Новый пароль совпадает с текущим');
+    writeJson($PW_FILE, ['hash' => password_hash($next, PASSWORD_DEFAULT), 'changed' => date('c')]);
+    session_regenerate_id(true);
+    out(['ok' => true]);
 
   case 'logout':
     $_SESSION = [];
@@ -225,7 +242,7 @@ switch ($a) {
     foreach ([$DATA_DIR => 'data', $PHOTOS_DIR => 'photos'] as $dir => $name) {
       foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS)) as $file) {
         $rel = $name . '/' . substr($file->getPathname(), strlen($dir) + 1);
-        if (basename($rel) === 'password.txt') continue;
+        if (in_array(basename($rel), ['password.txt', 'password.json'], true)) continue;
         $zip->addFile($file->getPathname(), $rel);
       }
     }
