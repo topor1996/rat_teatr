@@ -187,6 +187,11 @@ app.post("/api/review", (req, res) => {
   const data = readData(); (data.reviews = data.reviews || []).push({ text, author, source: "с сайта", url: "", playId, hidden: true, fromSite: true, id: "r" + Math.floor(Date.now() / 1000) + "-" + crypto.randomBytes(2).toString("hex"), date: day });
   writeData(data); res.json({ ok: true });
 });
+app.get("/api/inbox", requireAuth, (req, res) => {
+  const rv = (readData().reviews || []).filter(r => r.fromSite && r.hidden), ts = r => +String(r.id || "").slice(1, 11) || 0;
+  const last = Math.max(0, ...rv.map(ts)), latest = rv.find(r => ts(r) === last);
+  res.json({ ok: true, count: rv.length, last, author: latest?.author || "", text: (latest?.text || "").slice(0, 90) });
+});
 app.get("/api/snapshot", requireAuth, (req, res) => {
   const id = String(req.query.id || "").replace(/[^0-9.-]/g, "").replace(/\.\./g, ""), p = path.join(HISTORY_DIR, id + ".json");
   if (!id || !fs.existsSync(p)) return res.status(404).json({ error: "Версия не найдена" });

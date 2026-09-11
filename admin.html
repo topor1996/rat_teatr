@@ -88,6 +88,11 @@
   @media (max-width:640px){.voice-row{grid-template-columns:1fr}}
   /* ---- телефон: вкладки внизу под большим пальцем, крупные кнопки, без зума полей ---- */
   .diff{font-size:13px;line-height:1.5;padding:6px 0} .diff ul{margin:2px 0 8px;padding-left:18px} .diffrow td{background:#0e0e0e}
+  .inbox{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--acid);color:#000;padding:10px 14px;margin:0 0 14px;border:2.5px solid #000;transform:rotate(-.4deg);font-size:14px}
+  .inbox b{font-family:"Oswald",sans-serif;font-size:16px;letter-spacing:.06em;text-transform:uppercase}
+  .inbox .q{font-family:"PT Mono",monospace;color:#222;flex:1;min-width:200px}
+  .inbox .btn{border-color:#000}
+  .inbox .x{margin-left:auto;background:none;border:0;font-size:20px;cursor:pointer;color:#000}
   .drag{cursor:grab;touch-action:none;user-select:none;padding:6px 10px;font-size:18px;line-height:1;color:var(--muted);border:2px solid var(--line);background:transparent}
   .drag:active{cursor:grabbing}
   .entry.dragging{opacity:.5;outline:2px dashed var(--acid)}
@@ -149,6 +154,7 @@
   </div>
 
   <div id="editor" hidden>
+    <div class="inbox" id="inbox" hidden></div>
     <div class="bar">
       <h1>Театр <em>RAT</em> · админка</h1>
       <div class="links">
@@ -805,6 +811,25 @@ async function loadHistory() {
       <p class="help">«Что изменилось» у верхней версии сравнивает её с тем, что на сайте сейчас; у остальных — с версией выше по списку (то есть что поменяло следующее сохранение).</p>`;
   } catch (err) { box.textContent = err.message; }
 }
+/* ---- уведомление о новых отзывах с сайта: опрос раз в минуту, плашка сверху и счётчик в заголовке вкладки ---- */
+let inboxSeen = +(localStorage.getItem("rat_inbox_seen") || 0), inboxTimer = null;
+async function checkInbox(first) {
+  if (backend.name === "github") return;
+  try {
+    const r = await api(apiPath("api.php?a=inbox", "/api/inbox"));
+    document.title = (r.count ? `(${r.count}) ` : "") + "Админка — Театр RAT";
+    const box = $("#inbox");
+    if (r.count && r.last > inboxSeen) {
+      box.hidden = false;
+      box.innerHTML = `<b>✉️ ${r.count === 1 ? "Новый отзыв с сайта" : "Новых отзывов с сайта: " + r.count}</b><span class="q">${esc(r.author || "Зритель")}: «${esc(r.text)}${r.text.length >= 90 ? "…" : ""}»</span><button class="btn sm" data-inbox-open>Открыть</button><button class="x" data-inbox-close aria-label="Скрыть">×</button>`;
+      if (!first && data) { data = normalize(await backend.load()); renderAll(); } // подтянуть свежие данные, чтобы отзыв уже был в списке
+    } else if (!r.count) box.hidden = true;
+  } catch (e) {}
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-inbox-open]")) { document.querySelector('[data-tab="reviews"]').click(); const first = document.querySelector("#list-reviews .entry.is-hidden"); if (first) first.scrollIntoView({ behavior: "smooth" }); }
+  if (e.target.closest("[data-inbox-open],[data-inbox-close]")) { inboxSeen = Math.floor(Date.now() / 1000); localStorage.setItem("rat_inbox_seen", inboxSeen); $("#inbox").hidden = true; }
+});
 $("#pwChange").onclick = async () => {
   const cur = $("#pwCur").value, next = $("#pwNew").value, next2 = $("#pwNew2").value;
   if (!cur || !next) { setStatus("Заполните текущий и новый пароль", "err"); return; }
@@ -1106,7 +1131,7 @@ async function load() {
   if (!(await backend.me())) return showLogin();
   data = normalize(await backend.load()); loadedAt = Math.floor(Date.now() / 1000);
   showEditor(); renderAll(); dirty = false; setStatus("Всё сохранено");
-  loadVisits(); loadHistory(); loadPush();
+  loadVisits(); loadHistory(); loadPush(); checkInbox(true); clearInterval(inboxTimer); inboxTimer = setInterval(() => checkInbox(false), 60000);
 }
 /* страховка: если за 8 секунд ничего не показалось (например, хостинг не пустил запросы к api.php), показать форму входа с подсказкой */
 setTimeout(() => {

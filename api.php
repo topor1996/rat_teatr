@@ -358,6 +358,14 @@ switch ($a) {
     $tmp = $DATA_FILE . '.tmp'; file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); rename($tmp, $DATA_FILE);
     out(['ok' => true]);
 
+  case 'inbox':
+    // для уведомления в админке: сколько отзывов с сайта ждут проверки и когда пришёл последний
+    requireAuth();
+    $rv = array_values(array_filter(readData($DATA_FILE)['reviews'] ?? [], fn($r) => !empty($r['fromSite']) && !empty($r['hidden'])));
+    $last = 0; foreach ($rv as $r) $last = max($last, (int)substr((string)($r['id'] ?? ''), 1, 10));
+    $latest = null; foreach ($rv as $r) if ((int)substr((string)($r['id'] ?? ''), 1, 10) === $last) $latest = $r;
+    out(['ok' => true, 'count' => count($rv), 'last' => $last, 'author' => $latest['author'] ?? '', 'text' => mb_substr($latest['text'] ?? '', 0, 90)]);
+
   case 'snapshot':
     // содержимое одной версии из истории — для сравнения «что изменилось»
     requireAuth();
