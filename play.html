@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913n" rel="stylesheet">
-<link href="assets/intro.css?v=20260913n" rel="stylesheet">
-<link href="assets/site.css?v=20260913n" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913o" rel="stylesheet">
+<link href="assets/intro.css?v=20260913o" rel="stylesheet">
+<link href="assets/site.css?v=20260913o" rel="stylesheet">
 </head>
 <body>
 
@@ -146,7 +146,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913n" defer></script>
+<script src="assets/site.js?v=20260913o" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -171,7 +171,12 @@ function render(d) {
   var g = document.getElementById("pGenre"); if (p.genre) { g.textContent = p.genre; g.hidden = false; }
   document.getElementById("pMeta").innerHTML = [p.duration && "<b>" + esc(p.duration) + "</b>", p.age && "<b>" + esc(p.age) + "</b>", (nextOf ? "ближайший показ <b>" + R.fmtLong(nextOf) + "</b>" : "дат пока нет")].filter(Boolean).join(" · ");
   document.getElementById("pDesc").textContent = p.description || "";
-  if (p.cast) { var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + esc(p.cast); c.hidden = false; }
+  if (p.cast) {
+    /* имена актёров, у которых есть личная страница, становятся ссылками */
+    var castHtml = esc(p.cast);
+    d.actors.filter(R.actorHasPage).forEach(function (a) { var n = esc(a.name); if (castHtml.indexOf(n) >= 0) castHtml = castHtml.split(n).join('<a class="alink" href="' + R.actorUrl(a) + '">' + n + "</a>"); });
+    var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + castHtml; c.hidden = false;
+  }
   document.getElementById("pRow").innerHTML = (nextOf && !R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>';
   document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT")).replace(/<\/div>$/, '<button class="btn light sm" data-story="1" type="button">Картинка «Я иду»</button></div>');
   window.__storyCtx = { p: p, events: events, th: th };

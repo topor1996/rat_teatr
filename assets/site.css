@@ -538,3 +538,6 @@ h2.sec .gt{display:inline-block;animation:glB 3s steps(1,end) infinite;animation
   .mbar .buy.sticky b{font-size:14px;letter-spacing:.06em}
   .mbar .buy.sticky small{font-family:"PT Mono","PT Mono Fallback",monospace;font-size:10px;letter-spacing:0;text-transform:none;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 }
+.cast .alink{color:var(--acid);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+.cast .alink:hover{color:#fff}
+.golos-card .apage{display:inline-block;margin-top:8px;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#000;background:var(--acid);padding:5px 9px;border:2px solid #000;text-decoration:none;transform:rotate(-2deg)}

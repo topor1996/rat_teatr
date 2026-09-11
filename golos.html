@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.css?v=20260913n" rel="stylesheet">
+<link href="assets/intro.css?v=20260913o" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
 <link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link href="fonts/fonts.css?v=20260913n" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913o" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -103,6 +103,7 @@
   .marq i{font-style:normal}
   @keyframes mq{to{transform:translateX(-100%)}}
   @media (prefers-reduced-motion:reduce){.marq .track{animation:none}}
+  .card .apage{display:inline-block;margin:8px 0 2px;font-family:"Oswald",sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#000;background:#c9ff3d;padding:5px 9px;border:2px solid #000;text-decoration:none;transform:rotate(-2deg)}
   .marq.js .track{animation:none;transform:translate3d(0,0,0)}
   .marq-rat.run{pointer-events:auto;cursor:pointer}
   .marq-rat.dash{animation:ratDash .8s cubic-bezier(.5,0,1,1) forwards}
@@ -461,6 +462,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
       <div class="body">
         <h2 class="name">${esc(a.name)}</h2>
         <span class="role">${esc(a.role)}</span>
+        ${a.photo && (a.bio || a.roles) ? `<a class="apage" href="actor.html?id=${slug(a.name)}">страница актёра →</a>` : ""}
         <p class="scene">${esc(a.scene)}</p>
         <a class="btn ${hasSbp ? "" : "disabled"}" href="${hasSbp ? esc(a.sbp) : "#"}" target="_blank" rel="noopener">
           <svg><use href="#sbp"/></svg> Перевести через СБП
