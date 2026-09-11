@@ -888,8 +888,8 @@ window.RAT = (function () {
   function rip() {
     try {
       var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; var ac = squeak.ac || (squeak.ac = new AC()); if (ac.state === "suspended") ac.resume();
-      var len = Math.floor(ac.sampleRate * .28), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
-      for (var i = 0; i < len; i++) { var t = i / len; d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 1.6) * (0.5 + 0.5 * Math.sin(t * 90)); }
+      var len = Math.floor(ac.sampleRate * .55), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) { var t = i / len; var env = t < .2 ? t / .2 * .35 : t < .42 ? .15 : t < .5 ? 1 : Math.pow(1 - (t - .5) / .5, 1.4); d[i] = (Math.random() * 2 - 1) * env * (0.55 + 0.45 * Math.sin(t * 140)); }
       var src = ac.createBufferSource(); src.buffer = buf; var f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = .7; var g = ac.createGain(); g.gain.value = .12;
       src.connect(f); f.connect(g); g.connect(ac.destination); src.start();
     } catch (x) {}
@@ -902,10 +902,17 @@ window.RAT = (function () {
       var card = a.closest(".card, .flip, .ev, .rev, .shot"); if (!card || !card.querySelector(".tape")) return;
       if (reduced()) return;
       ev.preventDefault();
-      var url = a.href; card.classList.add("peel"); rip();
+      var url = a.href;
+      /* скотч остаётся на стене вместе с клочком бумаги: копируем каждый кусок скотча на его место в документе */
+      card.querySelectorAll(".tape").forEach(function (t) {
+        var r = t.getBoundingClientRect(), st = getComputedStyle(t), c = document.createElement("span"); c.className = "tape-stay";
+        c.style.left = (r.left + window.pageXOffset + r.width / 2 - t.offsetWidth / 2) + "px"; c.style.top = (r.top + window.pageYOffset + r.height / 2 - t.offsetHeight / 2) + "px";
+        c.style.width = t.offsetWidth + "px"; c.style.height = t.offsetHeight + "px"; c.style.transform = st.transform; document.body.appendChild(c);
+      });
+      card.classList.add("peel"); rip();
       var gone = false, go = function () { if (gone) return; gone = true; location.href = url; };
       card.addEventListener("animationend", function (e) { if (e.target === card) go(); });
-      setTimeout(go, 750);
+      setTimeout(go, 950);
     });
   }
   /* ---------- сцена по скроллу: камера едет вглубь, постер уходит назад, актёры выходят из темноты, титры, занавес ---------- */
