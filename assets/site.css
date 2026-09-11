@@ -42,7 +42,8 @@ nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(
   nav ul{margin-left:0;width:100%;padding-right:44px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 56px),transparent)}
   nav.at-end ul{-webkit-mask-image:none;mask-image:none}
   /* подсказка, что меню листается: стрелка у правого края, пропадает, когда долистали */
-  nav .more{position:absolute;right:10px;bottom:9px;width:30px;height:30px;border-radius:50%;background:var(--acid);color:#000;display:grid;place-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:20px;line-height:1;pointer-events:none;animation:navHint 1.3s ease-in-out infinite;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+  nav .more{position:absolute;right:10px;bottom:10px;width:28px;height:28px;border-radius:50%;background:var(--acid);display:flex;align-items:center;justify-content:center;pointer-events:none;animation:navHint 1.3s ease-in-out infinite;box-shadow:0 2px 8px rgba(0,0,0,.6)}
+  nav .more svg{display:block;margin-left:1px}
   nav.at-end .more{display:none}
   @keyframes navHint{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
 }

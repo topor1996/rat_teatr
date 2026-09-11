@@ -805,7 +805,7 @@ window.RAT = (function () {
   /* меню в шапке на телефоне листается: стрелка у края, тень, один раз само подвигается */
   function navHint() {
     var nav = document.querySelector("nav"), ul = nav && nav.querySelector("ul"); if (!ul || nav.querySelector(".more")) return;
-    var more = document.createElement("span"); more.className = "more"; more.setAttribute("aria-hidden", "true"); more.textContent = "›"; nav.querySelector(".wrap").appendChild(more);
+    var more = document.createElement("span"); more.className = "more"; more.setAttribute("aria-hidden", "true"); more.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5l7 7-7 7" fill="none" stroke="#000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; nav.querySelector(".wrap").appendChild(more);
     var check = function () { nav.classList.toggle("at-end", ul.scrollWidth - ul.clientWidth - ul.scrollLeft < 6); };
     ul.addEventListener("scroll", check, { passive: true }); window.addEventListener("resize", check); check();
     if (!reduced() && ul.scrollWidth > ul.clientWidth + 6) {
