@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913r" rel="stylesheet">
-<link href="assets/intro.css?v=20260913r" rel="stylesheet">
-<link href="assets/site.css?v=20260913r" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913s" rel="stylesheet">
+<link href="assets/intro.min.css?v=20260913s" rel="stylesheet">
+<link href="assets/site.min.css?v=20260913s" rel="stylesheet">
 </head>
 <body>
 
@@ -128,7 +128,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913r" defer></script>
+<script src="assets/site.min.js?v=20260913s" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -154,12 +154,12 @@ function render(d) {
   document.getElementById("aShare").innerHTML = R.shareHtml(url, a.name + " — " + (th.name || "Театр RAT"));
 
   /* спектакли, где актёр в составе: ищем имя или фамилию в поле «кто играет» */
-  var words = a.name.split(/\s+/).filter(function (w) { return w.length > 3; }), low = a.name.toLowerCase();
-  var plays = d.plays.filter(function (p) { var c = (p.cast || "").toLowerCase(); return c && (c.indexOf(low) >= 0 || words.some(function (w) { return c.indexOf(w.toLowerCase()) >= 0; })); });
+  var low = a.name.toLowerCase();
+  var plays = d.plays.filter(function (p) { return R.castMatches(a, p); });
   if (plays.length) {
     document.getElementById("aplays").hidden = false;
     document.getElementById("aPlaysList").innerHTML = plays.map(function (p) {
-      return '<a class="card rv" href="' + R.playUrl(p) + '" style="text-decoration:none;color:inherit"><span class="tape"></span><div class="poster ' + (p.poster ? "" : "ph") + '">' + (p.poster ? '<img src="' + esc(p.poster) + '" alt="' + esc(p.title) + '" loading="lazy">' : '<span class="ttl">' + esc(p.title) + "</span>") + '</div><div class="pbody"><h3>' + esc(p.title) + "</h3>" + (p.genre ? '<div class="genre">' + esc(p.genre) + "</div>" : "") + "</div></a>";
+      return '<a class="card rv" href="' + R.playUrl(p) + '" style="text-decoration:none;color:inherit"><span class="tape"></span><div class="poster ' + (p.poster ? "" : "ph") + '">' + (p.poster ? R.pic(p.poster, 'alt="' + esc(p.title) + '" loading="lazy"') : '<span class="ttl">' + esc(p.title) + "</span>") + '</div><div class="pbody"><h3>' + esc(p.title) + "</h3>" + (function (c) { return c && c.role ? '<div class="genre">в роли: ' + esc(c.role) + "</div>" : (p.genre ? '<div class="genre">' + esc(p.genre) + "</div>" : ""); })((p.castList || []).filter(function (c) { return c.name === a.name; })[0]) + "</div></a>";
     }).join("");
   }
   /* голоса актёра из всех спектаклей */

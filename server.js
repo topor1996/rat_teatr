@@ -58,7 +58,7 @@ function sanitize(input) {
   const plays = arr(input.plays).slice(0, 50).map((p, i) => ({
     id: str(p.id, 40).toLowerCase().replace(/[^a-z0-9-]/g, "") || "play-" + (i + 1),
     title: str(p.title, 100), genre: str(p.genre, 120), description: str(p.description, 3000),
-    hidden: !!p.hidden, poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio), media: arr(p.media).slice(0, 40).map(x => ({ src: media(x.src), caption: str(x.caption, 140), alt: str(x.alt, 200), poster: img(x.poster), hidden: !!x.hidden })).filter(x => x.src).map(x => ({ type: /\.(mp4|webm|mov)$/i.test(x.src) ? "video" : "photo", ...x })),
+    hidden: !!p.hidden, poster: img(p.poster), duration: str(p.duration, 40), age: str(p.age, 6), cast: str(p.cast, 500), castList: arr(p.castList).slice(0, 30).map(c => ({ name: str(c?.name, 100), role: str(c?.role, 100) })).filter(c => c.name), ticketUrl: url(p.ticketUrl), afishaShowId: str(p.afishaShowId, 40).replace(/\D/g, ""), voices: arr(p.voices).slice(0, 10).map(x => ({ name: str(x.name, 100), note: str(x.note, 200), audio: media(x.audio) })).filter(x => x.audio), media: arr(p.media).slice(0, 40).map(x => ({ src: media(x.src), caption: str(x.caption, 140), alt: str(x.alt, 200), poster: img(x.poster), hidden: !!x.hidden })).filter(x => x.src).map(x => ({ type: /\.(mp4|webm|mov)$/i.test(x.src) ? "video" : "photo", ...x })),
   })).filter(p => p.title);
   const events = arr(input.events).slice(0, 200).map(e => ({
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
@@ -192,6 +192,7 @@ app.get("/api/inbox", requireAuth, (req, res) => {
   const last = Math.max(0, ...rv.map(ts)), latest = rv.find(r => ts(r) === last);
   res.json({ ok: true, count: rv.length, last, author: latest?.author || "", text: (latest?.text || "").slice(0, 90) });
 });
+app.get("/api/thumbs", requireAuth, (req, res) => res.json({ ok: true, made: 0, skipped: 0, failed: 0, note: "В Node-версии уменьшенные копии не делаются — используются оригиналы" }));
 app.get("/api/snapshot", requireAuth, (req, res) => {
   const id = String(req.query.id || "").replace(/[^0-9.-]/g, "").replace(/\.\./g, ""), p = path.join(HISTORY_DIR, id + ".json");
   if (!id || !fs.existsSync(p)) return res.status(404).json({ error: "Версия не найдена" });

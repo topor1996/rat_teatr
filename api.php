@@ -80,7 +80,7 @@ function sanitize(array $in): array {
     if (!is_array($p)) continue;
     $id = preg_replace('~[^a-z0-9-]~', '', mb_strtolower(str($p['id'] ?? '', 40)));
     $item = ['id' => $id ?: 'play-' . (count($plays) + 1), 'title' => str($p['title'] ?? '', 100), 'genre' => str($p['genre'] ?? '', 120), 'description' => str($p['description'] ?? '', 3000),
-             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null), 'media' => playMedia($p['media'] ?? null), 'hidden' => !empty($p['hidden'])];
+             'poster' => img($p['poster'] ?? ''), 'duration' => str($p['duration'] ?? '', 40), 'age' => str($p['age'] ?? '', 6), 'cast' => str($p['cast'] ?? '', 500), 'castList' => array_values(array_filter(array_map(fn($c) => is_array($c) ? ['name' => str($c['name'] ?? '', 100), 'role' => str($c['role'] ?? '', 100)] : null, array_slice(is_array($p['castList'] ?? null) ? $p['castList'] : [], 0, 30)), fn($c) => $c && $c['name'] !== '')), 'ticketUrl' => url($p['ticketUrl'] ?? ''), 'afishaShowId' => preg_replace('~\D~', '', str($p['afishaShowId'] ?? '', 40)), 'voices' => voices($p['voices'] ?? null), 'media' => playMedia($p['media'] ?? null), 'hidden' => !empty($p['hidden'])];
     if ($item['title'] !== '') $plays[] = $item;
   }
   $BADGES = ['premiere', 'last', 'few', 'soldout'];
@@ -189,6 +189,17 @@ function pushPoke(string $endpoint, array $k, string $contact): int {
   $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", $headers), 'content' => '', 'timeout' => 15, 'ignore_errors' => true], 'ssl' => ['verify_peer' => false]]);
   @file_get_contents($endpoint, false, $ctx);
   return (int)(preg_match('~ (\d{3}) ~', $http_response_header[0] ?? '', $m) ? $m[1] : 0);
+}
+/* уменьшенная копия фото (до 480 px по большей стороне) рядом с оригиналом: photos/x.webp → photos/x-s.webp. Без GD — молча пропускаем */
+function makeThumb(string $file): bool {
+  if (!function_exists('imagecreatefromstring') || !function_exists('imagewebp')) return false;
+  $info = @getimagesize($file); if (!$info) return false;
+  $src = @imagecreatefromstring((string)file_get_contents($file)); if (!$src) return false;
+  $w = imagesx($src); $h = imagesy($src); $k = min(1, 480 / max($w, $h)); $tw = max(1, (int)round($w * $k)); $th = max(1, (int)round($h * $k));
+  $dst = imagecreatetruecolor($tw, $th); imagealphablending($dst, false); imagesavealpha($dst, true);
+  imagecopyresampled($dst, $src, 0, 0, 0, 0, $tw, $th, $w, $h);
+  $out = preg_replace('~\.[a-z0-9]+$~i', '', $file) . '-s.webp';
+  $ok = @imagewebp($dst, $out, 78); imagedestroy($dst); imagedestroy($src); return (bool)$ok;
 }
 function pushDb(): array { global $PUSH_FILE; $j = is_file($PUSH_FILE) ? json_decode((string)file_get_contents($PUSH_FILE), true) : null; return is_array($j) ? $j + ['subs' => []] : ['subs' => []]; }
 function evKey(array $e): string { return ($e['date'] ?? '') . '_' . ($e['time'] ?? '') . '_' . ($e['playId'] ?? ''); }
@@ -486,7 +497,20 @@ switch ($a) {
     }
     $name = time() . '-' . bin2hex(random_bytes(3)) . $ext;
     if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить файл — проверьте права на папку photos', 500);
-    out(['ok' => true, 'photo' => 'photos/' . $name]);
+    $thumb = in_array($ext, ['.jpg', '.png', '.webp'], true) ? makeThumb($PHOTOS_DIR . '/' . $name) : false;
+    out(['ok' => true, 'photo' => 'photos/' . $name, 'thumb' => $thumb]);
+
+  case 'thumbs':
+    // одноразово: уменьшенные копии для всех фото, у которых их ещё нет
+    requireAuth();
+    $made = 0; $skip = 0; $fail = 0;
+    foreach (glob($PHOTOS_DIR . '/*.{jpg,jpeg,png,webp}', GLOB_BRACE) ?: [] as $file) {
+      if (preg_match('~-s\.webp$~', $file)) continue;
+      $small = preg_replace('~\.[a-z0-9]+$~i', '', $file) . '-s.webp';
+      if (is_file($small)) { $skip++; continue; }
+      if (makeThumb($file)) $made++; else $fail++;
+    }
+    out(['ok' => true, 'made' => $made, 'skipped' => $skip, 'failed' => $fail]);
 
   case 'push_key':
     // публичный VAPID-ключ для подписки в браузере (создаётся при первом обращении)

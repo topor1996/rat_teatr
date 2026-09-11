@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913r" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913s" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -273,6 +273,11 @@
         <p class="help">Что стоит доделать, чтобы сайт выглядел законченно и быстро открывался. Считается по текущим данным, включая несохранённые.</p>
         <div id="checkBody" class="hint">Загружаю…</div>
       </div>
+      <div class="panel">
+        <h2>Заполненность <span class="tools"><button class="btn ghost sm" id="thumbsBtn" type="button" title="Уменьшенные копии для фото, загруженных до этой версии сайта">Сделать уменьшенные копии фото</button></span></h2>
+        <p class="help">Что на сайте пустует. Считается по данным админки прямо сейчас. Новые фото получают уменьшенную копию сами; для старых нажмите кнопку справа один раз.</p>
+        <div id="fillBody" class="hint">Откройте вкладку ещё раз после правок.</div>
+      </div>
     </div>
 
     <!-- Посещения -->
@@ -469,11 +474,12 @@ const SECTIONS = {
       </div>
       <label>Пометка (название события, если «другое»)</label><input data-f="note" value="${esc(e.note || "")}">
       <label>Стикеры на афише</label>
-      <div class="checks">${Object.entries(BADGES).map(([k, v]) => `<label class="chk"><input type="checkbox" data-badge="${k}" ${(e.badges || []).includes(k) ? "checked" : ""}> ${v}</label>`).join("")}</div>`,
+      <div class="checks">${Object.entries(BADGES).map(([k, v]) => `<label class="chk"><input type="checkbox" data-badge="${k}" ${(e.badges || []).includes(k) ? "checked" : ""}> ${v}</label>`).join("")}</div>
+      <p class="hint" style="margin:4px 0 0">Совет: «Премьера» сильнее, когда стоит на одной-двух первых датах, а не на всех подряд. «Осталось мало мест» и «Аншлаг» ставятся сами по данным Афиши.</p>`,
   },
   plays: {
     img: "poster", label: p => p.title || "Новый спектакль",
-    blank: () => ({ id: "play-" + Date.now().toString(36), title: "", genre: "", description: "", poster: "", duration: "", age: "18+", ticketUrl: "", afishaShowId: "" }),
+    blank: () => ({ id: "play-" + Date.now().toString(36), title: "", genre: "", description: "", poster: "", duration: "", age: "18+", ticketUrl: "", afishaShowId: "" , castList: []}),
     form: p => `
       <div class="row">
         <div><label>Название</label><input data-f="title" value="${esc(p.title)}"></div>
@@ -485,7 +491,10 @@ const SECTIONS = {
         <div><label>Возраст</label><input data-f="age" value="${esc(p.age)}" placeholder="18+"></div>
         <div><label>Идентификатор</label><input data-f="id" value="${esc(p.id)}"></div>
       </div>
-      <label>Кто играет (строкой, для страницы спектакля)</label><input data-f="cast" value="${esc(p.cast || "")}" placeholder="Иван Петров, Мария Соколова, ...">
+      <label>Состав из команды</label>
+      <div class="castrows">${(p.castList || []).map((c, ci) => `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:center"><select data-cast-name="${ci}" style="flex:1;min-width:0">${data.actors.map(x => `<option value="${esc(x.name)}" ${x.name === c.name ? "selected" : ""}>${esc(x.name)}</option>`).join("")}${data.actors.some(x => x.name === c.name) ? "" : `<option value="${esc(c.name)}" selected>${esc(c.name)} (нет в списке)</option>`}</select><input data-cast-role="${ci}" value="${esc(c.role || "")}" placeholder="в роли…" style="flex:1;min-width:0"><button class="btn danger sm" data-act="castdel" data-ci="${ci}" type="button" style="flex:none">×</button></div>`).join("")}</div>
+      <div class="tools" style="margin:4px 0 10px"><button class="btn ghost sm" data-act="castadd" type="button">+ актёр из команды</button><span class="hint" style="margin:0;align-self:center">Имя со страницы актёра подставится само; так ссылки на личные страницы и «где играет» работают без опечаток.</span></div>
+      <label>Кто ещё (строкой: приглашённые, художник по свету и т.п.)</label><input data-f="cast" value="${esc(p.cast || "")}" placeholder="Иван Петров, Мария Соколова, ...">
       <div class="row">
         <div><label>Ссылка на билеты спектакля</label><input data-f="ticketUrl" value="${esc(p.ticketUrl)}" placeholder="https://www.teatrdoc.ru/..."></div>
         <div><label>ID спектакля в Афише (виджет)</label><div class="tools" style="flex-wrap:nowrap"><input data-f="afishaShowId" value="${esc(p.afishaShowId || "")}" placeholder="подставится сам"><button class="btn ghost sm" data-act="findshow" style="white-space:nowrap">Найти в Афише</button></div><p class="hint">Ищется по названию среди спектаклей площадки в Афише. Если не нашлось — впишите вручную или укажите точное название, как у площадки.</p></div>
@@ -731,8 +740,34 @@ async function captionItem(g, file, p, force, mode) {
 
 /* ---- проверка перед публикацией ---- */
 const fmtMB = b => (b / 1048576).toFixed(1).replace(".0", "") + " МБ";
+function completeness() {
+  /* заполненность сайта: чего не хватает, с числами, по вкладкам */
+  const th = data.theatre, A = data.actors, P = data.plays.filter(p => !p.hidden), G = data.gallery, RV = data.reviews.filter(r => !r.hidden), today = new Date().toISOString().slice(0, 10);
+  const rows = []; const row = (n, text, tab, weight) => rows.push({ n, text, tab, weight: weight || 1 });
+  row(A.filter(a => !a.photo).length, "актёры без фото", "actors", 2);
+  row(A.filter(a => !a.sbp).length, "актёры без ссылки СБП (голосование только по номеру телефона)", "actors", 3);
+  row(A.filter(a => !a.bio && !a.roles).length, "актёры без «О себе» и ролей (личная страница не включается)", "actors", 2);
+  row(P.filter(p => !(p.castList || []).length && !p.cast).length, "спектакли без состава", "plays", 1);
+  row(P.filter(p => !p.poster).length, "спектакли без постера", "plays", 3);
+  row(P.filter(p => (p.description || "").length < 300).length, "спектакли с описанием короче 300 знаков", "plays", 1);
+  row(P.filter(p => !(p.media || []).some(m => !m.hidden)).length, "спектакли без фото и видео", "plays", 1);
+  row(P.filter(p => !p.afishaShowId).length, "спектакли без ID в Афише (нет остатков мест и импорта дат)", "plays", 1);
+  row(P.filter(p => !data.events.some(e => e.playId === p.id && !e.hidden && e.date >= today)).length, "спектакли без ближайших дат", "events", 1);
+  row(G.filter(g => g.photo && !g.caption).length, "фото бэкстейджа без подписи", "gallery", 1);
+  row(G.filter(g => !(g.actors || []).length).length, "фото и видео без отметки «кто на фото»", "gallery", 1);
+  row(RV.length ? 0 : 1, "нет ни одного опубликованного отзыва", "reviews", 3);
+  row(th.heroVideo || th.heroPoster ? 0 : 1, "нет видео или фото в шапке главной", "theatre", 2);
+  row((th.faq || []).filter(f => f.q && f.a).length ? 0 : 1, "не заполнен блок «Перед походом»", "theatre", 2);
+  row(th.telegram ? 0 : 1, "нет ссылки на Telegram", "theatre", 1);
+  row((th.about || "").length < 400 ? 1 : 0, "«О театре» короче 400 знаков", "theatre", 1);
+  const total = rows.reduce((x, r) => x + r.weight, 0), missing = rows.reduce((x, r) => x + (r.n ? r.weight : 0), 0);
+  return { pct: Math.round((1 - missing / total) * 100), rows: rows.filter(r => r.n) };
+}
 async function loadCheck() {
   const box = $("#checkBody"); const items = []; const add = (level, text, tab) => items.push({ level, text, tab });
+  const comp = completeness();
+  $("#fillBody").innerHTML = `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px"><div style="font-size:40px;font-family:Oswald,sans-serif;line-height:1">${comp.pct}%</div><div class="hint" style="margin:0">заполненность сайта. Чем ближе к 100, тем меньше у зрителя поводов закрыть вкладку.</div></div>` +
+    (comp.rows.length ? `<ul class="checklist">${comp.rows.map(r => `<li class="${r.weight >= 3 ? "bad" : r.weight === 2 ? "warn" : "ok"}"><span>${/^(нет|не |«)/.test(r.text) ? "" : `<b>${r.n}</b> — `}${esc(r.text)}</span><button class="btn ghost sm" data-goto="${r.tab}" type="button">Открыть</button></li>`).join("")}</ul>` : '<p class="hint">Всё заполнено.</p>');
   let sizes = {};
   if (backend.name !== "github") { try { sizes = (await api(apiPath("api.php?a=sizes", "/api/sizes"))).sizes || {}; } catch {} }
   const sz = f => sizes[f] || 0, today = new Date().toISOString().slice(0, 10);
@@ -863,6 +898,13 @@ document.addEventListener("click", e => {
   if (e.target.closest("[data-inbox-open]")) { document.querySelector('[data-tab="reviews"]').click(); const first = document.querySelector("#list-reviews .entry.is-hidden"); if (first) first.scrollIntoView({ behavior: "smooth" }); }
   if (e.target.closest("[data-inbox-open],[data-inbox-close]")) { inboxSeen = Math.floor(Date.now() / 1000); localStorage.setItem("rat_inbox_seen", inboxSeen); $("#inbox").hidden = true; }
 });
+document.addEventListener("click", e => { const b = e.target.closest("[data-goto]"); if (b) document.querySelector(`[data-tab="${b.dataset.goto}"]`)?.click(); });
+$("#thumbsBtn").onclick = async () => {
+  if (backend.name === "github") { setStatus("На GitHub Pages нет сервера — копии не делаются, сайт использует оригиналы", "err"); return; }
+  setStatus("Делаю уменьшенные копии…");
+  try { const r = await api(apiPath("api.php?a=thumbs", "/api/thumbs")); setStatus(`Готово: сделано ${r.made}, уже были ${r.skipped}, не удалось ${r.failed}${r.note ? ". " + r.note : ""}`, "ok"); }
+  catch (err) { setStatus(err.message, "err"); }
+};
 $("#pwChange").onclick = async () => {
   const cur = $("#pwCur").value, next = $("#pwNew").value, next2 = $("#pwNew2").value;
   if (!cur || !next) { setStatus("Заполните текущий и новый пароль", "err"); return; }
@@ -983,6 +1025,7 @@ $("#tabs").addEventListener("click", e => {
 });
 document.addEventListener("change", e => {
   const t = e.target;
+  if (t.dataset.castName !== undefined) { const el = t.closest(".entry"); const c = (data.plays[el.dataset.i].castList || [])[+t.dataset.castName]; if (c) { c.name = t.value; markDirty(); } return; }
   if (t.matches("[data-hidden]")) { const el = t.closest(".entry"); data[el.dataset.key][el.dataset.i].hidden = t.checked; markDirty(); renderList(el.dataset.key); return; }
   if (t.matches("[data-mact=hide]")) { const el = t.closest(".entry"); const m = (data.plays[el.dataset.i].media || [])[+t.closest(".media-row").dataset.mi]; if (m) { m.hidden = t.checked; markDirty(); renderList("plays"); } }
 });
@@ -1040,6 +1083,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   const t = e.target;
+  if (t.dataset.castRole !== undefined) { const el = t.closest(".entry"); const c = (data.plays[el.dataset.i].castList || [])[+t.dataset.castRole]; if (c) { c.role = t.value; markDirty(); } return; }
   if (t.dataset.gact !== undefined) { const el = t.closest(".entry"); const g = data.gallery[el.dataset.i]; g.actors = [...el.querySelectorAll("[data-gact]")].filter(x => x.checked).map(x => x.dataset.gact); markDirty(); return; }
   if (t.dataset.badge) { const el = t.closest(".entry"); const ev = data.events[el.dataset.i]; ev.badges = Object.keys(BADGES).filter(k => el.querySelector(`[data-badge=${k}]`).checked); markDirty(); return; }
   if (t.tagName === "SELECT" && t.dataset.f) { const el = t.closest(".entry"); const item = data[el.dataset.key][el.dataset.i]; item[t.dataset.f] = t.value; el.querySelector(".title").textContent = SECTIONS[el.dataset.key].label(item); markDirty(); }
@@ -1057,6 +1101,8 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
   if (b.dataset.act === "import") { importAfisha(i); return; }
   if (b.dataset.act === "autocap") { autoCaption(i, null, true); return; }
+  if (b.dataset.act === "castadd") { (list[i].castList = list[i].castList || []).push({ name: (data.actors[0] || {}).name || "", role: "" }); markDirty(); renderList(key); return; }
+  if (b.dataset.act === "castdel") { list[i].castList.splice(+b.dataset.ci, 1); markDirty(); renderList(key); return; }
   if (b.dataset.act === "gposter") { setStatus("Делаю обложку из ролика…"); attachPoster(list[i], backend.photoUrl(list[i].video)).then(ok => { if (ok) { markDirty(); renderList("gallery"); setStatus("Обложка готова. Не забудьте сохранить", "ok"); } else setStatus("Не удалось взять кадр из видео", "err"); }); return; }
   if (b.dataset.act === "findshow") { findAfishaShow(i); return; }
   if (b.dataset.act === "vdel") { (list[i].voices || []).splice(+b.dataset.vi, 1); }

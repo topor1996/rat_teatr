@@ -265,9 +265,35 @@ window.RAT = (function () {
   function actorSlug(name) { return String(name || "").toLowerCase().split("").map(function (ch) { return TRANSLIT[ch] !== undefined ? TRANSLIT[ch] : ch; }).join("").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); }
   function actorHasPage(a) { return !!(a && a.photo && (a.bio || a.roles)); }
   function actorUrl(a) { return "actor.html?id=" + encodeURIComponent(actorSlug(a.name)); }
+  /* картинка с уменьшенной копией: photos/x.webp → photos/x-s.webp; если копии нет (старые фото, GitHub Pages) — берётся оригинал */
+  function pic(path, attrs) {
+    if (!path) return "";
+    var small = /^photos\/.+\.(jpe?g|png|webp)$/i.test(path) && !/-s\.webp$/.test(path) ? path.replace(/\.[a-z0-9]+$/i, "-s.webp") : "";
+    return '<img src="' + esc(small || path) + '"' + (small ? ' data-full="' + esc(path) + '" onerror="this.onerror=null;this.src=this.dataset.full"' : "") + " " + (attrs || "") + ">";
+  }
+  /* состав спектакля: castList [{name, role}] из списка актёров + свободная строка cast (кто ещё). Актёр «играет в спектакле», если он в castList или его фамилия есть в строке */
+  function surname(name) { var w = String(name || "").trim().split(/\s+/); return (w.length > 1 ? w[w.length - 1] : w[0] || "").toLowerCase(); }
+  function castMatches(a, p) {
+    if (!a || !p) return false;
+    if ((p.castList || []).some(function (c) { return c.name === a.name; })) return true;
+    var sn = surname(a.name), c = (p.cast || "").toLowerCase();
+    return !!(sn.length >= 4 && c.indexOf(sn) >= 0);
+  }
+  function excerpt(text, n) { text = String(text || "").replace(/\s+/g, " ").trim(); if (text.length <= n) return text; var cut = text.slice(0, n); var sp = cut.lastIndexOf(" "); return (sp > n * .6 ? cut.slice(0, sp) : cut).replace(/[,;:—-]$/, "") + "…"; }
+  /* строка «Играют:» для страницы спектакля: имена со ссылками на личные страницы, роли из castList, дальше свободная строка */
+  function castHtml(p, actors) {
+    var byName = {}; (actors || []).forEach(function (a) { byName[a.name] = a; });
+    var parts = (p.castList || []).map(function (c) {
+      var a = byName[c.name], n = esc(c.name); if (a && actorHasPage(a)) n = '<a class="alink" href="' + actorUrl(a) + '">' + n + "</a>";
+      return n + (c.role ? ", " + esc(c.role) : "");
+    });
+    var free = esc(p.cast || "");
+    if (free) (actors || []).filter(actorHasPage).forEach(function (a) { var n = esc(a.name); if (free.indexOf(n) >= 0) free = free.split(n).join('<a class="alink" href="' + actorUrl(a) + '">' + n + "</a>"); });
+    return parts.concat(free ? [free] : []).join("; ");
+  }
   function actorCard(a) {
     return '<div class="flip rv" tabindex="0" role="button"><div class="inner">' +
-      '<div class="face front"><span class="tape"></span><div class="ph">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="' + esc(a.name) + '" loading="lazy">' : '<div class="in">' + esc(initials(a.name)) + "</div>") + "</div>" +
+      '<div class="face front"><span class="tape"></span><div class="ph">' + (a.photo ? pic(a.photo, 'alt="' + esc(a.name) + '" loading="lazy"') : '<div class="in">' + esc(initials(a.name)) + "</div>") + "</div>" +
       '<div class="n">' + esc(a.name) + "</div>" + (a.bio ? '<div class="r">' + esc(a.bio) + "</div>" : "") + '<span class="hint">нажми ↻</span></div>' +
       '<div class="face back" data-ini="' + esc(initials(a.name)) + '"><div class="n">' + esc(a.name) + "</div>" +
       (a.roles ? '<div class="roles">' + esc(a.roles) + "</div>" : "") + '<div class="bio">' + esc(a.bio || "") + "</div>" + (actorHasPage(a) ? '<a class="more" href="' + actorUrl(a) + '">страница →</a>' : "") + '<span class="hint">↻</span></div>' +
@@ -285,7 +311,7 @@ window.RAT = (function () {
   /* ---------- бэкстейдж ---------- */
   var ROT = [-3, 2, -1.5, 3, -2.5, 1, 2.5, -2];
   function shot(g, i) {
-    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '" data-play="' + esc(g.playId || "") + '" data-actors="' + esc((g.actors || []).join(", ")) + '"><span class="tape"></span><img src="' + esc(g.photo) + '" alt="' + esc(g.alt || g.caption || "") + '" loading="lazy">' + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
+    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '" data-play="' + esc(g.playId || "") + '" data-actors="' + esc((g.actors || []).join(", ")) + '"><span class="tape"></span>' + pic(g.photo, 'alt="' + esc(g.alt || g.caption || "") + '" loading="lazy"') + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
   }
   /* ---------- голоса актёров: аудио на странице спектакля ---------- */
   function voicesHtml(list) {
@@ -820,6 +846,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, rehash: rehash, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, rehash: rehash, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();
