@@ -884,7 +884,70 @@ window.RAT = (function () {
       setTimeout(function () { ul.scrollTo({ left: 56, behavior: "smooth" }); setTimeout(function () { ul.scrollTo({ left: 0, behavior: "smooth" }); }, 700); }, 1200);
     }
   }
-  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); tilt(); recorderInit(); }
+  /* ---------- отклеивание карточки при переходе: карточка отрывается от стены, скотч лопается, затем идёт переход ---------- */
+  function rip() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; var ac = squeak.ac || (squeak.ac = new AC()); if (ac.state === "suspended") ac.resume();
+      var len = Math.floor(ac.sampleRate * .28), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) { var t = i / len; d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, 1.6) * (0.5 + 0.5 * Math.sin(t * 90)); }
+      var src = ac.createBufferSource(); src.buffer = buf; var f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 1800; f.Q.value = .7; var g = ac.createGain(); g.gain.value = .12;
+      src.connect(f); f.connect(g); g.connect(ac.destination); src.start();
+    } catch (x) {}
+  }
+  function peelInit() {
+    document.addEventListener("click", function (ev) {
+      if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) return;
+      var a = ev.target.closest("a[href]"); if (!a || a.target === "_blank" || a.hasAttribute("download") || a.hasAttribute("data-buy") || a.hasAttribute("data-afisha-session") || a.hasAttribute("data-afisha-show")) return;
+      var href = a.getAttribute("href") || ""; if (!href || href.charAt(0) === "#" || /^(mailto|tel|javascript):/.test(href)) return;
+      var card = a.closest(".card, .flip, .ev, .rev, .shot"); if (!card || !card.querySelector(".tape")) return;
+      if (reduced()) return;
+      ev.preventDefault();
+      var url = a.href; card.classList.add("peel"); rip();
+      var gone = false, go = function () { if (gone) return; gone = true; location.href = url; };
+      card.addEventListener("animationend", function (e) { if (e.target === card) go(); });
+      setTimeout(go, 750);
+    });
+  }
+  /* ---------- сцена по скроллу: камера едет вглубь, постер уходит назад, актёры выходят из темноты, титры, занавес ---------- */
+  function stage(p, d, actors) {
+    var wrap = document.getElementById("stageWrap"); if (!wrap || reduced()) { if (wrap) wrap.hidden = true; return; }
+    var cast = (p.castList || []).map(function (c) { var a = (actors || []).filter(function (x) { return x.name === c.name; })[0]; return { name: c.name, role: c.role, photo: a && a.photo }; });
+    if (!cast.length) cast = (actors || []).filter(function (a) { return castMatches(a, p); }).map(function (a) { return { name: a.name, role: "", photo: a.photo }; });
+    cast = cast.slice(0, 6);
+    var sentences = String(p.description || "").replace(/\s+/g, " ").split(/(?<=[.!?…])\s+/).filter(function (x) { return x.length > 25 && x.length < 140; }).slice(0, 3);
+    var caps = [];
+    if (p.genre) caps.push({ at: .06, html: "<em>" + esc(p.genre) + "</em>" });
+    sentences.forEach(function (t, i) { caps.push({ at: .18 + i * .16, html: esc(t) }); });
+    cast.forEach(function (c, i) { caps.push({ at: .22 + i * .1, html: esc(c.name) + (c.role ? " <em>— " + esc(c.role) + "</em>" : "") }); });
+    caps.sort(function (a, b) { return a.at - b.at; });
+    var next = d && d.events ? upcoming(d).filter(function (e) { return e.playId === p.id; })[0] : null, th = d ? d.theatre : {};
+    var xs = [-38, 36, -18, 24, -30, 30];
+    wrap.innerHTML = '<div class="stage" id="stage"><div class="lamp l"></div><div class="lamp r"></div><div class="cam">' +
+      '<div class="floor"></div>' +
+      '<div class="sl sposter" style="--z:0px;--y:-4vh">' + (p.poster ? pic(p.poster, 'alt=""') : '<div class="ph"><span class="ttl">' + esc(p.title) + "</span></div>") + "</div>" +
+      cast.map(function (c, i) { return '<div class="sl cut" style="--z:' + (-700 - i * 320) + 'px;--x:' + xs[i % xs.length] + 'vw;--y:6vh;--o:0">' + (c.photo ? pic(c.photo, 'alt="' + esc(c.name) + '" loading="lazy"') : '<div class="ph">' + esc(initials(c.name)) + "</div>") + '<div class="shadow"></div><div class="who">' + esc(c.name) + (c.role ? "<small>" + esc(c.role) + "</small>" : "") + "</div></div>"; }).join("") +
+      "</div>" + caps.map(function (c, i) { return '<div class="cap" data-at="' + c.at + '">' + c.html + "</div>"; }).join("") +
+      '<div class="curtain l"></div><div class="curtain r"></div>' +
+      '<div class="final"><h3>' + esc(p.title) + "</h3>" + (next ? '<div class="hint" style="position:static;animation:none;margin-bottom:12px;transform:none">' + esc(fmtLong(next)) + "</div>" : "") + '<div class="row">' + (next && !hasBadge(next, "soldout") ? buyBtn(next, p, th, "Купить билет", "light") : (next ? '<span class="btn disabled">Билетов нет</span>' : playWaitBtn(p))) + '<a class="btn ghost onDark" href="#dates">Все даты</a></div></div>' +
+      '<div class="hint">листай — камера едет на сцену ↓</div></div>';
+    var st = wrap.querySelector(".stage"), cuts = wrap.querySelectorAll(".cut"), capsEl = wrap.querySelectorAll(".cap"), fin = wrap.querySelector(".final"), poster = wrap.querySelector(".sposter");
+    var ticking = false;
+    var upd = function () {
+      ticking = false;
+      var r = wrap.getBoundingClientRect(), total = r.height - window.innerHeight, prog = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      var cam = Math.min(prog / .78, 1); /* 0..0.78 — проезд, дальше занавес */
+      st.style.setProperty("--p", cam.toFixed(4));
+      poster.style.setProperty("--o", (1 - cam * 1.1).toFixed(3));
+      cuts.forEach(function (c, i) { var z = -700 - i * 320, dist = z + cam * 1500; /* расстояние до камеры: <0 — впереди, >0 — позади */ var o = dist < -900 ? 0 : dist < -350 ? (dist + 900) / 550 : dist <= 150 ? 1 : dist < 400 ? (400 - dist) / 250 : 0; c.style.setProperty("--o", o.toFixed(3)); });
+      var cur = null; capsEl.forEach(function (c) { var at = +c.dataset.at; if (prog >= at && prog < at + .13) cur = c; });
+      capsEl.forEach(function (c) { c.classList.toggle("on", c === cur); });
+      var cprog = Math.max(0, (prog - .78) / .16); st.style.setProperty("--c", Math.min(1, cprog).toFixed(3));
+      var f = Math.max(0, (prog - .9) / .1); st.style.setProperty("--f", Math.min(1, f).toFixed(3)); fin.classList.toggle("on", f > .5); st.classList.toggle("done", prog > .97);
+    };
+    var onScroll = function () { if (document.hidden) { upd(); return; } if (!ticking) { ticking = true; requestAnimationFrame(upd); } };
+    window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); upd();
+  }
+  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); tilt(); recorderInit(); peelInit(); }
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
@@ -928,6 +991,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, rehash: rehash, hallVoicesHtml: hallVoicesHtml, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, rehash: rehash, stage: stage, hallVoicesHtml: hallVoicesHtml, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

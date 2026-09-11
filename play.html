@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913x" rel="stylesheet">
-<link href="assets/intro.min.css?v=20260913x" rel="stylesheet">
-<link href="assets/site.min.css?v=20260913x" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913y" rel="stylesheet">
+<link href="assets/intro.min.css?v=20260913y" rel="stylesheet">
+<link href="assets/site.min.css?v=20260913y" rel="stylesheet">
 </head>
 <body>
 
@@ -95,6 +95,8 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     </div>
   </section>
 
+  <div class="stage-wrap" id="stageWrap"></div>
+
   <section id="before" hidden>
     <h2 class="sec">Перед <em>походом</em><span class="stamp-deco">коротко</span></h2>
     <p class="sec-sub" id="beforeSub">Ответы на то, о чём обычно спрашивают в личке.</p>
@@ -154,7 +156,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.min.js?v=20260913x" defer></script>
+<script src="assets/site.min.js?v=20260913y" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -185,6 +187,7 @@ function render(d) {
   document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT")).replace(/<\/div>$/, '<button class="btn light sm" data-story="1" type="button">Картинка «Я иду»</button></div>');
   window.__storyCtx = { p: p, events: events, th: th };
   window.__stickyBuy = R.stickyBuyText(nextOf, p);
+  R.stage(p, d, d.actors);
   var faq = R.faqHtml(th); if (faq) { document.getElementById("before").hidden = false; document.getElementById("faqList").innerHTML = faq; if (!(th.faq || []).some(function (f) { return f.q && f.a; })) document.getElementById("beforeSub").textContent = "Как добраться до площадки."; }
   if (!events.length) { var dl = document.getElementById("datesList"); }
   /* пришли из уведомления «как вам?» — сразу к форме отзыва */
