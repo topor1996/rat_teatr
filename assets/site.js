@@ -947,7 +947,7 @@ window.RAT = (function () {
     var onScroll = function () { if (document.hidden) { upd(); return; } if (!ticking) { ticking = true; requestAnimationFrame(upd); } };
     window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); upd();
   }
-  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); tilt(); recorderInit(); peelInit(); }
+  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); recorderInit(); peelInit(); } /* tilt() — живая стена — отключена по просьбе театра, функция оставлена */
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
