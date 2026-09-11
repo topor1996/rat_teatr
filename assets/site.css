@@ -222,6 +222,7 @@ footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block;color:var(--
 footer a{color:#cfcbbd}
 
 /* ---------- play page ---------- */
+.phero[hidden]{display:none}
 .phero{display:grid;grid-template-columns:1fr 1.2fr;gap:28px;align-items:start;padding:36px 0 10px}
 @media (max-width:720px){.phero{grid-template-columns:1fr}}
 .phero .poster{margin:0;aspect-ratio:auto;transform:rotate(-1.5deg);box-shadow:0 20px 50px rgba(0,0,0,.6);border:10px solid var(--paper)} /* постер целиком, без обрезки: высота по картинке */
