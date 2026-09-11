@@ -699,14 +699,14 @@ window.RAT = (function () {
     try { if (localStorage.getItem("rat_tilt") === "off") return; } catch (x) {}
     var els = document.querySelectorAll(".card, .flip, .shot, .ev, .rev, .voice, .rc, .next, .revform, .faq");
     if (!els.length) return;
-    els.forEach(function (el, i) { el.classList.add("tilt"); el.style.setProperty("--d", (0.45 + ((i * 7) % 5) * 0.18).toFixed(2)); });
+    els.forEach(function (el, i) { el.classList.add("tilt"); el.style.setProperty("--d", (0.7 + ((i * 7) % 5) * 0.25).toFixed(2)); });
     var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
-    var loop = function () { cx += (tx - cx) * .08; cy += (ty - cy) * .08; document.documentElement.style.setProperty("--px", cx.toFixed(2) + "px"); document.documentElement.style.setProperty("--py", cy.toFixed(2) + "px"); if (Math.abs(tx - cx) > .05 || Math.abs(ty - cy) > .05) raf = requestAnimationFrame(loop); else raf = null; };
-    var set = function (x, y) { tx = Math.max(-1, Math.min(1, x)) * 18; ty = Math.max(-1, Math.min(1, y)) * 14; if (!raf) raf = requestAnimationFrame(loop); };
+    var loop = function () { cx += (tx - cx) * .1; cy += (ty - cy) * .1; var st = document.documentElement.style; st.setProperty("--px", cx.toFixed(2) + "px"); st.setProperty("--py", cy.toFixed(2) + "px"); st.setProperty("--pxn", (cx / 40).toFixed(3)); if (Math.abs(tx - cx) > .05 || Math.abs(ty - cy) > .05) raf = requestAnimationFrame(loop); else raf = null; };
+    var set = function (x, y) { tx = Math.max(-1, Math.min(1, x)) * 40; ty = Math.max(-1, Math.min(1, y)) * 30; if (!raf) raf = requestAnimationFrame(loop); };
     var fine = window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches;
     if (fine) window.addEventListener("mousemove", function (e) { set(e.clientX / window.innerWidth * 2 - 1, e.clientY / window.innerHeight * 2 - 1); }, { passive: true });
     var base = null;
-    var onOrient = function (e) { if (e.gamma === null || e.beta === null) return; if (base === null) base = { g: e.gamma, b: e.beta }; set((e.gamma - base.g) / 25, (e.beta - base.b) / 25); };
+    var onOrient = function (e) { if (e.gamma === null || e.beta === null) return; if (base === null) base = { g: e.gamma, b: e.beta }; set((e.gamma - base.g) / 15, (e.beta - base.b) / 15); };
     var start = function () { window.addEventListener("deviceorientation", onOrient, { passive: true }); };
     if (window.DeviceOrientationEvent) {
       if (typeof DeviceOrientationEvent.requestPermission === "function") { /* iOS: разрешение только по касанию */

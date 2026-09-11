@@ -581,6 +581,6 @@ body.has-mbar .nudge{bottom:calc(84px + env(safe-area-inset-bottom))}
 .recbox audio{width:100%;margin-top:6px}
 .voices.hall .voice .vname::before{content:"🎙 ";font-size:14px}
 /* ---------- живая стена: смещение от наклона/мыши, глубина у каждой бумажки своя ---------- */
-.tilt{translate:calc(var(--px,0px) * var(--d,.6)) calc(var(--py,0px) * var(--d,.6))}
-.tilt .tape{translate:calc(var(--px,0px) * -.25) calc(var(--py,0px) * -.25)}
-@media (prefers-reduced-motion:reduce){.tilt,.tilt .tape{translate:none}}
+.tilt{translate:calc(var(--px,0px) * var(--d,.8)) calc(var(--py,0px) * var(--d,.8));rotate:calc(var(--pxn,0) * 1.6deg * var(--d,.8))}
+.tilt .tape{translate:calc(var(--px,0px) * -.45) calc(var(--py,0px) * -.35)}
+@media (prefers-reduced-motion:reduce){.tilt,.tilt .tape{translate:none;rotate:none}}
