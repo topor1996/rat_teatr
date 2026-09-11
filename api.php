@@ -101,9 +101,9 @@ function sanitize(array $in): array {
   }
   foreach ($lst('gallery', 200) as $g) {
     if (!is_array($g)) continue;
-    $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40), 'hidden' => !empty($g['hidden'])];
+    $item = ['photo' => img($g['photo'] ?? ''), 'video' => media($g['video'] ?? ''), 'poster' => img($g['poster'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40), 'hidden' => !empty($g['hidden'])];
     $item['actors'] = array_values(array_filter(array_map(fn($n) => str($n, 100), array_slice(is_array($g['actors'] ?? null) ? $g['actors'] : [], 0, 20)), fn($n) => $n !== '')); // кто на фото (имена из списка актёров)
-    if ($item['photo'] !== '') $gallery[] = $item;
+    if ($item['photo'] !== '' || $item['video'] !== '') $gallery[] = $item; // фото или видео (ролик в бэкстейдже)
   }
   return [
     'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'venue' => str($th['venue'] ?? '', 120),

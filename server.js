@@ -65,7 +65,7 @@ function sanitize(input) {
     hidden: !!e.hidden, price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
   const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.fromSite ? { fromSite: true, id: str(r.id, 40).replace(/[^\w-]/g, ""), date: str(r.date, 10) } : {}) })).filter(r => r.text);
-  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden, actors: arr(g.actors).slice(0, 20).map(n => str(n, 100)).filter(Boolean) })).filter(g => g.photo);
+  const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), video: media(g.video), poster: img(g.poster), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden, actors: arr(g.actors).slice(0, 20).map(n => str(n, 100)).filter(Boolean) })).filter(g => g.photo || g.video);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
                instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),

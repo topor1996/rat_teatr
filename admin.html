@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913o" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913p" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -207,8 +207,8 @@
     <!-- Бэкстейдж -->
     <div class="tab" id="tab-gallery">
       <p class="help"><b>Стена в гримёрке.</b> Можно выбрать сразу много фото — каждое станет отдельной карточкой. Фото сжимаются автоматически. Если привязать к спектаклю, попадёт и на его страницу.</p>
-      <label class="btn ghost" style="margin-bottom:14px">+ Загрузить фото<input type="file" accept="image/jpeg,image/png,image/webp" multiple data-multi="gallery" style="display:none"></label>
-      <label class="btn ghost cam" style="margin:0 0 14px 8px">📷 Снять<input type="file" accept="image/*" capture="environment" data-multi="gallery" style="display:none"></label>
+      <label class="btn ghost" style="margin-bottom:14px">+ Загрузить фото или видео<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" multiple data-multi="gallery" style="display:none"></label>
+      <label class="btn ghost cam" style="margin:0 0 14px 8px">📷 Снять<input type="file" accept="image/*,video/*" capture="environment" data-multi="gallery" style="display:none"></label><p class="help">Видео до 10 МБ (короткий вертикальный ролик) попадает в ленту «Ролики» под стеной бэкстейджа; обложка делается из кадра сама.</p>
       <div id="list-gallery"></div>
     </div>
 
@@ -532,9 +532,10 @@ const SECTIONS = {
       <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://...">`,
   },
   gallery: {
-    img: "photo", label: g => g.caption || "Фото",
+    img: "photo", label: g => (g.video ? "🎬 " : "") + (g.caption || (g.video ? "Видео" : "Фото")),
     blank: () => ({ photo: "", caption: "", alt: "", playId: "", actors: [] }),
     form: g => `
+      ${g.video ? `<p class="help" style="margin:0 0 8px">🎬 Видео <code>${esc(g.video)}</code> — показывается в ленте «Ролики». ${g.poster ? "Обложка сделана из кадра." : "Обложки нет."} <button class="btn ghost sm" data-act="gposter" type="button">Сделать обложку заново</button></p>` : ""}
       <div class="row">
         <div><label>Подпись</label><input data-f="caption" value="${esc(g.caption)}" placeholder="Гримёрка перед «ПОХ»"></div>
         <div><label>Спектакль</label><select data-f="playId"><option value="" ${!g.playId ? "selected" : ""}>— общий бэкстейдж —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === g.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
@@ -579,7 +580,7 @@ function renderList(key) {
       <h2><span class="title">${esc(sec.label(item))}${item.hidden ? ' <span class="draft-tag">черновик</span>' : ""}</span>
         <span class="tools"><label class="chk draft" title="Не показывать на сайте, пока не будет готово"><input type="checkbox" data-hidden ${item.hidden ? "checked" : ""}> Скрыть</label><span class="drag" title="Перетащить" aria-label="Перетащить">≡</span><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
       <div class="item ${sec.img ? "" : "noimg"}">
-        ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img])}</div>
+        ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img] || item.poster)}</div>
           <div class="photo-tools"><label class="btn ghost sm" style="justify-content:center;margin:0">Загрузить<input type="file" accept="image/jpeg,image/png,image/webp" data-file="${sec.img}"></label>
           <button class="btn ghost sm" data-act="noimg" style="justify-content:center">Убрать</button></div></div>` : ""}
         <div>${sec.form(item)}</div>
@@ -998,6 +999,7 @@ document.addEventListener("click", e => {
   if (b.dataset.act === "noimg") list[i][sec.img] = "";
   if (b.dataset.act === "import") { importAfisha(i); return; }
   if (b.dataset.act === "autocap") { autoCaption(i, null, true); return; }
+  if (b.dataset.act === "gposter") { setStatus("Делаю обложку из ролика…"); attachPoster(list[i], backend.photoUrl(list[i].video)).then(ok => { if (ok) { markDirty(); renderList("gallery"); setStatus("Обложка готова. Не забудьте сохранить", "ok"); } else setStatus("Не удалось взять кадр из видео", "err"); }); return; }
   if (b.dataset.act === "findshow") { findAfishaShow(i); return; }
   if (b.dataset.act === "vdel") { (list[i].voices || []).splice(+b.dataset.vi, 1); }
   markDirty(); renderList(key);
@@ -1053,8 +1055,14 @@ document.addEventListener("change", async e => {
   if (t.dataset.multi && t.files.length) {
     const files = [...t.files]; let n = 0;
     for (const file of files) {
-      setStatus(`Загружаю фото ${++n} из ${files.length}…`);
-      try { const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file); const item = { photo: path, caption: "", alt: "", playId: "" }; data[t.dataset.multi].push(item); if (t.dataset.multi === "gallery") await autoCaption(data.gallery.length - 1, file, false); }
+      setStatus(`Загружаю ${/^video\//.test(file.type) ? "видео" : "фото"} ${++n} из ${files.length}…`);
+      const isVideo = /^video\//.test(file.type);
+      if (isVideo && file.size > 10 * 1024 * 1024) { setStatus(`«${file.name}»: видео больше 10 МБ, пропущено`, "err"); continue; }
+      try {
+        const path = await uploadFile(file); if (backend.name === "github") previews[path] = URL.createObjectURL(file);
+        if (isVideo) { const item = { photo: "", video: path, poster: "", caption: "Видео из бэкстейджа", alt: "Короткое видео из бэкстейджа театра", playId: "", actors: [] }; setStatus("Делаю обложку из ролика…"); await attachPoster(item, file).catch(() => false); data[t.dataset.multi].push(item); }
+        else { const item = { photo: path, caption: "", alt: "", playId: "", actors: [] }; data[t.dataset.multi].push(item); if (t.dataset.multi === "gallery") await autoCaption(data.gallery.length - 1, file, false); }
+      }
       catch (err) { setStatus(err.message, "err"); break; }
     }
     markDirty(); renderList(t.dataset.multi); setStatus(`Загружено: ${n}. Не забудьте сохранить`); t.value = ""; return;

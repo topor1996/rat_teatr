@@ -644,6 +644,7 @@ window.RAT = (function () {
   }
   /* ---------- стена бэкстейджа: фильтр по спектаклям ---------- */
   function wallFilter(gallery, plays) {
+    gallery = gallery.filter(function (g) { return g.photo; });
     var used = {}; gallery.forEach(function (g) { if (g.playId) used[g.playId] = (used[g.playId] || 0) + 1; });
     var list = plays.filter(function (p) { return used[p.id]; });
     if (list.length < 1 || (list.length === 1 && Object.keys(used).length === gallery.length && false)) return "";
@@ -660,15 +661,16 @@ window.RAT = (function () {
     });
   }
   /* ---------- ролики: вертикальные видео из медиа спектаклей, звук по касанию ---------- */
-  function reel(plays, el) {
+  function reel(plays, gallery, el) {
     el = el || document.getElementById("reel"); if (!el) return 0;
-    var items = [];
-    plays.forEach(function (p) { (p.media || []).forEach(function (m) { if (m.type === "video" && !m.hidden && m.src) items.push({ p: p, m: m }); }); });
+    var items = [], byId = {}; (plays || []).forEach(function (p) { byId[p.id] = p; });
+    (gallery || []).forEach(function (g) { if (g.video && !g.hidden) items.push({ p: byId[g.playId] || null, m: { src: g.video, poster: g.poster, caption: g.caption }, bs: true }); });
+    (plays || []).forEach(function (p) { (p.media || []).forEach(function (m) { if (m.type === "video" && !m.hidden && m.src) items.push({ p: p, m: m }); }); });
     if (!items.length) { el.hidden = true; var h = document.querySelector(".reel-h"); if (h) h.hidden = true; return 0; }
     el.innerHTML = items.map(function (it) {
-      return '<div class="rc" data-src="' + esc(it.m.src) + '" tabindex="0" role="button" aria-label="Видео: ' + esc(it.m.caption || it.p.title) + '">' +
+      return '<div class="rc" data-src="' + esc(it.m.src) + '" tabindex="0" role="button" aria-label="Видео: ' + esc(it.m.caption || (it.p ? it.p.title : "бэкстейдж")) + '">' +
         (it.m.poster ? '<img src="' + esc(it.m.poster) + '" alt="" loading="lazy">' : "") + '<span class="rp"></span>' +
-        '<a class="rt" href="' + playUrl(it.p) + '">' + esc(it.p.title) + "</a>" + (it.m.caption ? '<div class="rcap">' + esc(it.m.caption) + "</div>" : "") +
+        (it.p ? '<a class="rt" href="' + playUrl(it.p) + '">' + esc(it.p.title) + "</a>" : '<span class="rt">Бэкстейдж</span>') + (it.m.caption ? '<div class="rcap">' + esc(it.m.caption) + "</div>" : "") +
         '<span class="snd">🔇 звук по касанию</span></div>';
     }).join("");
     var cards = [].slice.call(el.querySelectorAll(".rc"));

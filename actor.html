@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913o" rel="stylesheet">
-<link href="assets/intro.css?v=20260913o" rel="stylesheet">
-<link href="assets/site.css?v=20260913o" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913p" rel="stylesheet">
+<link href="assets/intro.css?v=20260913p" rel="stylesheet">
+<link href="assets/site.css?v=20260913p" rel="stylesheet">
 </head>
 <body>
 
@@ -108,6 +108,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <h2 class="sec">Фо<em>то</em><span class="stamp-deco">бэкстейдж</span></h2>
     <p class="sec-sub">Кадры из гримёрки и со сцены. Нажми, чтобы увеличить.</p>
     <div class="wall" id="aWall"></div>
+    <div class="reel" id="aReel" hidden></div>
   </section>
 
   <section id="others">
@@ -127,7 +128,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913o" defer></script>
+<script src="assets/site.js?v=20260913p" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -165,8 +166,9 @@ function render(d) {
   var voices = []; d.plays.forEach(function (p) { (p.voices || []).forEach(function (v) { if (v.name && v.name.toLowerCase() === low) voices.push({ name: p.title, note: v.note, audio: v.audio }); }); });
   if (voices.length) { document.getElementById("avoices").hidden = false; document.getElementById("aVoices").innerHTML = R.voicesHtml(voices); R.voicePlayers(document.getElementById("aVoices")); }
   /* фото бэкстейджа, где отмечен актёр */
-  var photos = d.gallery.filter(function (g) { return (g.actors || []).indexOf(a.name) >= 0; });
-  if (photos.length) { document.getElementById("aphotos").hidden = false; document.getElementById("aWall").innerHTML = photos.map(R.shot).join(""); }
+  var tagged = d.gallery.filter(function (g) { return (g.actors || []).indexOf(a.name) >= 0; }), photos = tagged.filter(function (g) { return g.photo; });
+  var reelN = R.reel([], tagged.filter(function (g) { return g.video; }), document.getElementById("aReel"));
+  if (photos.length || reelN) { document.getElementById("aphotos").hidden = false; document.getElementById("aWall").innerHTML = photos.map(R.shot).join(""); if (reelN) document.getElementById("aReel").hidden = false; }
   /* остальная команда */
   document.getElementById("othersList").innerHTML = d.actors.filter(function (x) { return x !== a; }).map(R.actorCard).join("");
 

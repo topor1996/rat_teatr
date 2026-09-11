@@ -23,4 +23,5 @@ foreach ($d['plays'] ?? [] as $p) {
   }
   echo '</url>';
 }
+foreach ($d['gallery'] ?? [] as $g) if (!empty($g['video']) && empty($g['hidden'])) echo '<url><loc>' . $x($base . '/#backstage') . '</loc><video:video><video:thumbnail_loc>' . $x($base . '/' . ($g['poster'] ?: 'assets/og-cover.png')) . '</video:thumbnail_loc><video:title>' . $x($g['caption'] ?: 'Бэкстейдж театра RAT') . '</video:title><video:description>' . $x($g['alt'] ?: 'Короткое видео из бэкстейджа') . '</video:description><video:content_loc>' . $x($base . '/' . $g['video']) . '</video:content_loc></video:video></url>';
 echo '</urlset>';
