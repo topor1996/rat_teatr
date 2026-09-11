@@ -2,7 +2,12 @@
 // Отдаёт index.html / play.html, подставляя Open Graph и schema.org из data/data.json,
 // чтобы Telegram, WhatsApp и Яндекс видели название, описание и постер без JavaScript.
 declare(strict_types=1);
-function rat_render(string $file, ?string $playId = null): void {
+function rat_slug(string $name): string {
+  $t = ['а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ё'=>'e','ж'=>'zh','з'=>'z','и'=>'i','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'h','ц'=>'c','ч'=>'ch','ш'=>'sh','щ'=>'sch','ъ'=>'','ы'=>'y','ь'=>'','э'=>'e','ю'=>'yu','я'=>'ya'];
+  $s = strtr(mb_strtolower($name), $t); $s = preg_replace('~[^a-z0-9]+~', '-', $s); return mb_substr(trim($s, '-'), 0, 60);
+}
+function rat_actor_has_page(array $a): bool { return !empty($a['photo']) && (!empty($a['bio']) || !empty($a['roles'])); }
+function rat_render(string $file, ?string $playId = null, ?string $actorSlug = null): void {
   $root = __DIR__;
   $html = (string)file_get_contents($root . '/' . $file);
   $d = json_decode((string)@file_get_contents($root . '/data/data.json'), true) ?: [];
@@ -23,7 +28,15 @@ function rat_render(string $file, ?string $playId = null): void {
   $months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   $fmt = function ($ev) use ($months) { [$y, $m, $dd] = array_map('intval', explode('-', $ev['date'])); return $dd . ' ' . $months[$m - 1] . (($ev['time'] ?? '') ? ', ' . $ev['time'] : ''); };
 
-  if ($play) {
+  $actor = null;
+  if ($actorSlug !== null) foreach ($d['actors'] ?? [] as $a) if (rat_slug($a['name'] ?? '') === $actorSlug && rat_actor_has_page($a)) { $actor = $a; break; }
+  if ($actor) {
+    $next = null;
+    $title = $actor['name'] . ' — ' . $name;
+    $desc = trim(($actor['role'] ?? '') . ($actor['role'] ?? '' ? '. ' : '') . mb_substr($actor['bio'] ?? ($actor['roles'] ?? ''), 0, 180));
+    $image = $base . $actor['photo'];
+    $url = $base . 'actor.html?id=' . rawurlencode($actorSlug);
+  } elseif ($play) {
     $next = null; foreach ($upcoming as $ev) if (($ev['playId'] ?? '') === $play['id']) { $next = $ev; break; }
     $title = $play['title'] . ' — ' . $name;
     $desc = trim(($play['genre'] ? $play['genre'] . '. ' : '') . ($next ? 'Ближайший показ ' . $fmt($next) . '. ' : '') . mb_substr($play['description'] ?? '', 0, 180));
@@ -36,7 +49,7 @@ function rat_render(string $file, ?string $playId = null): void {
     $image = $base . 'og.php' . ($next ? '?d=' . $next['date'] : '');
     $url = $base;
   }
-  $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n<meta property=\"og:image:width\" content=\"1200\">\n<meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:type\" content=\"image/png\">\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
+  $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n" . ($actor ? "" : "<meta property=\"og:image:width\" content=\"1200\">\n<meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:type\" content=\"image/png\">") . "\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
   // og:video: Telegram и VK показывают ролик прямо в превью. На странице спектакля — первое видео из медиа, на главной — видео шапки
   $video = null;
   if ($play) { foreach ($play['media'] ?? [] as $m) if (($m['type'] ?? '') === 'video' && empty($m['hidden']) && !empty($m['src'])) { $video = $m['src']; break; } }
@@ -50,6 +63,7 @@ function rat_render(string $file, ?string $playId = null): void {
   $html = preg_replace('~<title>.*?</title>~s', '<title>' . $e($title) . '</title>', $html, 1);
 
   $graph = [['@type' => 'TheaterGroup', 'name' => $name, 'url' => $base, 'description' => $th['tagline'] ?? '']];
+  if ($actor) $graph[] = ['@type' => 'Person', 'name' => $actor['name'], 'jobTitle' => $actor['role'] ?: 'актёр', 'image' => $base . $actor['photo'], 'url' => $url, 'memberOf' => ['@type' => 'TheaterGroup', 'name' => $name], 'description' => mb_substr($actor['bio'] ?? '', 0, 300)];
   foreach (array_slice($upcoming, 0, 20) as $ev) {
     $p = $byId[$ev['playId'] ?? ''] ?? null;
     if ($play && (!$p || $p['id'] !== $play['id'])) continue;

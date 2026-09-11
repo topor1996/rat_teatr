@@ -6,6 +6,8 @@ $base = (!empty($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP
 $x = fn($v) => htmlspecialchars((string)$v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">';
 echo '<url><loc>' . $x($base . '/') . '</loc></url><url><loc>' . $x($base . '/golos') . '</loc></url>';
+require_once __DIR__ . '/render.php';
+foreach ($d['actors'] ?? [] as $a) if (rat_actor_has_page($a)) echo '<url><loc>' . $x($base . '/actor.html?id=' . rawurlencode(rat_slug($a['name']))) . '</loc><image:image><image:loc>' . $x($base . '/' . $a['photo']) . '</image:loc><image:title>' . $x($a['name']) . '</image:title></image:image></url>';
 foreach ($d['plays'] ?? [] as $p) {
   if (empty($p['id']) || !empty($p['hidden'])) continue;
   echo '<url><loc>' . $x($base . '/play.html?id=' . rawurlencode($p['id'])) . '</loc>';

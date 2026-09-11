@@ -102,6 +102,7 @@ function sanitize(array $in): array {
   foreach ($lst('gallery', 200) as $g) {
     if (!is_array($g)) continue;
     $item = ['photo' => img($g['photo'] ?? ''), 'caption' => str($g['caption'] ?? '', 140), 'alt' => str($g['alt'] ?? '', 200), 'playId' => str($g['playId'] ?? '', 40), 'hidden' => !empty($g['hidden'])];
+    $item['actors'] = array_values(array_filter(array_map(fn($n) => str($n, 100), array_slice(is_array($g['actors'] ?? null) ? $g['actors'] : [], 0, 20)), fn($n) => $n !== '')); // кто на фото (имена из списка актёров)
     if ($item['photo'] !== '') $gallery[] = $item;
   }
   return [

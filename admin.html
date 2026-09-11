@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913k" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913l" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -533,13 +533,15 @@ const SECTIONS = {
   },
   gallery: {
     img: "photo", label: g => g.caption || "Фото",
-    blank: () => ({ photo: "", caption: "", alt: "", playId: "" }),
+    blank: () => ({ photo: "", caption: "", alt: "", playId: "", actors: [] }),
     form: g => `
       <div class="row">
         <div><label>Подпись</label><input data-f="caption" value="${esc(g.caption)}" placeholder="Гримёрка перед «ПОХ»"></div>
         <div><label>Спектакль</label><select data-f="playId"><option value="" ${!g.playId ? "selected" : ""}>— общий бэкстейдж —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === g.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
       </div>
       <label>Alt-текст (описание для незрячих и поисковиков)</label><input data-f="alt" value="${esc(g.alt || "")}" placeholder="Актёры в гримёрке перед спектаклем, тёмный кадр">
+      <label>Кто на фото</label><div class="checks">${data.actors.length ? data.actors.map(a => `<label class="chk"><input type="checkbox" data-gact="${esc(a.name)}" ${(g.actors || []).includes(a.name) ? "checked" : ""}> ${esc(a.name)}</label>`).join("") : '<span class="hint" style="margin:0">Сначала добавьте актёров на вкладке «Актёры».</span>'}</div>
+      <p class="help" style="margin:4px 0 0">Отмеченные фото попадут на личные страницы этих актёров.</p>
       <div class="tools" style="margin-top:8px"><button class="btn ghost sm" data-act="autocap">Придумать подпись заново</button><span class="hint" style="margin:0;align-self:center">Подпись и alt заполняются сами при загрузке: по спектаклю, дате съёмки и самому кадру. Поправьте, если не то.</span></div>`,
   },
 };
@@ -979,6 +981,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   const t = e.target;
+  if (t.dataset.gact !== undefined) { const el = t.closest(".entry"); const g = data.gallery[el.dataset.i]; g.actors = [...el.querySelectorAll("[data-gact]")].filter(x => x.checked).map(x => x.dataset.gact); markDirty(); return; }
   if (t.dataset.badge) { const el = t.closest(".entry"); const ev = data.events[el.dataset.i]; ev.badges = Object.keys(BADGES).filter(k => el.querySelector(`[data-badge=${k}]`).checked); markDirty(); return; }
   if (t.tagName === "SELECT" && t.dataset.f) { const el = t.closest(".entry"); const item = data[el.dataset.key][el.dataset.i]; item[t.dataset.f] = t.value; el.querySelector(".title").textContent = SECTIONS[el.dataset.key].label(item); markDirty(); }
 });

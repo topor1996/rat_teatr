@@ -257,6 +257,7 @@ html.afisha-open body{position:fixed!important;width:100%!important}
 @media (max-width:980px){#modal{box-shadow:none!important;border:0!important}}
 
 /* ---------- обратный отсчёт до премьеры ---------- */
+.countdown[hidden]{display:none} /* атрибут hidden слабее display у класса — иначе пустой квадрат */
 .countdown{display:inline-flex;flex-wrap:wrap;align-items:center;gap:10px 18px;margin:18px 0 0 14px;padding:12px 16px;background:#000;color:var(--acid);border:3px solid var(--acid);transform:rotate(1deg);position:relative;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 .countdown .lbl{font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:18px;line-height:1;transform:rotate(-2deg);display:inline-block}
 .countdown .t{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:28px;line-height:1;letter-spacing:.04em;font-variant-numeric:tabular-nums;color:#fff}
@@ -454,3 +455,83 @@ h2.sec .gt{display:inline-block;animation:glB 3s steps(1,end) infinite;animation
 .calsub a{color:var(--acid)}
 .calsub .hint{color:#b9b4a5}
 .calsub .copy{background:none;border:0;padding:0;font:inherit;color:var(--acid);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+
+/* ================= нижняя панель на телефоне, «наверх», полоса прокрутки, фильтр стены, ролики, скелеты ================= */
+/* нижняя панель: Афиша · Билеты · Голосуй — только на телефоне */
+.mbar{display:none}
+@media (max-width:700px){
+  .mbar{position:fixed;left:0;right:0;top:auto;bottom:0;z-index:30;border-bottom:0;display:flex;background:rgba(10,10,10,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .mbar a,.mbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:none;border:0;color:#ddd;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:12px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;min-height:48px}
+  .mbar .ic{font-size:20px;line-height:1}
+  .mbar .buy{color:#000;background:var(--acid);margin:0 6px;transform:rotate(-1.5deg);border:2px solid #000}
+  .mbar .buy .ic{filter:grayscale(1) brightness(.2)}
+  body.has-mbar{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  html.afisha-open .mbar,html.tv-on .mbar{display:none}
+  body.has-mbar .pwa-btn{bottom:calc(78px + env(safe-area-inset-bottom))}
+  body.has-mbar .toast{bottom:calc(86px + env(safe-area-inset-bottom))}
+}
+/* «наверх»: крыса лезет по канату справа внизу */
+.totop{position:fixed;right:14px;bottom:18px;width:44px;height:110px;z-index:29;background:none;border:0;padding:0;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(20px);transition:opacity .3s,transform .3s}
+.totop.on{opacity:1;pointer-events:auto;transform:none}
+.totop .rope{position:absolute;left:50%;top:0;bottom:0;width:0;border-left:2px dashed #8a7a5a;margin-left:-1px}
+.totop .rat{position:absolute;left:50%;top:30px;width:64px;height:28px;margin-left:-32px;transform:rotate(-90deg);filter:drop-shadow(0 0 2px rgba(0,0,0,.8));transition:top .25s}
+.totop .rat path:first-child{fill:var(--acid)}
+.totop:hover .rat{top:14px}
+.totop.climb .rat{animation:climb .9s ease-in forwards}
+@keyframes climb{0%{top:30px}100%{top:-60px;opacity:0}}
+.totop .lbl{position:absolute;left:50%;bottom:-4px;transform:translateX(-50%);font-family:"PT Mono","PT Mono Fallback",monospace;font-size:9px;color:var(--muted);letter-spacing:.1em;white-space:nowrap}
+@media (max-width:700px){.totop{bottom:calc(84px + env(safe-area-inset-bottom));right:8px}}
+/* полоса прокрутки сверху с бегущей крысой */
+.sprog{position:fixed;left:0;top:0;right:0;height:3px;z-index:31;pointer-events:none}
+.sprog .bar{height:100%;background:var(--acid);transform-origin:left;transform:scaleX(0);box-shadow:0 0 6px rgba(201,255,61,.6)}
+.sprog .rat{position:absolute;top:-4px;left:0;width:30px;height:13px;margin-left:-28px;transition:none}
+.sprog .rat path:first-child{fill:var(--acid)}
+/* фильтр стены по спектаклям */
+.wallf{display:flex;flex-wrap:wrap;gap:8px;margin:0 6px 8px}
+.wallf button{background:none;border:2px solid var(--line);color:#ddd;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:7px 12px;cursor:pointer;transform:rotate(-1deg)}
+.wallf button:nth-child(2n){transform:rotate(1deg)}
+.wallf button.on{background:var(--acid);color:#000;border-color:#000}
+.shot[hidden]{display:none}
+/* ролики: вертикальные видео, листаются пальцем, звук по касанию */
+.reel-h{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;font-size:22px;margin:34px 6px 10px;letter-spacing:.02em}
+.reel-h small{font-family:"PT Mono","PT Mono Fallback",monospace;font-weight:400;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:10px}
+.reel{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:10px 6px 18px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.reel::-webkit-scrollbar{display:none}
+.rc{flex:0 0 min(78vw,270px);aspect-ratio:9/16;scroll-snap-align:center;position:relative;background:#000;border:7px solid var(--paper);box-shadow:0 12px 26px rgba(0,0,0,.5);overflow:hidden;cursor:pointer}
+.rc:nth-child(2n+1){transform:rotate(-1deg)} .rc:nth-child(2n){transform:rotate(.8deg)}
+.rc video,.rc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.rc .rt{position:absolute;left:10px;top:10px;right:10px;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#fff;text-shadow:0 1px 3px #000}
+.rc .rcap{position:absolute;left:10px;right:10px;bottom:38px;font-size:12px;color:#eee;text-shadow:0 1px 3px #000}
+.rc .snd{position:absolute;left:10px;bottom:10px;background:rgba(0,0,0,.6);color:#fff;font-family:"PT Mono","PT Mono Fallback",monospace;font-size:11px;padding:4px 8px;border:1px solid rgba(255,255,255,.3)}
+.rc.sound .snd{background:var(--acid);color:#000;border-color:#000}
+.rc .rp{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid #fff;display:grid;place-items:center;pointer-events:none}
+.rc .rp::after{content:"";width:0;height:0;border-left:18px solid #fff;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:5px}
+.rc.playing .rp{display:none}
+/* скелеты: серые «бумажки» на месте данных, пока они грузятся */
+.sk{background:linear-gradient(90deg,#171717 0%,#232323 40%,#171717 80%);background-size:220% 100%;animation:skim 1.3s linear infinite;border-radius:2px}
+@keyframes skim{from{background-position:120% 0}to{background-position:-100% 0}}
+.sk-ev{height:112px;transform:rotate(-.4deg)} .sk-ev:nth-child(2n){transform:rotate(.5deg)}
+.sk-card{aspect-ratio:3/4;transform:rotate(-1.2deg)} .sk-card:nth-child(2n){transform:rotate(.9deg)}
+.sk-actor{aspect-ratio:3/4} .sk-shot{aspect-ratio:1}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}.totop.climb .rat{animation:none}}
+
+/* ---------- личные страницы актёров ---------- */
+.flip .back .more{font-family:"Oswald","Oswald Fallback",sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#000;background:var(--acid);padding:6px 10px;align-self:flex-start;text-decoration:none;margin-top:8px;transform:rotate(-2deg);border:2px solid #000}
+.ahero{display:grid;grid-template-columns:minmax(220px,340px) 1fr;gap:28px;align-items:start;padding:36px 0 10px}
+@media (max-width:720px){.ahero{grid-template-columns:1fr}}
+.ahero .aphoto{margin:0;aspect-ratio:3/4;background:#1a1a1a;transform:rotate(-1.5deg);box-shadow:0 20px 50px rgba(0,0,0,.6);border:10px solid var(--paper);position:relative}
+.ahero .aphoto img{width:100%;height:100%;object-fit:cover;display:block;filter:grayscale(.25) contrast(1.05)}
+.ahero .aphoto .tape{position:absolute;width:74px;height:22px;background:var(--tape);top:-14px;left:50%;transform:translateX(-50%) rotate(-4deg)}
+.ahero h1{margin:0;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(40px,8vw,84px);line-height:.92;letter-spacing:-.01em}
+.ahero .arole{display:inline-block;margin-top:12px;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;color:var(--acid);font-size:clamp(18px,3vw,26px);transform:rotate(-2deg)}
+.ahero .abio{margin:18px 0 0;font-size:15px;color:#e6e2d6;max-width:620px;white-space:pre-line}
+.ahero .aroles{margin:18px 0 0;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:15px;text-transform:uppercase;letter-spacing:.05em;line-height:1.5;color:#cfcbbd}
+.ahero .aroles b{color:var(--acid);font-weight:600;margin-right:8px}
+.ahero .row{margin-top:24px}
+.aplays{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px 16px}
+/* липкая кнопка покупки на телефоне (страница спектакля) */
+@media (max-width:700px){
+  .mbar .buy.sticky{flex:2.2;flex-direction:column;gap:2px;line-height:1.1;padding:7px 8px}
+  .mbar .buy.sticky b{font-size:14px;letter-spacing:.06em}
+  .mbar .buy.sticky small{font-family:"PT Mono","PT Mono Fallback",monospace;font-size:10px;letter-spacing:0;text-transform:none;color:#222;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+}

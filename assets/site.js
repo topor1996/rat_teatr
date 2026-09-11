@@ -241,15 +241,20 @@ window.RAT = (function () {
   });
 
   /* ---------- труппа: карточки с переворотом ---------- */
+  /* ---------- личные страницы актёров: адрес из имени, страница есть, если заполнены фото и «о себе» или роли ---------- */
+  var TRANSLIT = { а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya" };
+  function actorSlug(name) { return String(name || "").toLowerCase().split("").map(function (ch) { return TRANSLIT[ch] !== undefined ? TRANSLIT[ch] : ch; }).join("").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); }
+  function actorHasPage(a) { return !!(a && a.photo && (a.bio || a.roles)); }
+  function actorUrl(a) { return "actor.html?id=" + encodeURIComponent(actorSlug(a.name)); }
   function actorCard(a) {
     return '<div class="flip rv" tabindex="0" role="button"><div class="inner">' +
       '<div class="face front"><span class="tape"></span><div class="ph">' + (a.photo ? '<img src="' + esc(a.photo) + '" alt="' + esc(a.name) + '" loading="lazy">' : '<div class="in">' + esc(initials(a.name)) + "</div>") + "</div>" +
       '<div class="n">' + esc(a.name) + "</div>" + (a.bio ? '<div class="r">' + esc(a.bio) + "</div>" : "") + '<span class="hint">нажми ↻</span></div>' +
       '<div class="face back" data-ini="' + esc(initials(a.name)) + '"><div class="n">' + esc(a.name) + "</div>" +
-      (a.roles ? '<div class="roles">' + esc(a.roles) + "</div>" : "") + '<div class="bio">' + esc(a.bio || "") + "</div>" + '<span class="hint">↻</span></div>' +
+      (a.roles ? '<div class="roles">' + esc(a.roles) + "</div>" : "") + '<div class="bio">' + esc(a.bio || "") + "</div>" + (actorHasPage(a) ? '<a class="more" href="' + actorUrl(a) + '">страница →</a>' : "") + '<span class="hint">↻</span></div>' +
       "</div></div>";
   }
-  document.addEventListener("click", function (e) { var f = e.target.closest && e.target.closest(".flip"); if (f) f.classList.toggle("on"); });
+  document.addEventListener("click", function (e) { if (e.target.closest && e.target.closest(".flip .more")) return; var f = e.target.closest && e.target.closest(".flip"); if (f) f.classList.toggle("on"); });
   document.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("flip")) { e.preventDefault(); e.target.classList.toggle("on"); } });
 
   /* ---------- отзывы ---------- */
@@ -261,7 +266,7 @@ window.RAT = (function () {
   /* ---------- бэкстейдж ---------- */
   var ROT = [-3, 2, -1.5, 3, -2.5, 1, 2.5, -2];
   function shot(g, i) {
-    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '"><span class="tape"></span><img src="' + esc(g.photo) + '" alt="' + esc(g.alt || g.caption || "") + '" loading="lazy">' + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
+    return '<figure class="shot rv" style="transform:rotate(' + ROT[i % ROT.length] + 'deg);margin:0" data-src="' + esc(g.photo) + '" data-cap="' + esc(g.caption || "") + '" data-play="' + esc(g.playId || "") + '" data-actors="' + esc((g.actors || []).join(", ")) + '"><span class="tape"></span><img src="' + esc(g.photo) + '" alt="' + esc(g.alt || g.caption || "") + '" loading="lazy">' + (g.caption ? '<figcaption class="cap">' + esc(g.caption) + "</figcaption>" : "") + "</figure>";
   }
   /* ---------- голоса актёров: аудио на странице спектакля ---------- */
   function voicesHtml(list) {
@@ -384,7 +389,7 @@ window.RAT = (function () {
     var img = lb.querySelector("img"), cap = lb.querySelector(".cap"), count = lb.querySelector(".lcount"), list = [], idx = 0;
     var show = function (i) {
       if (!list.length) return; idx = (i + list.length) % list.length; var s = list[idx];
-      img.src = s.dataset.src; cap.textContent = s.dataset.cap || ""; count.textContent = list.length > 1 ? (idx + 1) + " / " + list.length : "";
+      img.src = s.dataset.src; cap.textContent = (s.dataset.cap || "") + (s.dataset.actors ? (s.dataset.cap ? " · " : "") + "на фото: " + s.dataset.actors : ""); count.textContent = list.length > 1 ? (idx + 1) + " / " + list.length : "";
       lb.classList.toggle("single", list.length < 2);
       var n = list[(idx + 1) % list.length]; if (n && n !== s) { var pre = new Image(); pre.src = n.dataset.src; } /* следующее фото подгружаем заранее */
     };
@@ -393,7 +398,7 @@ window.RAT = (function () {
       var s = e.target.closest && e.target.closest(".shot");
       if (s) { /* группа — все фото того же блока: слайдер, стена бэкстейджа, галерея */
         var group = s.closest(".strip, .wall, .gallery, section, main") || document;
-        list = [].slice.call(group.querySelectorAll(".shot")); show(list.indexOf(s)); lb.classList.add("open"); return;
+        list = [].slice.call(group.querySelectorAll(".shot")).filter(function (x) { return !x.hidden; }); show(list.indexOf(s)); lb.classList.add("open"); return;
       }
       if (!lb.classList.contains("open")) return;
       if (e.target.closest(".lnav.prev")) { show(idx - 1); return; }
@@ -587,7 +592,119 @@ window.RAT = (function () {
       else prompt("Скопируйте ссылку:", b.dataset.copy);
     });
   }
-  function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); }
+  /* ---------- нижняя панель на телефоне: Афиша · Билеты · Голосуй ---------- */
+  var RAT_SVG = '<svg class="rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M21 17c0-8 8-11 16-11 7 0 11 2 14 5l11 6-11 4c-3 3-7 4-14 4-8 0-16-1-16-8z" fill="#000"/><circle cx="48" cy="8" r="3.2" fill="#000"/><path d="M21 17C13 15 9 25 1 21" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><path d="M28 24l-2 4M34 25v3M43 25l-1 3M48 23l2 5" stroke="#000" stroke-width="2.6" stroke-linecap="round"/><circle cx="54" cy="15" r="1.4" fill="#c9ff3d"/></svg>';
+  function mobileBar(opts) {
+    opts = opts || {}; if (document.querySelector(".mbar")) return;
+    var home = opts.home || "./";
+    document.body.insertAdjacentHTML("beforeend", '<nav class="mbar" aria-label="Быстрые действия">' +
+      '<a href="' + esc(opts.afisha || home + "#afisha") + '"><span class="ic">📅</span>Афиша</a>' +
+      (opts.buy ? '<button type="button" class="buy sticky" data-mbuy><b>' + esc(opts.buy.label || "Купить") + '</b><small>' + esc(opts.buy.sub || "") + "</small></button>" : '<button type="button" class="buy" data-mbuy><span class="ic">🎟</span>Билеты</button>') +
+      '<a href="' + esc(opts.golos || home + "golos") + '"><span class="ic">💸</span>Голосуй</a></nav>');
+    document.body.classList.add("has-mbar");
+    document.addEventListener("click", function (ev) {
+      if (!ev.target.closest("[data-mbuy]")) return;
+      /* ближайшая живая кнопка покупки на странице; если нет — к афише */
+      var b = document.querySelector("#nextBtn:not(.disabled)[data-afisha-session], #nextBtn:not(.disabled)[data-afisha-show], .ev .btn:not(.disabled):not(.wait), #pBuy:not(.disabled), .phero .btn:not(.disabled)");
+      if (b && b.tagName === "A" && (b.getAttribute("href") || "#") !== "#" || b && b.hasAttribute("data-afisha-session") || b && b.hasAttribute("data-afisha-show")) b.click();
+      else { var a = document.getElementById("afisha") || document.getElementById("dates"); if (a) a.scrollIntoView({ behavior: "smooth" }); else location.href = home + "#afisha"; }
+    });
+  }
+  /* текст липкой кнопки на странице спектакля: дата · цена · остаток */
+  function stickyBuyText(e, p) {
+    if (!e) return null;
+    var dt = parseDate(e.date), left = e.live && e.live.count, sold = hasBadge(e, "soldout");
+    var parts = [dt.getDate() + " " + MONTHS_SHORT[dt.getMonth()] + (e.time ? " · " + e.time : "")];
+    if (e.price) parts.push(e.price); else if (e.live && e.live.minPrice) parts.push("от " + e.live.minPrice + " ₽");
+    if (sold) return { label: "Билетов нет", sub: parts.join(" · ") + " · лист ожидания" };
+    if (left && left <= 15) parts.push("осталось " + left);
+    return { label: "Купить билет", sub: parts.join(" · ") };
+  }
+  /* ---------- «наверх»: крыса на канате появляется после второго экрана ---------- */
+  function toTop() {
+    if (document.querySelector(".totop") || reduced() && false) return;
+    document.body.insertAdjacentHTML("beforeend", '<button class="totop" type="button" aria-label="Наверх"><span class="rope"></span>' + RAT_SVG + '<span class="lbl">наверх</span></button>');
+    var b = document.querySelector(".totop"), on = false;
+    var check = function () { var want = window.pageYOffset > window.innerHeight * 2; if (want !== on) { on = want; b.classList.toggle("on", on); } };
+    window.addEventListener("scroll", check, { passive: true }); check();
+    b.addEventListener("click", function () { b.classList.add("climb"); window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" }); setTimeout(function () { b.classList.remove("climb"); }, 1000); });
+  }
+  /* ---------- полоса прокрутки сверху, по ней бежит крыса ---------- */
+  function scrollProgress() {
+    if (document.querySelector(".sprog")) return;
+    document.body.insertAdjacentHTML("beforeend", '<div class="sprog" aria-hidden="true"><div class="bar"></div>' + RAT_SVG + '</div>');
+    var bar = document.querySelector(".sprog .bar"), rat = document.querySelector(".sprog .rat"), ticking = false;
+    var upd = function () {
+      ticking = false;
+      var max = document.documentElement.scrollHeight - window.innerHeight, p = max > 0 ? Math.min(1, window.pageYOffset / max) : 0;
+      bar.style.transform = "scaleX(" + p.toFixed(4) + ")"; rat.style.left = (p * 100).toFixed(2) + "%";
+    };
+    var onScroll = function () { if (!ticking) { ticking = true; requestAnimationFrame(upd); } };
+    window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); upd();
+  }
+  /* ---------- стена бэкстейджа: фильтр по спектаклям ---------- */
+  function wallFilter(gallery, plays) {
+    var used = {}; gallery.forEach(function (g) { if (g.playId) used[g.playId] = (used[g.playId] || 0) + 1; });
+    var list = plays.filter(function (p) { return used[p.id]; });
+    if (list.length < 1 || (list.length === 1 && Object.keys(used).length === gallery.length && false)) return "";
+    if (!list.length) return "";
+    return '<button type="button" class="on" data-wall="">все · ' + gallery.length + "</button>" + list.map(function (p) { return '<button type="button" data-wall="' + esc(p.id) + '">' + esc(p.title) + " · " + used[p.id] + "</button>"; }).join("");
+  }
+  function wallFilterInit() {
+    document.addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-wall]"); if (!b) return;
+      var box = b.closest(".wallf"), id = b.dataset.wall;
+      box.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      var wall = document.getElementById("wall"); if (!wall) return;
+      wall.querySelectorAll(".shot").forEach(function (s) { s.hidden = !!id && s.dataset.play !== id; s.classList.add("in"); });
+    });
+  }
+  /* ---------- ролики: вертикальные видео из медиа спектаклей, звук по касанию ---------- */
+  function reel(plays, el) {
+    el = el || document.getElementById("reel"); if (!el) return 0;
+    var items = [];
+    plays.forEach(function (p) { (p.media || []).forEach(function (m) { if (m.type === "video" && !m.hidden && m.src) items.push({ p: p, m: m }); }); });
+    if (!items.length) { el.hidden = true; var h = document.querySelector(".reel-h"); if (h) h.hidden = true; return 0; }
+    el.innerHTML = items.map(function (it) {
+      return '<div class="rc" data-src="' + esc(it.m.src) + '" tabindex="0" role="button" aria-label="Видео: ' + esc(it.m.caption || it.p.title) + '">' +
+        (it.m.poster ? '<img src="' + esc(it.m.poster) + '" alt="" loading="lazy">' : "") + '<span class="rp"></span>' +
+        '<a class="rt" href="' + playUrl(it.p) + '">' + esc(it.p.title) + "</a>" + (it.m.caption ? '<div class="rcap">' + esc(it.m.caption) + "</div>" : "") +
+        '<span class="snd">🔇 звук по касанию</span></div>';
+    }).join("");
+    var cards = [].slice.call(el.querySelectorAll(".rc"));
+    var video = function (c) {
+      var v = c.querySelector("video"); if (v) return v;
+      v = document.createElement("video"); v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.preload = "metadata"; v.src = c.dataset.src;
+      var img = c.querySelector("img"); c.insertBefore(v, img ? img.nextSibling : c.firstChild);
+      v.addEventListener("playing", function () { c.classList.add("playing"); if (img) img.style.opacity = "0"; });
+      v.addEventListener("pause", function () { c.classList.remove("playing"); });
+      return v;
+    };
+    var setSound = function (c, on) { var v = video(c); v.muted = !on; c.classList.toggle("sound", on); c.querySelector(".snd").textContent = on ? "🔊 звук включён" : "🔇 звук по касанию"; };
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (ens) {
+        ens.forEach(function (en) {
+          var c = en.target;
+          if (en.intersectionRatio >= .6) { if (!reduced()) video(c).play().catch(function () {}); }
+          else { var v = c.querySelector("video"); if (v) { v.pause(); setSound(c, false); } }
+        });
+      }, { threshold: [0, .6] });
+      cards.forEach(function (c) { io.observe(c); });
+    }
+    el.addEventListener("click", function (ev) {
+      if (ev.target.closest(".rt")) return;
+      var c = ev.target.closest(".rc"); if (!c) return;
+      var v = video(c); var wantSound = v.muted;
+      cards.forEach(function (o) { if (o !== c) { var ov = o.querySelector("video"); if (ov && !ov.muted) setSound(o, false); } });
+      setSound(c, wantSound); if (v.paused) v.play().catch(function () {});
+      c.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    });
+    el.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { var c = ev.target.closest(".rc"); if (c) { ev.preventDefault(); c.click(); } } });
+    return items.length;
+  }
+  /* ---------- скелеты: серые бумажки, пока данные не пришли ---------- */
+  function skeleton(kind, n) { var out = ""; for (var i = 0; i < n; i++) out += '<div class="sk sk-' + kind + '" aria-hidden="true"></div>'; return out; }
+  function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
@@ -631,6 +748,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

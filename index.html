@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913k" rel="stylesheet">
-<link href="assets/intro.css?v=20260913k" rel="stylesheet">
-<link href="assets/site.css?v=20260913k" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913l" rel="stylesheet">
+<link href="assets/intro.css?v=20260913l" rel="stylesheet">
+<link href="assets/site.css?v=20260913l" rel="stylesheet">
 </head>
 <body>
 
@@ -103,20 +103,20 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   <section id="afisha">
     <h2 class="sec">Афиша <em>ближайшее</em><span class="stamp-deco">RAT ✦ билеты</span></h2>
     <p class="sec-sub">Билеты продаёт площадка — оплата картой или через СБП на её сайте.</p>
-    <div class="afisha" id="afishaList"></div>
+    <div class="afisha" id="afishaList"><div class="sk sk-ev"></div><div class="sk sk-ev"></div><div class="sk sk-ev"></div></div>
       <div id="calsub"></div>
   </section>
 
   <section id="plays">
     <h2 class="sec">Спек<em>такли</em><span class="stamp-deco">репертуар</span></h2>
     <p class="sec-sub">Сочинены внутри театра. Играем на Лесной.</p>
-    <div class="plays" id="playsList"></div>
+    <div class="plays" id="playsList"><div class="sk sk-card"></div><div class="sk sk-card"></div></div>
   </section>
 
   <section id="troupe">
     <h2 class="sec">Коман<em>да</em><span class="stamp-deco">те самые</span></h2>
     <p class="sec-sub">Нажми на карточку — на обороте роли.</p>
-    <div class="troupe" id="troupeList"></div>
+    <div class="troupe" id="troupeList"><div class="sk sk-actor"></div><div class="sk sk-actor"></div><div class="sk sk-actor"></div><div class="sk sk-actor"></div></div>
   </section>
 
   <section id="reviews" hidden>
@@ -125,10 +125,13 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <div class="reviews" id="reviewsList"></div>
   </section>
 
-  <section id="backstage" hidden>
+  <section id="backstage">
     <h2 class="sec">Бэк<em>стейдж</em><span class="stamp-deco">гримёрка</span></h2>
     <p class="sec-sub">Стена в гримёрке. Нажми, чтобы увеличить.</p>
-    <div class="wall" id="wall"></div>
+    <div class="wallf" id="wallFilter"></div>
+    <div class="wall" id="wall"><div class="sk sk-shot"></div><div class="sk sk-shot"></div><div class="sk sk-shot"></div><div class="sk sk-shot"></div></div>
+    <h3 class="reel-h" id="reelH" hidden>Ролики <small>листай, звук по касанию</small></h3>
+    <div class="reel" id="reel" hidden></div>
   </section>
 
   <section id="about">
@@ -165,7 +168,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913k" defer></script>
+<script src="assets/site.js?v=20260913l" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -234,7 +237,10 @@ function render(d) {
 
   /* отзывы, бэкстейдж */
   document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = d.reviews.map(R.reviewCard).join("") + R.reviewForm("");
-  if (d.gallery.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = d.gallery.map(R.shot).join(""); }
+  var reelN = R.reel(d.plays); if (reelN) { document.getElementById("reel").hidden = false; document.getElementById("reelH").hidden = false; }
+  document.getElementById("backstage").hidden = !d.gallery.length && !reelN;
+  document.getElementById("wall").innerHTML = d.gallery.map(R.shot).join("");
+  document.getElementById("wallFilter").innerHTML = R.wallFilter(d.gallery, d.plays);
 
   /* о театре, контакты, карта */
   document.getElementById("aboutText").textContent = th.about || "";
@@ -260,7 +266,7 @@ function render(d) {
   document.querySelectorAll('nav li a[href^="#"]').forEach(function (a) { var sec = document.getElementById(a.getAttribute("href").slice(1)); if (sec && sec.hidden) a.parentNode.hidden = true; });
 
   document.getElementById("calsub").innerHTML = R.calendarLinks();
-  R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.hit("home");
+  R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "./" }); R.toTop(); R.scrollProgress(); R.hit("home");
 }
 
 RAT.marquee(["Театр RAT", "Афиша", "Спектакли", "Билеты", "Голосуй рублём"]);

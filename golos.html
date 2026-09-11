@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.css?v=20260913k" rel="stylesheet">
+<link href="assets/intro.css?v=20260913l" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
 <link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link href="fonts/fonts.css?v=20260913k" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913l" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -417,6 +417,8 @@ function squeak() {
     [0, .13].forEach(off => { const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + off; o.type = "square"; o.frequency.setValueAtTime(2300, t); o.frequency.exponentialRampToValueAtTime(3900, t + .05); o.frequency.exponentialRampToValueAtTime(2500, t + .11); g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + .12); o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + .13); });
   } catch (x) {}
 }
+const TR = { а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"e",ж:"zh",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"h",ц:"c",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",ь:"",э:"e",ю:"yu",я:"ya" };
+const slug = n => String(n || "").toLowerCase().split("").map(c => TR[c] !== undefined ? TR[c] : c).join("").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
 const splitList = s => String(s || "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
 marquee(["Лучшая сцена", "Любой банк", "СБП", "Голосуй рублём", "Театр RAT"]);
 marqLive();
@@ -452,7 +454,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
       </div>
     </div>` : "";
   return `
-  <article class="card">
+  <article class="card" id="a-${slug(a.name)}">
     <span class="tape"></span><span class="tape r"></span>
     <div class="paper">
       <div class="photo"><span class="num">${i+1}</span>${photo}</div>
