@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913v" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913w" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -537,10 +537,11 @@ const SECTIONS = {
       <label>Телефон для СБП (запасной способ)</label><input data-f="phone" value="${esc(a.phone)}" placeholder="+7 900 000-00-00">`,
   },
   reviews: {
-    img: null, label: r => (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
+    img: null, label: r => (r.audio ? "🎙 " : "") + (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
     blank: () => ({ text: "", author: "", source: "", url: "", playId: "" }),
     form: r => `
       ${r.fromSite ? `<p class="help" style="margin:0 0 8px">✉️ Пришёл с сайта${r.date ? " " + esc(r.date) : ""}. Прочитайте и снимите галочку «Скрыть», чтобы опубликовать.</p>` : ""}
+      ${r.audio ? `<p style="margin:0 0 8px">🎙 Голосовой отзыв: <audio controls preload="metadata" src="${esc(backend.photoUrl(r.audio))}" style="vertical-align:middle;max-width:100%"></audio></p>` : ""}
       <label>Текст отзыва</label><textarea data-f="text">${esc(r.text)}</textarea>
       <div class="row3">
         <div><label>Автор</label><input data-f="author" value="${esc(r.author)}" placeholder="Анна, зритель"></div>

@@ -64,7 +64,7 @@ function sanitize(input) {
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
     hidden: !!e.hidden, price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
-  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.fromSite ? { fromSite: true, id: str(r.id, 40).replace(/[^\w-]/g, ""), date: str(r.date, 10) } : {}) })).filter(r => r.text);
+  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.fromSite ? { fromSite: true, id: str(r.id, 40).replace(/[^\w-]/g, ""), date: str(r.date, 10) } : {}), audio: media(r.audio) })).filter(r => r.text || r.audio);
   const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), video: media(g.video), poster: img(g.poster), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden, actors: arr(g.actors).slice(0, 20).map(n => str(n, 100)).filter(Boolean) })).filter(g => g.photo || g.video);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
@@ -105,12 +105,12 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: PHOTOS_DIR,
     filename: (req, file, cb) => {
-      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/x-wav": ".wav" }[file.mimetype] || ".jpg";
+      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "video/mp4": ".mp4", "video/webm": ".webm", "video/quicktime": ".mov", "audio/webm": ".webm", "audio/ogg": ".ogg", "audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/x-wav": ".wav" }[String(file.mimetype).split(";")[0]] || ".jpg";
       cb(null, `${Date.now()}-${crypto.randomBytes(3).toString("hex")}${ext}`);
     },
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => cb(null, /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|x-m4a|aac|ogg|wav|x-wav))$/.test(file.mimetype)),
+  fileFilter: (req, file, cb) => cb(null, /^(image\/(jpeg|png|webp)|video\/(mp4|webm|quicktime)|audio\/(mpeg|mp4|x-m4a|aac|ogg|wav|x-wav|webm)(;.*)?)$/.test(file.mimetype)),
 });
 
 // ---------- приложение ----------
@@ -175,6 +175,17 @@ app.put("/api/data", requireAuth, (req, res) => {
   res.json({ ok: true, data });
 });
 const reviewRate = new Map();
+app.post("/api/voice", upload.single("audio"), (req, res) => {
+  const b = req.body || {};
+  if (String(b.site || "").trim()) return res.json({ ok: true });
+  if (!req.file) return res.status(400).json({ error: "Запись не дошла до сервера" });
+  if (req.file.size > 2 * 1024 * 1024) { try { fs.unlinkSync(req.file.path); } catch {} return res.status(400).json({ error: "Запись слишком длинная (больше 2 МБ)" }); }
+  const day = new Date().toISOString().slice(0, 10), rk = day + "-" + crypto.createHash("sha256").update((req.ip || "") + "|" + (req.headers["user-agent"] || "")).digest("hex").slice(0, 12);
+  if ((reviewRate.get(rk) || 0) >= 5) return res.status(429).json({ error: "Слишком много отзывов за день, спасибо! Остальное — завтра" });
+  reviewRate.set(rk, (reviewRate.get(rk) || 0) + 1);
+  const data = readData(); (data.reviews = data.reviews || []).push({ text: str(b.text, 800), author: str(b.author, 60), source: "голосом с сайта", url: "", playId: str(b.playId, 40).replace(/[^\w-]/g, ""), hidden: true, fromSite: true, id: "r" + Math.floor(Date.now() / 1000) + "-" + crypto.randomBytes(2).toString("hex"), date: day, audio: "photos/" + req.file.filename });
+  writeData(data); res.json({ ok: true });
+});
 app.post("/api/review", (req, res) => {
   const b = req.body || {};
   if (String(b.site || "").trim()) return res.json({ ok: true });

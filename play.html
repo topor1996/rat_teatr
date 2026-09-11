@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913v" rel="stylesheet">
-<link href="assets/intro.min.css?v=20260913v" rel="stylesheet">
-<link href="assets/site.min.css?v=20260913v" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913w" rel="stylesheet">
+<link href="assets/intro.min.css?v=20260913w" rel="stylesheet">
+<link href="assets/site.min.css?v=20260913w" rel="stylesheet">
 </head>
 <body>
 
@@ -122,6 +122,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   <section id="reviews" hidden>
     <h2 class="sec">Гово<em>рят</em></h2>
     <p class="sec-sub">Что говорят зрители.</p>
+    <div id="hallVoices"></div>
     <div class="reviews" id="reviewsList"></div>
   </section>
 
@@ -153,7 +154,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.min.js?v=20260913v" defer></script>
+<script src="assets/site.min.js?v=20260913w" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -200,7 +201,8 @@ function render(d) {
     if (fsrc) { var pl = document.createElement("link"); pl.rel = "preload"; pl.as = "image"; pl.href = fsrc; pl.setAttribute("fetchpriority", "high"); document.head.appendChild(pl); }
     document.getElementById("media").hidden = false; document.getElementById("mediaBox").innerHTML = R.mediaSlider(p.media); R.sliders(document.getElementById("mediaBox")); }
   if (p.voices && p.voices.length) { document.getElementById("voices").hidden = false; document.getElementById("voicesList").innerHTML = R.voicesHtml(p.voices); R.voicePlayers(document.getElementById("voicesList")); }
-  document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.map(R.reviewCard).join("") + R.reviewForm(p.id); if (!revs.length) { var rs = document.querySelector("#reviews .sec-sub"); if (rs) rs.textContent = "Отзывов пока нет — будьте первым."; }
+  var hv = document.getElementById("hallVoices"); hv.innerHTML = R.hallVoicesHtml(revs); if (hv.innerHTML) R.voicePlayers(hv);
+  document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = revs.filter(function (r) { return !r.audio; }).map(R.reviewCard).join("") + R.reviewForm(p.id); if (!revs.length) { var rs = document.querySelector("#reviews .sec-sub"); if (rs) rs.textContent = "Отзывов пока нет — будьте первым."; }
   var shots = d.gallery.filter(function (x) { return x.playId === p.id; });
   if (shots.length) { document.getElementById("backstage").hidden = false; document.getElementById("wall").innerHTML = shots.map(R.shot).join(""); }
 

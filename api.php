@@ -97,7 +97,8 @@ function sanitize(array $in): array {
     if (!is_array($r)) continue;
     $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40), 'hidden' => !empty($r['hidden'])];
     if (!empty($r['fromSite'])) { $item['fromSite'] = true; $item['id'] = preg_replace('~[^\w-]~', '', (string)($r['id'] ?? '')); $item['date'] = str($r['date'] ?? '', 10); }
-    if ($item['text'] !== '') $reviews[] = $item;
+    $item['audio'] = media($r['audio'] ?? ''); // голосовой отзыв: файл в photos/
+    if ($item['text'] !== '' || $item['audio'] !== '') $reviews[] = $item;
   }
   foreach ($lst('gallery', 200) as $g) {
     if (!is_array($g)) continue;
@@ -372,6 +373,30 @@ switch ($a) {
     rename($tmp, $DATA_FILE);
     out(['ok' => true, 'data' => $data]);
 
+  case 'voice':
+    // голосовой отзыв: аудио до 2 МБ (webm/opus из Chrome, m4a из Safari), в черновики как обычный отзыв
+    if ($method !== 'POST') fail('POST only', 405);
+    if (trim((string)($_POST['site'] ?? '')) !== '') out(['ok' => true]);
+    $f = $_FILES['audio'] ?? null;
+    if (!$f || ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) fail('Запись не дошла до сервера');
+    if ($f['size'] > 2 * 1024 * 1024) fail('Запись слишком длинная (больше 2 МБ)');
+    if ($f['size'] < 2000) fail('Запись слишком короткая');
+    $mime = function_exists('mime_content_type') ? (string)@mime_content_type($f['tmp_name']) : (string)($f['type'] ?? '');
+    $ext = ['audio/webm' => '.webm', 'video/webm' => '.webm', 'audio/ogg' => '.ogg', 'audio/mp4' => '.m4a', 'audio/x-m4a' => '.m4a', 'audio/aac' => '.aac', 'audio/mpeg' => '.mp3', 'video/mp4' => '.m4a', 'audio/wav' => '.wav', 'audio/x-wav' => '.wav'][$mime] ?? null;
+    if (!$ext) { $t = (string)($f['type'] ?? ''); $ext = strpos($t, 'webm') !== false ? '.webm' : (strpos($t, 'mp4') !== false || strpos($t, 'm4a') !== false || strpos($t, 'aac') !== false ? '.m4a' : (strpos($t, 'ogg') !== false ? '.ogg' : null)); }
+    if (!$ext) fail('Неизвестный формат записи');
+    $rateFile = $DATA_DIR . '/reviews-rate.json'; $rate = readJson($rateFile, []); $day = date('Y-m-d'); $rate = array_filter($rate, fn($v, $k) => strpos($k, $day) === 0, ARRAY_FILTER_USE_BOTH);
+    $rk = $day . '-' . substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 12);
+    if (($rate[$rk] ?? 0) >= 5) fail('Слишком много отзывов за день, спасибо! Остальное — завтра', 429);
+    $rate[$rk] = ($rate[$rk] ?? 0) + 1; writeJson($rateFile, $rate);
+    $name = 'voice-' . time() . '-' . bin2hex(random_bytes(3)) . $ext;
+    if (!move_uploaded_file($f['tmp_name'], $PHOTOS_DIR . '/' . $name)) fail('Не удалось сохранить запись', 500);
+    $author = str($_POST['author'] ?? '', 60); $playId = preg_replace('~[^\w-]~', '', (string)($_POST['playId'] ?? '')); $text = str($_POST['text'] ?? '', 800);
+    $data = readData($DATA_FILE);
+    $data['reviews'][] = ['text' => $text, 'author' => $author, 'source' => 'голосом с сайта', 'url' => '', 'playId' => $playId, 'hidden' => true, 'fromSite' => true, 'id' => 'r' . time() . '-' . bin2hex(random_bytes(2)), 'date' => $day, 'audio' => 'photos/' . $name];
+    $tmp = $DATA_FILE . '.tmp'; file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); rename($tmp, $DATA_FILE);
+    out(['ok' => true]);
+
   case 'review':
     // отзыв зрителя с сайта: попадает в черновики, публикует админ. Ловушка для ботов + не больше 5 в день с одного адреса
     if ($method !== 'POST') fail('POST only', 405);
@@ -395,7 +420,7 @@ switch ($a) {
     $rv = array_values(array_filter(readData($DATA_FILE)['reviews'] ?? [], fn($r) => !empty($r['fromSite']) && !empty($r['hidden'])));
     $last = 0; foreach ($rv as $r) $last = max($last, (int)substr((string)($r['id'] ?? ''), 1, 10));
     $latest = null; foreach ($rv as $r) if ((int)substr((string)($r['id'] ?? ''), 1, 10) === $last) $latest = $r;
-    out(['ok' => true, 'count' => count($rv), 'last' => $last, 'author' => $latest['author'] ?? '', 'text' => mb_substr($latest['text'] ?? '', 0, 90)]);
+    out(['ok' => true, 'count' => count($rv), 'last' => $last, 'author' => $latest['author'] ?? '', 'text' => mb_substr(($latest['text'] ?? '') ?: (!empty($latest['audio']) ? '🎙 голосовой отзыв' : ''), 0, 90)]);
 
   case 'snapshot':
     // содержимое одной версии из истории — для сравнения «что изменилось»

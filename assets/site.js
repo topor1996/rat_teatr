@@ -644,7 +644,76 @@ window.RAT = (function () {
       '<textarea name="text" maxlength="800" rows="4" placeholder="Что вы почувствовали? Пара предложений, без ссылок" required></textarea>' +
       '<div class="row"><input name="author" maxlength="60" placeholder="Как вас подписать (необязательно)" autocomplete="name"><input name="site" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true"></div>' +
       '<input type="hidden" name="playId" value="' + esc(playId || "") + '">' +
-      '<div class="row"><button class="btn" type="submit">Отправить</button><small>Появится на сайте после проверки театром.</small></div></form>';
+      '<div class="row"><button class="btn" type="submit">Отправить</button>' + (window.MediaRecorder && navigator.mediaDevices ? '<button class="btn ghost rec" type="button" data-rec>🎙 Сказать голосом</button>' : "") + '<small>Появится на сайте после проверки театром.</small></div>' +
+      '<div class="recbox" hidden><div class="reclvl"><i></i></div><span class="rectime">0:00</span><span class="rechint">до 20 секунд</span><button class="btn sm" type="button" data-rec-stop>Стоп</button><button class="btn ghost sm" type="button" data-rec-again hidden>Заново</button><button class="btn sm" type="button" data-rec-send hidden>Отправить запись</button><audio controls hidden></audio></div></form>';
+  }
+  /* ---------- голосовой отзыв: запись в браузере до 20 с, потом отправка на сервер ---------- */
+  function recorderInit() {
+    var rec = null, chunks = [], blob = null, timer = null, ctx = null, raf = null, stream = null;
+    var mime = function () { var c = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"]; for (var i = 0; i < c.length; i++) if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(c[i])) return c[i]; return ""; };
+    var stopAll = function () { if (rec && rec.state !== "inactive") rec.stop(); if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } clearInterval(timer); cancelAnimationFrame(raf); if (ctx) { ctx.close().catch(function () {}); ctx = null; } };
+    document.addEventListener("click", function (ev) {
+      var f = ev.target.closest("[data-review]"); if (!f) return;
+      var box = f.querySelector(".recbox"), lvl = box && box.querySelector(".reclvl i"), time = box && box.querySelector(".rectime"), audio = box && box.querySelector("audio");
+      if (ev.target.closest("[data-rec]")) {
+        if (!navigator.mediaDevices || !window.MediaRecorder) { toast("В этом браузере нет записи звука", true); return; }
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+          stream = st; chunks = []; blob = null; var m = mime(); rec = new MediaRecorder(st, m ? { mimeType: m } : undefined);
+          rec.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+          rec.onstop = function () {
+            blob = new Blob(chunks, { type: rec.mimeType || m || "audio/webm" }); audio.src = URL.createObjectURL(blob); audio.hidden = false;
+            box.querySelector("[data-rec-stop]").hidden = true; box.querySelector("[data-rec-again]").hidden = false; box.querySelector("[data-rec-send]").hidden = false; box.querySelector(".rechint").textContent = "послушайте и отправьте";
+            if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } clearInterval(timer); cancelAnimationFrame(raf);
+          };
+          box.hidden = false; audio.hidden = true; box.querySelector("[data-rec-stop]").hidden = false; box.querySelector("[data-rec-again]").hidden = true; box.querySelector("[data-rec-send]").hidden = true; box.querySelector(".rechint").textContent = "говорите, до 20 секунд";
+          var t0 = Date.now(); rec.start(250);
+          timer = setInterval(function () { var sec = Math.floor((Date.now() - t0) / 1000); time.textContent = "0:" + (sec < 10 ? "0" : "") + sec; if (sec >= 20) stopAll(); }, 250);
+          try { /* индикатор громкости */
+            var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); var src = ctx.createMediaStreamSource(st), an = ctx.createAnalyser(); an.fftSize = 256; src.connect(an); var arr = new Uint8Array(an.frequencyBinCount);
+            var tick = function () { an.getByteTimeDomainData(arr); var peak = 0; for (var i = 0; i < arr.length; i++) peak = Math.max(peak, Math.abs(arr[i] - 128)); lvl.style.width = Math.min(100, peak * 1.6) + "%"; raf = requestAnimationFrame(tick); }; tick();
+          } catch (x) {}
+        }).catch(function () { toast("Нет доступа к микрофону. Разрешите его в настройках браузера", true); });
+        return;
+      }
+      if (ev.target.closest("[data-rec-stop]")) { stopAll(); return; }
+      if (ev.target.closest("[data-rec-again]")) { blob = null; audio.hidden = true; box.querySelector("[data-rec-again]").hidden = true; box.querySelector("[data-rec-send]").hidden = true; box.querySelector(".rechint").textContent = "нажмите «Сказать голосом» ещё раз"; time.textContent = "0:00"; lvl.style.width = "0"; return; }
+      if (ev.target.closest("[data-rec-send]")) {
+        if (!blob) return; var b = ev.target.closest("button"); b.disabled = true;
+        var fd = new FormData(); fd.append("audio", blob, "voice." + (blob.type.indexOf("mp4") >= 0 ? "m4a" : blob.type.indexOf("ogg") >= 0 ? "ogg" : "webm")); fd.append("author", f.author.value.trim()); fd.append("playId", f.playId.value); fd.append("text", f.text.value.trim()); fd.append("site", f.site.value);
+        var send = function (u) { return fetch(u, { method: "POST", body: fd }).then(function (r) { return r.json().then(function (j) { if (!r.ok || j.error) throw new Error(j.error || "Не получилось"); return j; }); }); };
+        send("api.php?a=voice").catch(function (e) { if (e instanceof Error && e.message !== "Не получилось") throw e; return send("api/voice"); })
+          .then(function () { f.innerHTML = '<span class="tape"></span><h3>Спасибо!</h3><p>Голос записан. Театр послушает и опубликует.</p>'; toast("Голосовой отзыв отправлен"); track("review"); setTimeout(function () { nudge("review"); }, 1200); })
+          .catch(function (e) { b.disabled = false; toast(e.message || "Не получилось отправить", true); });
+      }
+    });
+  }
+  /* «голоса зала»: голосовые отзывы тем же плеером, что голоса актёров */
+  function hallVoicesHtml(reviews) {
+    var v = (reviews || []).filter(function (r) { return r.audio; });
+    if (!v.length) return "";
+    return '<h3 class="reel-h" style="margin-top:6px">Голоса зала <small>записали прямо на сайте</small></h3><div class="voices hall">' + voicesHtml(v.map(function (r) { return { name: r.author || "Зритель", note: r.text || (r.date ? r.date.split("-").reverse().join(".") : ""), audio: r.audio }; })) + "</div>";
+  }
+  /* ---------- живая стена: бумажки чуть смещаются от наклона телефона или движения мыши, каждая на своей глубине ---------- */
+  function tilt() {
+    if (reduced()) return;
+    try { if (localStorage.getItem("rat_tilt") === "off") return; } catch (x) {}
+    var els = document.querySelectorAll(".card, .flip, .shot, .ev, .rev, .voice, .rc, .next, .revform, .faq");
+    if (!els.length) return;
+    els.forEach(function (el, i) { el.classList.add("tilt"); el.style.setProperty("--d", (0.45 + ((i * 7) % 5) * 0.18).toFixed(2)); });
+    var tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+    var loop = function () { cx += (tx - cx) * .08; cy += (ty - cy) * .08; document.documentElement.style.setProperty("--px", cx.toFixed(2) + "px"); document.documentElement.style.setProperty("--py", cy.toFixed(2) + "px"); if (Math.abs(tx - cx) > .05 || Math.abs(ty - cy) > .05) raf = requestAnimationFrame(loop); else raf = null; };
+    var set = function (x, y) { tx = Math.max(-1, Math.min(1, x)) * 18; ty = Math.max(-1, Math.min(1, y)) * 14; if (!raf) raf = requestAnimationFrame(loop); };
+    var fine = window.matchMedia && window.matchMedia("(hover:hover) and (pointer:fine)").matches;
+    if (fine) window.addEventListener("mousemove", function (e) { set(e.clientX / window.innerWidth * 2 - 1, e.clientY / window.innerHeight * 2 - 1); }, { passive: true });
+    var base = null;
+    var onOrient = function (e) { if (e.gamma === null || e.beta === null) return; if (base === null) base = { g: e.gamma, b: e.beta }; set((e.gamma - base.g) / 25, (e.beta - base.b) / 25); };
+    var start = function () { window.addEventListener("deviceorientation", onOrient, { passive: true }); };
+    if (window.DeviceOrientationEvent) {
+      if (typeof DeviceOrientationEvent.requestPermission === "function") { /* iOS: разрешение только по касанию */
+        var ask = function () { document.removeEventListener("touchend", ask); DeviceOrientationEvent.requestPermission().then(function (r) { if (r === "granted") start(); }).catch(function () {}); };
+        document.addEventListener("touchend", ask, { passive: true });
+      } else if (!fine) start();
+    }
   }
   function reviewInit() {
     document.addEventListener("submit", function (ev) {
@@ -815,7 +884,7 @@ window.RAT = (function () {
       setTimeout(function () { ul.scrollTo({ left: 56, behavior: "smooth" }); setTimeout(function () { ul.scrollTo({ left: 0, behavior: "smooth" }); }, 700); }, 1200);
     }
   }
-  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
+  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); tilt(); recorderInit(); }
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
@@ -859,6 +928,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, rehash: rehash, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, rehash: rehash, hallVoicesHtml: hallVoicesHtml, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();
