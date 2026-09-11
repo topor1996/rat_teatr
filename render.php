@@ -78,6 +78,8 @@ function rat_render(string $file, ?string $playId = null, ?string $actorSlug = n
     $graph[] = $item;
   }
   if ($play) {
+    $faq = array_values(array_filter($th['faq'] ?? [], fn($f) => !empty($f['q']) && !empty($f['a'])));
+    if ($faq) $graph[] = ['@type' => 'FAQPage', 'mainEntity' => array_map(fn($f) => ['@type' => 'Question', 'name' => $f['q'], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $f['a']]], $faq)];
     if (!empty($play['poster'])) $graph[] = ['@type' => 'ImageObject', 'contentUrl' => $base . $play['poster'], 'name' => $play['title'], 'caption' => 'Постер спектакля «' . $play['title'] . '»', 'representativeOfPage' => true];
     foreach ($play['media'] ?? [] as $m) {
       if (!empty($m['hidden']) || empty($m['src'])) continue;

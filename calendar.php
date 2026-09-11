@@ -23,7 +23,7 @@ foreach ($d['events'] ?? [] as $e) {
   if ($p && preg_match('~(\d+)\s*час~u', (string)($p['duration'] ?? ''), $m)) { $mins = (int)$m[1] * 60; if (preg_match('~(\d+)\s*мин~u', $p['duration'], $mm)) $mins += (int)$mm[1]; }
   elseif ($p && preg_match('~(\d+)\s*мин~u', (string)($p['duration'] ?? ''), $mm)) $mins = (int)$mm[1];
   $end = (clone $start)->modify('+' . $mins . ' minutes');
-  $url = $p ? $base . 'play.html?id=' . rawurlencode($p['id']) : $base;
+  $url = $p ? $base . 'play.html?id=' . rawurlencode($p['id']) . '&utm_source=calendar' : $base . '?utm_source=calendar';
   $ticket = ($e['ticketUrl'] ?? '') ?: ($p['ticketUrl'] ?? '') ?: ($th['ticketsUrl'] ?? '');
   $desc = trim(($p['genre'] ?? '') . ($p ? "\n" . mb_substr($p['description'] ?? '', 0, 300) : '') . ($e['note'] ?? '' ? "\n" . $e['note'] : '') . ($ticket ? "\nБилеты: " . $ticket : '') . "\n" . $url);
   $sold = in_array('soldout', $e['badges'] ?? [], true);

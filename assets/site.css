@@ -541,3 +541,22 @@ h2.sec .gt{display:inline-block;animation:glB 3s steps(1,end) infinite;animation
 .cast .alink{color:var(--acid);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
 .cast .alink:hover{color:#fff}
 .golos-card .apage{display:inline-block;margin-top:8px;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#000;background:var(--acid);padding:5px 9px;border:2px solid #000;text-decoration:none;transform:rotate(-2deg)}
+
+/* ---------- «Перед походом» и мягкая просьба о подписке ---------- */
+.faq{background:var(--paper);color:var(--ink);margin:0 0 8px;padding:0;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.faq summary{cursor:pointer;padding:12px 16px;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:16px;text-transform:uppercase;letter-spacing:.04em;list-style:none;position:relative;padding-right:40px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:14px;top:8px;font-size:24px;color:var(--red)}
+.faq[open] summary::after{content:"–"}
+.faq p{margin:0;padding:0 16px 14px;font-size:14px;line-height:1.55;white-space:pre-line}
+.faq:nth-child(odd){transform:rotate(-.3deg)} .faq:nth-child(even){transform:rotate(.3deg)}
+.rcount{font-family:"PT Mono","PT Mono Fallback",monospace;font-size:11px;color:var(--muted)}
+.nudge{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(30px);width:min(92vw,420px);background:var(--paper);color:var(--ink);padding:18px 18px 14px;box-shadow:0 20px 50px rgba(0,0,0,.6);z-index:9990;opacity:0;transition:opacity .3s,transform .3s}
+.nudge.on{opacity:1;transform:translateX(-50%) translateY(0) rotate(-.6deg)}
+.nudge .tape{position:absolute;width:70px;height:20px;background:var(--tape);left:50%;top:-10px;transform:translateX(-50%) rotate(-3deg)}
+.nudge b{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:20px;text-transform:uppercase;line-height:1}
+.nudge p{margin:6px 0 12px;font-size:13px;color:var(--muted)}
+.nudge .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nudge .btn{padding:10px 12px;font-size:14px}
+.nudge .later{background:none;border:0;font:inherit;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;margin-left:auto}
+body.has-mbar .nudge{bottom:calc(84px + env(safe-area-inset-bottom))}

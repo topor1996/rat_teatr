@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.css?v=20260913p" rel="stylesheet">
+<link href="assets/intro.css?v=20260913q" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
 <link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link href="fonts/fonts.css?v=20260913p" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913q" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -109,6 +109,17 @@
   .marq-rat.dash{animation:ratDash .8s cubic-bezier(.5,0,1,1) forwards}
   @keyframes ratDash{from{opacity:1;transform:translateX(var(--x,0px)) rotate(-2deg)}to{opacity:1;transform:translateX(calc(100vw + 160px)) rotate(-6deg)}}
   @media (prefers-reduced-motion:reduce){.marq-rat.dash{animation:none}}
+  /* «спасибо» после перевода: пара слов о спектакле и канал в Telegram */
+  .thanks{position:fixed;inset:0;z-index:10005;background:rgba(0,0,0,.7);display:grid;place-items:end center;padding:16px;opacity:0;pointer-events:none;transition:opacity .3s}
+  .thanks.on{opacity:1;pointer-events:auto}
+  .thanks .box{background:var(--paper);color:var(--ink);width:min(100%,460px);padding:22px 20px 16px;position:relative;transform:rotate(-.6deg);box-shadow:0 20px 50px rgba(0,0,0,.6)}
+  .thanks h3{margin:0 0 4px;font-family:"Oswald",sans-serif;font-weight:700;text-transform:uppercase;font-size:24px;line-height:1}
+  .thanks p{margin:0 0 12px;font-size:13px;color:var(--muted)}
+  .thanks textarea,.thanks input{width:100%;box-sizing:border-box;border:2px solid #000;background:#fff;color:#000;font:inherit;font-size:16px;padding:10px 12px;margin:0 0 8px}
+  .thanks textarea{min-height:84px;resize:vertical}
+  .thanks .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .thanks .x{position:absolute;right:8px;top:6px;background:none;border:0;font-size:22px;cursor:pointer;color:#000}
+  .thanks .btn.tg{background:#fff;color:#000}
 
   /* ---------- steps as stickers ---------- */
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:36px 0 8px}
@@ -491,7 +502,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
       if (Array.isArray(j.actors) && j.actors.length) { d = j; break; }
     } catch {}
   }
-  render(d.show || SHOW, d.actors);
+  window.__golos = d; render(d.show || SHOW, d.actors);
   try { var q = "p=golos"; if (!(navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q))) fetch("api.php?a=hit&" + q, { keepalive: true }).catch(function () {}); } catch (x) {}
   try {
     var box = document.querySelector(".marq-outer");
@@ -527,6 +538,39 @@ grid.addEventListener("click", async e => {
   if (t.dataset.qr !== undefined) openQr(current[t.dataset.qr]);
 });
 
+/* после нажатия «перевести» или копирования номера — один раз за сессию: спасибо, отзыв, канал */
+(function () {
+  let shown = false;
+  const show = () => {
+    if (shown) return; shown = true;
+    const d = window.__golos || {}, th = d.theatre || {}, today = new Date().toISOString().slice(0, 10);
+    const ev = (d.events || []).filter(e => e.date === today && !e.hidden)[0], play = ev && (d.plays || []).find(p => p.id === ev.playId);
+    const box = document.createElement("div"); box.className = "thanks";
+    box.innerHTML = `<div class="box"><button class="x" type="button" aria-label="Закрыть">×</button><h3>Спасибо!</h3><p>Актёр получит перевод напрямую. Пара слов о спектакле${play ? " «" + esc(play.title) + "»" : ""}? Театр прочитает и опубликует.</p>
+      <form data-thanks><textarea name="text" maxlength="800" placeholder="Что вы почувствовали?"></textarea><input name="author" maxlength="60" placeholder="Как вас подписать (необязательно)"><input name="site" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px">
+      <div class="row"><button class="btn" type="submit">Отправить отзыв</button>${th.telegram ? `<a class="btn tg" href="${esc(th.telegram)}" target="_blank" rel="noopener">Канал в Telegram</a>` : ""}</div></form></div>`;
+    document.body.appendChild(box); setTimeout(() => box.classList.add("on"), 20);
+    const close = () => { box.classList.remove("on"); setTimeout(() => box.remove(), 400); };
+    box.addEventListener("click", e => { if (e.target === box || e.target.closest(".x")) close(); });
+    box.querySelector("form").addEventListener("submit", async e => {
+      e.preventDefault(); const f = e.target, text = f.text.value.trim();
+      if (text.length < 20) { f.text.focus(); f.text.placeholder = "Хотя бы пару предложений…"; return; }
+      f.querySelector("button").disabled = true;
+      const body = JSON.stringify({ text, author: f.author.value.trim(), playId: play ? play.id : "", site: f.site.value });
+      try {
+        let r = await fetch("api.php?a=review", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+        if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) r = await fetch("/api/review", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+        const j = await r.json(); if (j.error) throw new Error(j.error);
+        f.innerHTML = `<p style="color:#000;font-size:15px;margin:0">Отзыв получен, спасибо!${th.telegram ? ` <a href="${esc(th.telegram)}" target="_blank" rel="noopener">Канал в Telegram →</a>` : ""}</p>`;
+        try { navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&ev=review"); } catch {}
+      } catch (err) { f.querySelector("button").disabled = false; alert(err.message || "Не получилось отправить"); }
+    });
+  };
+  document.addEventListener("click", e => {
+    const pay = e.target.closest(".card a.btn[target=_blank]:not(.disabled), .card [data-copy]");
+    if (pay) setTimeout(show, 1500);
+  });
+})();
 const modal = document.getElementById("modal"), qrBox = document.getElementById("qr");
 function openQr(a) {
   document.getElementById("mName").textContent = a.name;

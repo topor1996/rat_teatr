@@ -48,7 +48,7 @@ window.RAT = (function () {
     return urls.reduce(function (p, url) {
       return p.then(function (st) { if (st) return st; return fetch(url, { cache: "no-store" }).then(function (r) { if (!r.ok || (r.headers.get("content-type") || "").indexOf("json") < 0) return null; return r.json(); }).catch(function () { return null; }); });
     }, Promise.resolve(null)).then(function (st) {
-      if (!st || !st.sessions) return d;
+      if (!st || !st.sessions) theatre = d.theatre || null; return d;
       d.events.forEach(function (e) {
         var s = e.afishaSessionId && st.sessions[e.afishaSessionId]; if (!s) return;
         e.live = s; e.badges = (e.badges || []).slice();
@@ -68,7 +68,7 @@ window.RAT = (function () {
   /* ---------- виджет билетов «Афиши» (tickets.afisha.ru), как на teatrdoc.ru ----------
      Партнёрский ID театра-площадки задаётся в админке; у показа — ID сеанса, у спектакля — ID спектакля.
      Кнопка открывает окно виджета прямо на сайте; если виджет не загрузился — переход по обычной ссылке. */
-  var afisha = { partner: "", widget: null, loading: null };
+  var afisha = { partner: "", widget: null, loading: null }, theatre = null;
   function afishaAttrs(e, p, th) {
     if (!(th && th.afishaPartnerId)) return "";
     if (e && e.afishaSessionId) return ' data-afisha-session="' + esc(e.afishaSessionId) + '"';
@@ -85,11 +85,11 @@ window.RAT = (function () {
     var u = ticket(e, p, th), a = afishaAttrs(e, p, th);
     if (!u && !a) return "";
     var lb = leftBadge(e);
-    return '<a class="btn ' + (cls || "") + (lb ? " has-left" : "") + '" href="' + (u ? esc(u) : "#") + '"' + (a ? a : ' target="_blank" rel="noopener"') + a + ">" + label + lb + "</a>";
+    return '<a class="btn ' + (cls || "") + (lb ? " has-left" : "") + '" href="' + (u ? esc(u) : "#") + '"' + (a ? a : ' target="_blank" rel="noopener"') + a + ' data-buy="1">' + label + lb + "</a>";
   }
   function applyBuy(el, e, p, th) {
     var u = ticket(e, p, th), sess = e && e.afishaSessionId, show = p && p.afishaShowId;
-    el.href = u || "#";
+    el.href = u || "#"; el.setAttribute("data-buy", "1");
     if (th && th.afishaPartnerId && (sess || show)) { if (sess) el.setAttribute("data-afisha-session", sess); else el.setAttribute("data-afisha-show", show); el.removeAttribute("target"); return true; }
     if (u) { el.target = "_blank"; el.rel = "noopener"; }
     return !!u;
@@ -97,8 +97,24 @@ window.RAT = (function () {
   function applyLeft(el, e) { var lb = leftBadge(e); if (lb && !el.querySelector(".left")) { el.classList.add("has-left"); el.insertAdjacentHTML("beforeend", lb); } }
 
   /* ---------- счётчик посещений без cookie ---------- */
+  /* источник захода: utm_source из ссылки или домен-реферер; отправляется один раз за сессию вместе с первым заходом */
+  function srcOnce() {
+    try {
+      if (sessionStorage.getItem("rat_src_sent")) return "";
+      var u = new URLSearchParams(location.search).get("utm_source"), r = document.referrer, src = "";
+      if (u) src = u; else if (!r) src = "direct"; else { var h = r.replace(/^https?:\/\//, "").split("/")[0].replace(/^www\./, ""); if (h === location.hostname) return ""; src = /instagram/.test(h) ? "instagram" : /t\.me|telegram/.test(h) ? "telegram" : /vk\.com|vk\.ru/.test(h) ? "vk" : /afisha/.test(h) ? "afisha" : /yandex|ya\.ru/.test(h) ? "yandex" : /google/.test(h) ? "google" : /teatrdoc/.test(h) ? "teatrdoc" : h; }
+      sessionStorage.setItem("rat_src_sent", "1"); return src.toLowerCase().replace(/[^a-z0-9._-]/g, "").slice(0, 40);
+    } catch (x) { return ""; }
+  }
+  function beacon(q) {
+    try { if (navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q)) return; } catch (x) {}
+    fetch("api.php?a=hit&" + q, { keepalive: true }).then(function (r) { if (!r.ok) throw 0; }).catch(function () { fetch("/api/hit?" + q, { keepalive: true }).catch(function () {}); });
+  }
+  /* событие воронки: buy, widget, remind, wait, play, news, calendar, golos, review */
+  function track(ev) { beacon("ev=" + encodeURIComponent(ev)); }
   function hit(page) {
-    var q = "p=" + encodeURIComponent(page);
+    var src = srcOnce(), q = "p=" + encodeURIComponent(page) + (src ? "&src=" + encodeURIComponent(src) : "");
+    beacon(q); return;
     try { if (navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q)) return; } catch (x) {}
     fetch("api.php?a=hit&" + q, { keepalive: true }).then(function (r) { if (!r.ok) throw 0; }).catch(function () { fetch("/api/hit?" + q, { keepalive: true }).catch(function () {}); });
   }
@@ -136,9 +152,11 @@ window.RAT = (function () {
     afisha.partner = (th && th.afishaPartnerId) || "";
     if (!afisha.partner) return;
     // пока окно виджета открыто — класс на <html>, чтобы наш CSS заблокировал фон и растянул окно
+    var wasOpen = false;
     var sync = function () {
       var m = document.getElementById("modal");
       document.documentElement.classList.toggle("afisha-open", !!m);
+      if (m) wasOpen = true; else if (wasOpen) { wasOpen = false; setTimeout(function () { nudge("buy"); }, 800); }
       if (m && !m.querySelector(".rat-modal-head")) {
         var head = document.createElement("div"); head.className = "rat-modal-head";
         head.innerHTML = '<svg class="rat"><use href="#rat"/></svg><span>Билеты</span><small>' + esc(th.name || "Театр RAT") + ' ✦ оплата через Афишу, билет придёт на почту</small>';
@@ -156,7 +174,7 @@ window.RAT = (function () {
     ev.preventDefault();
     var sess = a.getAttribute("data-afisha-session"), show = a.getAttribute("data-afisha-show"), href = a.getAttribute("href");
     var label = a.textContent; a.textContent = "Открываем…";
-    var open = function (w) { a.textContent = label; w.openModal(sess ? Number(sess) : { shows_id: Number(show) }); };
+    var open = function (w) { a.textContent = label; w.openModal(sess ? Number(sess) : { shows_id: Number(show) }); track("widget"); };
     var fallback = function () { a.textContent = label; if (href && href !== "#") location.href = href; };
     // одна повторная попытка загрузки, если первая (фоновая) сорвалась; иначе — обычный переход в этой же вкладке
     afishaLoad().then(open).catch(function () { afishaLoad().then(open).catch(fallback); });
@@ -228,6 +246,7 @@ window.RAT = (function () {
 
   /* ---------- поделиться ---------- */
   function shareHtml(url, title) {
+    url = url + (url.indexOf("?") >= 0 ? "&" : "?") + "utm_source=share";
     return '<div class="share"><span class="lbl">Поделиться</span>' +
       '<a class="btn ghost onDark sm" href="https://t.me/share/url?url=' + encodeURIComponent(url) + "&text=" + encodeURIComponent(title) + '" target="_blank" rel="noopener">Telegram</a>' +
       '<a class="btn ghost onDark sm" href="https://vk.com/share.php?url=' + encodeURIComponent(url) + "&title=" + encodeURIComponent(title) + '" target="_blank" rel="noopener">VK</a>' +
@@ -513,7 +532,28 @@ window.RAT = (function () {
   function pushWant(kind, key) {
     return pushSubscribe().then(function (sub) {
       return apiJson("push_sub", "push_sub", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sub: sub.toJSON(), kind: kind, key: key }) });
-    }).then(function () { pushMark(kind, key); });
+    }).then(function () { pushMark(kind, key); track(kind); });
+  }
+  function playWaitBtn(p) {
+    if (!("serviceWorker" in navigator)) return "";
+    var on = pushHas("play", p.id);
+    return '<button type="button" class="btn light' + (on ? " on" : "") + '" data-remind-play="' + esc(p.id) + '">' + (on ? "✓ Сообщим, когда назначат дату" : "🔔 Сообщить, когда назначат дату") + "</button>";
+  }
+  /* ---------- мягкая просьба после действия: узнавать о новых датах (показывается один раз) ---------- */
+  function nudge(reason) {
+    try { if (localStorage.getItem("rat_nudge")) return; } catch (x) {}
+    if (document.querySelector(".nudge") || !("serviceWorker" in navigator) && !(theatre && theatre.telegram)) return;
+    var tg = theatre && theatre.telegram;
+    var box = document.createElement("div"); box.className = "nudge";
+    box.innerHTML = '<span class="tape"></span><b>Узнавать о новых датах?</b><p>' + (reason === "review" ? "Спасибо за отзыв. " : reason === "buy" ? "" : "") + 'Напишем только про новые показы, без рекламы.</p><div class="row">' +
+      ('serviceWorker' in navigator ? '<button type="button" class="btn" data-nudge-push>🔔 В браузере</button>' : "") + (tg ? '<a class="btn ghost" href="' + esc(tg) + '" target="_blank" rel="noopener" data-nudge-tg>Telegram-канал</a>' : "") + '<button type="button" class="later" data-nudge-later>Не сейчас</button></div>';
+    document.body.appendChild(box); setTimeout(function () { box.classList.add("on"); }, 20);
+    var done = function () { try { localStorage.setItem("rat_nudge", "1"); } catch (x) {} box.classList.remove("on"); setTimeout(function () { box.remove(); }, 400); };
+    box.addEventListener("click", function (ev) {
+      if (ev.target.closest("[data-nudge-later]")) { done(); return; }
+      if (ev.target.closest("[data-nudge-tg]")) { done(); return; }
+      if (ev.target.closest("[data-nudge-push]")) { var b = ev.target.closest("button"); b.disabled = true; pushWant("news", "all").then(function () { toast("Договорились: напишем про новые даты"); done(); }).catch(function (err) { b.disabled = false; toast(err.message || "Не получилось", true); }); }
+    });
   }
   function remindBtn(e) {
     if (!("serviceWorker" in navigator)) return "";
@@ -545,11 +585,22 @@ window.RAT = (function () {
       if (r) {
         if (r.classList.contains("on")) { toast("Уже напомним за день до показа"); return; }
         r.disabled = true;
-        pushWant("remind", r.dataset.remind).then(function () { r.classList.add("on"); r.textContent = "✓ напомню за день"; toast("Напомним за день до показа"); })
+        pushWant("remind", r.dataset.remind).then(function () { r.classList.add("on"); r.textContent = "✓ напомню за день"; toast("Напомним за день до показа"); setTimeout(function () { nudge("remind"); }, 1500); })
           .catch(function (err) { toast(err.message || "Не получилось включить напоминание", true); }).then(function () { r.disabled = false; });
         return;
       }
-      var w = ev.target.closest("[data-wait]"); if (w) waitDialog(w.dataset.wait, w);
+      var w = ev.target.closest("[data-wait]"); if (w) { waitDialog(w.dataset.wait, w); return; }
+      var pw = ev.target.closest("[data-remind-play]");
+      if (pw) {
+        if (pw.classList.contains("on")) { toast("Уже сообщим, как только появится дата"); return; }
+        pw.disabled = true;
+        pushWant("play", pw.dataset.remindPlay).then(function () { pw.classList.add("on"); pw.textContent = "✓ Сообщим, когда назначат дату"; toast("Сообщим, как только назначат дату"); setTimeout(function () { nudge("play"); }, 1500); })
+          .catch(function (err) { toast(err.message || "Не получилось", true); }).then(function () { pw.disabled = false; });
+        return;
+      }
+      var buy = ev.target.closest("[data-buy]"); if (buy) track("buy");
+      var cal = ev.target.closest(".calsub a"); if (cal) track("calendar");
+      var gl = ev.target.closest('a[href="golos"],a[href$="/golos"],a[href^="golos#"]'); if (gl) track("golos");
     });
     // офлайн-афиша (PWA): регистрируем service worker сразу, кнопка «Установить» появится, если браузер разрешит
     if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(function () {});
@@ -575,7 +626,7 @@ window.RAT = (function () {
       var text = f.text.value.trim(); if (text.length < 20) { toast("Напишите хотя бы пару предложений", true); f.text.focus(); return; }
       var btn = f.querySelector("button"); btn.disabled = true;
       apiJson("review", "review", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: text, author: f.author.value.trim(), playId: f.playId.value, site: f.site.value }) })
-        .then(function () { f.innerHTML = '<span class="tape"></span><h3>Спасибо!</h3><p>Отзыв получен. Театр прочитает и опубликует.</p>'; toast("Отзыв отправлен"); })
+        .then(function () { f.innerHTML = '<span class="tape"></span><h3>Спасибо!</h3><p>Отзыв получен. Театр прочитает и опубликует.</p>'; toast("Отзыв отправлен"); track("review"); setTimeout(function () { nudge("review"); }, 1200); })
         .catch(function (err) { toast(err.message || "Не получилось отправить", true); btn.disabled = false; });
     });
   }
@@ -706,6 +757,14 @@ window.RAT = (function () {
   }
   /* ---------- скелеты: серые бумажки, пока данные не пришли ---------- */
   function skeleton(kind, n) { var out = ""; for (var i = 0; i < n; i++) out += '<div class="sk sk-' + kind + '" aria-hidden="true"></div>'; return out; }
+  /* ---------- «Перед походом»: ответы на вопросы перед покупкой + маршрут ---------- */
+  function faqHtml(th) {
+    var faq = (th && th.faq || []).filter(function (f) { return f.q && f.a; });
+    var coords = (th && th.mapCoords || "").replace(/\s+/g, "");
+    var route = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/.test(coords) ? '<a class="btn ghost onDark" href="https://yandex.ru/maps/?rtext=~' + esc(coords) + '&rtt=mt" target="_blank" rel="noopener">🚇 Маршрут в Яндекс Картах</a>' : "";
+    if (!faq.length && !route) return "";
+    return faq.map(function (f) { return '<details class="faq rv"><summary>' + esc(f.q) + "</summary><p>" + esc(f.a) + "</p></details>"; }).join("") + (route ? '<div class="row" style="margin-top:14px">' + route + (th.address ? '<span class="hint">' + esc(th.address) + "</span>" : "") + "</div>" : "");
+  }
   function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
 
   /* ---------- появление при прокрутке ---------- */
@@ -750,6 +809,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

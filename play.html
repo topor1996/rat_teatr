@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260913p" rel="stylesheet">
-<link href="assets/intro.css?v=20260913p" rel="stylesheet">
-<link href="assets/site.css?v=20260913p" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913q" rel="stylesheet">
+<link href="assets/intro.css?v=20260913q" rel="stylesheet">
+<link href="assets/site.css?v=20260913q" rel="stylesheet">
 </head>
 <body>
 
@@ -95,6 +95,12 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     </div>
   </section>
 
+  <section id="before" hidden>
+    <h2 class="sec">Перед <em>походом</em><span class="stamp-deco">коротко</span></h2>
+    <p class="sec-sub">Ответы на то, о чём обычно спрашивают в личке.</p>
+    <div id="faqList"></div>
+  </section>
+
   <section id="dates" hidden>
     <h2 class="sec">Да<em>ты</em><span class="stamp-deco">билеты</span></h2>
     <p class="sec-sub">Билеты продаёт площадка — оплата картой или через СБП на её сайте.</p>
@@ -146,7 +152,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.js?v=20260913p" defer></script>
+<script src="assets/site.js?v=20260913q" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -177,10 +183,14 @@ function render(d) {
     d.actors.filter(R.actorHasPage).forEach(function (a) { var n = esc(a.name); if (castHtml.indexOf(n) >= 0) castHtml = castHtml.split(n).join('<a class="alink" href="' + R.actorUrl(a) + '">' + n + "</a>"); });
     var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + castHtml; c.hidden = false;
   }
-  document.getElementById("pRow").innerHTML = (nextOf && !R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>';
+  document.getElementById("pRow").innerHTML = (nextOf ? (!R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>' : R.playWaitBtn(p) + '<a class="btn ghost onDark" href="./#afisha">Афиша</a>');
   document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT")).replace(/<\/div>$/, '<button class="btn light sm" data-story="1" type="button">Картинка «Я иду»</button></div>');
   window.__storyCtx = { p: p, events: events, th: th };
-  window.__stickyBuy = R.stickyBuyText(nextOf, p); // текст липкой кнопки на телефоне: дата · цена · остаток
+  window.__stickyBuy = R.stickyBuyText(nextOf, p);
+  var faq = R.faqHtml(th); if (faq) { document.getElementById("before").hidden = false; document.getElementById("faqList").innerHTML = faq; }
+  if (!events.length) { var dl = document.getElementById("datesList"); }
+  /* пришли из уведомления «как вам?» — сразу к форме отзыва */
+  if (new URLSearchParams(location.search).get("review")) setTimeout(function () { var f = document.querySelector("[data-review]"); if (f) { f.scrollIntoView({ behavior: "smooth", block: "center" }); var t = f.querySelector("textarea"); if (t) t.focus(); } }, 900); // текст липкой кнопки на телефоне: дата · цена · остаток
 
   document.getElementById("dates").hidden = false;
   document.getElementById("calsub").innerHTML = R.calendarLinks();

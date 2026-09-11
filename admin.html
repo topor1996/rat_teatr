@@ -6,7 +6,7 @@
 <title>Админка — Театр RAT</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260913p" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260913q" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -237,6 +237,9 @@
           <div><label>Координаты точки на карте (широта, долгота)</label><input data-th="mapCoords" placeholder="55.7820, 37.5935"><p class="hint">Открой место в Яндекс.Картах, правой кнопкой → «Что здесь?», скопируй числа. Без координат карта показывает поиск по адресу.</p></div>
           <div><label>Бегущая строка на главной</label><input data-th="marquee" placeholder="Театр RAT, Афиша, Спектакли, Билеты, Голосуй рублём"><p class="hint">Фразы через запятую.</p></div>
         </div>
+        <h2 style="margin-top:18px">«Перед походом» <span class="tools"><button class="btn ghost sm" data-faq-preset type="button">Подставить типовые вопросы</button><button class="btn ghost sm" data-faq-add type="button">+ вопрос</button></span></h2>
+        <p class="help">Короткие ответы на то, о чём спрашивают перед покупкой: где вход, что за зал, антракт, опоздание, возврат, 18+. Показывается на каждой странице спектакля и уходит в поиск как вопрос-ответ. Пустые ответы не показываются.</p>
+        <div id="faqRows"></div>
       </div>
       <div class="panel">
         <h2>Видео или фото в шапке главной</h2>
@@ -583,7 +586,7 @@ function renderList(key) {
   box.innerHTML = list.length ? list.map((item, i) => `
     <div class="panel entry${item.hidden ? " is-hidden" : ""}" data-key="${key}" data-i="${i}">
       <span class="num">${i + 1}</span>
-      <h2><span class="title">${esc(sec.label(item))}${item.hidden ? ' <span class="draft-tag">черновик</span>' : ""}</span>
+      <h2><span class="title">${esc(sec.label(item))}${item.hidden ? ' <span class="draft-tag">черновик</span>' : ""}${key === "plays" && window.playWaits && window.playWaits[item.id] ? ` <span class="draft-tag" style="background:var(--acid);color:#000">ждут дату: ${window.playWaits[item.id]}</span>` : ""}</span>
         <span class="tools"><label class="chk draft" title="Не показывать на сайте, пока не будет готово"><input type="checkbox" data-hidden ${item.hidden ? "checked" : ""}> Скрыть</label><span class="drag" title="Перетащить" aria-label="Перетащить">≡</span><button class="btn ghost sm" data-act="up">↑</button><button class="btn ghost sm" data-act="down">↓</button><button class="btn danger sm" data-act="del">Удалить</button></span></h2>
       <div class="item ${sec.img ? "" : "noimg"}">
         ${sec.img ? `<div><div class="photo">${photoHtml(item[sec.img] || item.poster)}</div>
@@ -595,8 +598,25 @@ function renderList(key) {
   box.querySelectorAll(".entry").forEach(el => checkSbp(el, list[el.dataset.i].sbp));
   growLong(box);
 }
+const FAQ_PRESET = [["Где это и как найти вход?", ""], ["Что такое «Верхний зал»?", ""], ["Сколько идёт спектакль, есть ли антракт?", ""], ["Что делать, если опаздываю?", ""], ["Можно ли вернуть билет?", ""], ["Почему 18+?", ""], ["Есть ли дресс-код?", ""]];
+function renderFaq() {
+  const rows = data.theatre.faq || [];
+  $("#faqRows").innerHTML = rows.length ? rows.map((f, i) => `<div class="row" style="margin-bottom:10px;align-items:start"><div style="flex:1"><label>Вопрос</label><input data-faq-q="${i}" value="${esc(f.q || "")}" placeholder="Где вход?"></div><div style="flex:2"><label>Ответ</label><textarea data-faq-a="${i}" rows="2">${esc(f.a || "")}</textarea></div><button class="btn danger sm" data-faq-del="${i}" type="button" style="margin-top:22px">×</button></div>`).join("") : '<p class="hint">Вопросов пока нет — нажмите «Подставить типовые вопросы» и впишите ответы.</p>';
+  growLong($("#faqRows"));
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("[data-faq-preset]")) { const have = new Set((data.theatre.faq || []).map(f => f.q)); data.theatre.faq = (data.theatre.faq || []).concat(FAQ_PRESET.filter(([q]) => !have.has(q)).map(([q, a]) => ({ q, a }))); markDirty(); renderFaq(); return; }
+  if (e.target.closest("[data-faq-add]")) { (data.theatre.faq = data.theatre.faq || []).push({ q: "", a: "" }); markDirty(); renderFaq(); $("#faqRows input:last-of-type")?.focus(); return; }
+  const del = e.target.closest("[data-faq-del]"); if (del) { data.theatre.faq.splice(+del.dataset.faqDel, 1); markDirty(); renderFaq(); }
+});
+document.addEventListener("input", e => {
+  const t = e.target;
+  if (t.dataset.faqQ !== undefined) { data.theatre.faq[+t.dataset.faqQ].q = t.value; markDirty(); }
+  if (t.dataset.faqA !== undefined) { data.theatre.faq[+t.dataset.faqA].a = t.value; markDirty(); }
+});
 function renderStatic() {
   document.querySelectorAll("[data-th]").forEach(i => i.value = data.theatre[i.dataset.th] || "");
+  renderFaq();
   const v = data.theatre.heroVideo, pst = data.theatre.heroPoster;
   $("#heroVideoBox").innerHTML = v ? `<video src="${previews[v] || backend.photoUrl(v)}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>` : "Нет видео";
   $("#heroPosterBox").innerHTML = pst ? `<img src="${previews[pst] || backend.photoUrl(pst) + "?" + Date.now()}" alt="">` : "Нет фото";
@@ -767,10 +787,13 @@ async function loadPush() {
   try {
     const r = await api(apiPath("api.php?a=push_stats", "/api/push_stats"));
     const st = r.lastStat ? ` (отправлено ${r.lastStat.sent}, ошибок ${r.lastStat.failed}, удалено ${r.lastStat.removed}, писем ${r.lastStat.mailed})` : "";
+    window.playWaits = r.playWait || {}; if (!dirty) renderList("plays");
     box.innerHTML = `<div class="row3" style="margin-bottom:12px">
       <div><label>Подписанных браузеров</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.subs}</div></div>
       <div><label>Ждут напоминания</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.remind}</div></div>
       <div><label>Ждут билеты (пуш / почта)</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.wait} / ${r.mails}</div></div></div>
+      <div class="row3" style="margin-bottom:12px"><div><label>Подписаны на новые даты</label><div style="font-size:28px;font-family:Oswald,sans-serif">${r.news || 0}</div></div>
+      <div style="grid-column:span 2"><label>Ждут дату спектакля</label><div>${Object.keys(r.playWait || {}).length ? Object.entries(r.playWait).map(([pid, n]) => `<b>${esc((data.plays.find(p => p.id === pid) || {}).title || pid)}</b> — ${n}`).join(" · ") : '<span class="hint" style="margin:0">пока никто</span>'}</div></div></div>
       <label>Адрес рассылки для cron-job.org (секретный, не публикуйте)</label>
       <input readonly value="${esc(r.cronUrl)}" onclick="this.select()">
       <p class="help" style="margin-top:8px">Последний запуск: ${r.lastRun ? new Date(r.lastRun).toLocaleString("ru-RU") : "ещё не было"}${esc(st)}.<br>На iPhone уведомления приходят, только если сайт добавлен на экран «Домой». Письма из листа ожидания отправляет функция mail() хостинга — на InfinityFree она работает нестабильно, пуш надёжнее.</p>`;
@@ -786,15 +809,25 @@ async function loadVisits() {
   const box = $("#visitsBody");
   if (backend.name === "github") { box.textContent = "На GitHub Pages нет сервера — счётчик работает на InfinityFree и с server.js."; return; }
   try {
-    const days = (await api(apiPath("api.php?a=visits", "/api/visits"))).days || {};
+    const r = await api(apiPath("api.php?a=visits", "/api/visits")), days = r.days || {};
     const dates = Object.keys(days).sort().reverse().slice(0, 30);
     if (!dates.length) { box.textContent = "Пока никто не заходил."; return; }
     const pages = [...new Set(dates.flatMap(d => Object.keys(days[d])))].sort((a, b) => (PAGE_NAMES[a] ? 0 : 1) - (PAGE_NAMES[b] ? 0 : 1) || a.localeCompare(b));
     const cell = v => v ? `${v.uniq || 0} <span style="color:var(--muted);font-size:11px">/ ${v.views || 0}</span>` : "—";
     const tot = {}; pages.forEach(p => { tot[p] = { uniq: 0, views: 0 }; dates.forEach(d => { const v = days[d][p]; if (v) { tot[p].uniq += v.uniq || 0; tot[p].views += v.views || 0; } }); });
+    /* источники заходов и воронка за те же дни */
+    const sum = obj => { const t = {}; dates.forEach(d => Object.entries(obj[d] || {}).forEach(([k, n]) => t[k] = (t[k] || 0) + n)); return t; };
+    const src = sum(r.src || {}), ev = sum(r.ev || {});
+    const SRC_RU = { direct: "Напрямую / закладки", instagram: "Instagram", telegram: "Telegram", vk: "VK", afisha: "Афиша", yandex: "Яндекс", google: "Google", teatrdoc: "Театр.doc", share: "Поделились ссылкой", push: "Пуш-уведомление", calendar: "Календарь", pwa: "Приложение (PWA)", qr: "QR-код" };
+    const visitors = Object.values(tot).reduce((n, v) => n + (v.uniq || 0), 0), playViews = pages.filter(p => p.startsWith("play:")).reduce((n, p) => n + tot[p].uniq, 0);
+    const pct = (n, base) => base ? ` <span style="color:var(--muted);font-size:11px">${Math.round(n / base * 100)}%</span>` : "";
+    const srcRows = Object.entries(src).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(SRC_RU[k] || k)}</td><td class="n">${n}${pct(n, Object.values(src).reduce((x, y) => x + y, 0))}</td></tr>`).join("");
+    const funnel = [["Посетители (все страницы)", visitors, null], ["Открыли страницу спектакля", playViews, visitors], ["Нажали «Купить билет»", ev.buy || 0, playViews || visitors], ["Открылся виджет билетов", ev.widget || 0, ev.buy || 0], ["Включили напоминание", ev.remind || 0, visitors], ["Ждут дату спектакля", ev.play || 0, visitors], ["Лист ожидания", ev.wait || 0, visitors], ["Подписались на новые даты", ev.news || 0, visitors], ["Подписались на календарь", ev.calendar || 0, visitors], ["Перешли на голосование", ev.golos || 0, visitors], ["Оставили отзыв", ev.review || 0, visitors]];
+    const funnelHtml = `<h3 style="margin:18px 0 6px;font-size:15px">Воронка за ${dates.length} дн.</h3><div class="scroll"><table class="stats"><tr><th>Шаг</th><th>Сколько</th></tr>${funnel.map(([n, v, b]) => `<tr><td>${n}</td><td class="n">${v}${b !== null ? pct(v, b) : ""}</td></tr>`).join("")}</table></div><p class="hint">Проценты — от предыдущего шага для покупки и от всех посетителей для остального. Считаются нажатия, а не люди: один человек может нажать дважды.</p>`;
+    const srcHtml = `<h3 style="margin:18px 0 6px;font-size:15px">Откуда приходят</h3>${srcRows ? `<div class="scroll"><table class="stats"><tr><th>Источник</th><th>Посетителей</th></tr>${srcRows}</table></div>` : '<p class="hint">Пока нет данных: источники считаются с этой версии сайта.</p>'}<p class="help">Чтобы видеть свои соцсети отдельно, ставьте в ссылки метку: <code>?utm_source=instagram</code>, <code>?utm_source=telegram</code>, для QR на печати — <code>?utm_source=qr</code>. Без метки источник определяется по сайту, с которого перешли.</p>`;
     box.innerHTML = `<p class="hint" style="margin:0 0 8px">В ячейке: уникальные посетители / просмотры. Последние ${dates.length} дн.</p><div class="scroll"><table class="stats"><tr><th>Дата</th>${pages.map(p => `<th>${esc(pageName(p))}</th>`).join("")}</tr>
       ${dates.map(d => `<tr><td>${d}</td>${pages.map(p => `<td class="n">${cell(days[d][p])}</td>`).join("")}</tr>`).join("")}
-      <tr class="total"><td>Итого</td>${pages.map(p => `<td class="n">${cell(tot[p])}</td>`).join("")}</tr></table></div>`;
+      <tr class="total"><td>Итого</td>${pages.map(p => `<td class="n">${cell(tot[p])}</td>`).join("")}</tr></table></div>` + funnelHtml + srcHtml;
   } catch (err) { box.textContent = err.message; }
 }
 async function loadHistory() {
@@ -1126,7 +1159,7 @@ $("#loginForm").onsubmit = async e => {
 $("#logout").onclick = async () => { await backend.logout(); showLogin(); };
 window.addEventListener("beforeunload", e => { if (dirty) { e.preventDefault(); e.returnValue = ""; } });
 
-function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; d.reviews ||= []; d.gallery ||= []; return d; }
+function normalize(d) { d = d || {}; d.theatre ||= {}; d.show ||= {}; d.plays ||= []; d.events ||= []; d.actors ||= []; d.reviews ||= []; d.gallery ||= []; d.theatre.faq ||= []; return d; }
 async function load() {
   if (!(await backend.me())) return showLogin();
   data = normalize(await backend.load()); loadedAt = Math.floor(Date.now() / 1000);

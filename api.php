@@ -109,7 +109,7 @@ function sanitize(array $in): array {
     'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'venue' => str($th['venue'] ?? '', 120),
                   'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
                   'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? ''),
-                  'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? ''), 'mapCoords' => str($th['mapCoords'] ?? '', 40), 'marquee' => str($th['marquee'] ?? '', 300), 'afishaPartnerId' => preg_replace('~\D~', '', str($th['afishaPartnerId'] ?? '', 20))],
+                  'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? ''), 'mapCoords' => str($th['mapCoords'] ?? '', 40), 'faq' => array_values(array_filter(array_map(fn($f) => is_array($f) ? ['q' => str($f['q'] ?? '', 120), 'a' => str($f['a'] ?? '', 600)] : null, array_slice(is_array($th['faq'] ?? null) ? $th['faq'] : [], 0, 12)), fn($f) => $f && $f['q'] !== '')), 'marquee' => str($th['marquee'] ?? '', 300), 'afishaPartnerId' => preg_replace('~\D~', '', str($th['afishaPartnerId'] ?? '', 20))],
     'plays' => $plays, 'events' => $events, 'reviews' => $reviews, 'gallery' => $gallery,
     'show' => ['theatre' => str($show['theatre'] ?? '', 100), 'title' => str($show['title'] ?? '', 100), 'dates' => str($show['dates'] ?? '', 100),
                'heading1' => str($show['heading1'] ?? '', 40), 'heading2' => str($show['heading2'] ?? '', 40), 'lead' => str($show['lead'] ?? '', 400), 'marquee' => str($show['marquee'] ?? '', 300),
@@ -220,6 +220,12 @@ function pushRun(): array {
       $show = afisha_show($partner, $sid); if ($show) foreach (afisha_events($show) as $ev) $sessions[$ev['sessionId']] = $ev['count'];
     }
   }
+  // новые даты: что появилось с прошлого обхода (первый обход только запоминает)
+  $upKeys = []; foreach ($events as $ek => $ee) if ($hoursTo($ee) > 0) $upKeys[$ek] = $ee;
+  $known = $db['known'] ?? null; $newKeys = $known === null ? [] : array_diff(array_keys($upKeys), $known);
+  $db['known'] = array_values(array_unique(array_merge($known ?? [], array_keys($upKeys))));
+  $upByPlay = []; foreach ($upKeys as $ek => $ee) $upByPlay[$ee['playId'] ?? ''][] = $ek;
+  $mskHour = (int)$now->format('G');
   $available = function (array $e) use ($sessions) { $sid = preg_replace('~\D~', '', (string)($e['afishaSessionId'] ?? '')); return $sid !== '' && isset($sessions[$sid]) && $sessions[$sid] > 0; };
   $stat = ['sent' => 0, 'failed' => 0, 'removed' => 0, 'mailed' => 0];
   foreach ($db['subs'] as $id => &$s) {
@@ -228,13 +234,27 @@ function pushRun(): array {
       $e = $events[$key] ?? null;
       if (!$e) { unset($s['remind'][$key]); continue; }
       $h = $hoursTo($e);
-      if ($h < -3) { unset($s['remind'][$key]); continue; }
-      if (!$done && $h <= 26) { $queue[] = ['title' => ($e['date'] === $now->format('Y-m-d') ? 'Сегодня' : 'Завтра') . ': «' . $title($e) . '»', 'body' => $when($e) . ', ' . (($e['venue'] ?? '') ?: ($data['theatre']['venue'] ?? '')) . '. Ждём вас!', 'url' => $urlOf($e), 'tag' => 'remind-' . $key]; $s['remind'][$key] = 1; }
+      if ($h < -40) { unset($s['remind'][$key]); continue; }
+      // наутро после показа: «как вам?» → форма отзыва (один раз, с 10 утра по Москве)
+      if ($done == 1 && $h <= -12 && $mskHour >= 10) { $queue[] = ['title' => 'Вчера были на «' . $title($e) . '»?', 'body' => 'Расскажите, как вам. Пара предложений — и театр их прочитает.', 'url' => $urlOf($e) . (strpos($urlOf($e), '?') !== false ? '&' : '?') . 'review=1&utm_source=push', 'tag' => 'review-' . $key]; $s['remind'][$key] = 2; continue; }
+      if (!$done && $h <= 26 && $h > -3) { $queue[] = ['title' => ($e['date'] === $now->format('Y-m-d') ? 'Сегодня' : 'Завтра') . ': «' . $title($e) . '»', 'body' => $when($e) . ', ' . (($e['venue'] ?? '') ?: ($data['theatre']['venue'] ?? '')) . '. Ждём вас!', 'url' => $urlOf($e), 'tag' => 'remind-' . $key]; $s['remind'][$key] = 1; }
     }
     foreach (($s['wait'] ?? []) as $key => $done) {
       $e = $events[$key] ?? null;
       if (!$e || $hoursTo($e) < 0) { unset($s['wait'][$key]); continue; }
       if (!$done && $available($e)) { $queue[] = ['title' => 'Появились билеты: «' . $title($e) . '»', 'body' => $when($e) . '. Успейте, пока снова не разобрали.', 'url' => $urlOf($e), 'tag' => 'wait-' . $key]; unset($s['wait'][$key]); }
+    }
+    // ждут дату конкретного спектакля
+    foreach (($s['play'] ?? []) as $pid => $done) {
+      if (!isset($plays[$pid])) { unset($s['play'][$pid]); continue; }
+      $ks = $upByPlay[$pid] ?? [];
+      if (!$ks) { $s['play'][$pid] = 0; continue; } // дат снова нет — в следующий раз сообщим опять
+      if (!$done) { $e = $events[$ks[0]]; $queue[] = ['title' => 'Назначена дата: «' . $title($e) . '»', 'body' => $when($e) . ', ' . (($e['venue'] ?? '') ?: ($data['theatre']['venue'] ?? '')) . '. Билеты уже в продаже.', 'url' => $urlOf($e) . (strpos($urlOf($e), '?') !== false ? '&' : '?') . 'utm_source=push', 'tag' => 'play-' . $pid]; $s['play'][$pid] = 1; }
+    }
+    // подписка на все новые даты
+    if (!empty($s['news']) && $newKeys) {
+      $first = $events[reset($newKeys)]; $n = count($newKeys);
+      $queue[] = ['title' => $n > 1 ? 'Новые даты: ' . $n . ' показ' . ($n < 5 ? 'а' : 'ов') : 'Новая дата: «' . $title($first) . '»', 'body' => $when($first) . ($n > 1 ? ' и ещё' : '') . '. Смотрите афишу.', 'url' => './?utm_source=push#afisha', 'tag' => 'news'];
     }
     if (!$queue) continue;
     $s['pending'] = array_merge($s['pending'] ?? [], $queue);
@@ -421,24 +441,30 @@ switch ($a) {
     out(['ok' => true, 'sizes' => $sizes]);
 
   case 'hit':
-    // счётчик посещений без cookie: страница + день; уникальность — по усечённому хэшу IP+браузера, IP не хранится
+    // счётчик без cookie: страницы (p), события воронки (ev: buy, widget, remind, wait, play, news, calendar, golos, review) и источник захода (src)
     $page = preg_replace('~[^a-z0-9:_-]~', '', mb_strtolower(str($_GET['p'] ?? '', 60)));
-    if ($page === '') fail('no page');
+    $ev = preg_replace('~[^a-z_]~', '', str($_GET['ev'] ?? '', 20));
+    $src = preg_replace('~[^a-z0-9._-]~', '', mb_strtolower(str($_GET['src'] ?? '', 40)));
+    if ($page === '' && $ev === '') fail('no page');
     $day = date('Y-m-d');
     $h = substr(hash('sha256', ($_SERVER['REMOTE_ADDR'] ?? '') . '|' . ($_SERVER['HTTP_USER_AGENT'] ?? '') . '|' . $day), 0, 12);
     $v = readJson($VISITS_FILE, ['days' => [], 'seen' => []]);
-    $v['days'][$day][$page]['views'] = (int)($v['days'][$day][$page]['views'] ?? 0) + 1;
-    if (empty($v['seen'][$day][$page][$h])) { $v['seen'][$day][$page][$h] = 1; $v['days'][$day][$page]['uniq'] = (int)($v['days'][$day][$page]['uniq'] ?? 0) + 1; }
-    foreach (array_keys($v['seen']) as $d) if ($d !== $day) unset($v['seen'][$d]);       // хэши храним только за текущий день
-    foreach (array_keys($v['days']) as $d) if ($d < date('Y-m-d', strtotime('-400 days'))) unset($v['days'][$d]);
+    if ($page !== '') {
+      $v['days'][$day][$page]['views'] = (int)($v['days'][$day][$page]['views'] ?? 0) + 1;
+      if (empty($v['seen'][$day][$page][$h])) { $v['seen'][$day][$page][$h] = 1; $v['days'][$day][$page]['uniq'] = (int)($v['days'][$day][$page]['uniq'] ?? 0) + 1; }
+    }
+    if ($ev !== '') $v['ev'][$day][$ev] = (int)($v['ev'][$day][$ev] ?? 0) + 1;
+    if ($src !== '' && empty($v['seen'][$day]['src:' . $h])) { $v['seen'][$day]['src:' . $h] = 1; $v['src'][$day][$src] = (int)($v['src'][$day][$src] ?? 0) + 1; }
+    foreach (array_keys($v['seen']) as $d) if ($d !== $day) unset($v['seen'][$d]); // хэши храним только за сегодня
+    foreach (['days', 'ev', 'src'] as $k) if (isset($v[$k])) { ksort($v[$k]); while (count($v[$k]) > 120) array_shift($v[$k]); }
     writeJson($VISITS_FILE, $v);
     out(['ok' => true]);
 
   case 'visits':
     requireAuth();
-    $v = readJson($VISITS_FILE, ['days' => [], 'seen' => []]);
-    krsort($v['days']);
-    out(['ok' => true, 'days' => $v['days']]);
+    $v = readJson($VISITS_FILE, ['days' => []]);
+    $days = $v['days'] ?? []; krsort($days);
+    out(['ok' => true, 'days' => $days, 'ev' => $v['ev'] ?? [], 'src' => $v['src'] ?? []]);
 
   case 'upload':
     // фото (jpg/png/webp до 8 МБ) и видео для шапки (mp4/webm до 10 МБ)
@@ -476,11 +502,13 @@ switch ($a) {
     $db = pushDb(); if (count($db['subs']) >= 5000) fail('Слишком много подписок', 429);
     $id = sha1($endpoint);
     if ($kind === 'renew' && !empty($b['old'])) { $oldId = sha1(str($b['old'], 2000)); if (isset($db['subs'][$oldId])) { $db['subs'][$id] = $db['subs'][$oldId]; unset($db['subs'][$oldId]); } }
-    $s = $db['subs'][$id] ?? ['created' => date('c'), 'remind' => [], 'wait' => [], 'pending' => []];
+    $s = $db['subs'][$id] ?? ['created' => date('c'), 'remind' => [], 'wait' => [], 'play' => [], 'pending' => []];
     $s['endpoint'] = $endpoint; $s['keys'] = ['p256dh' => str($sub['keys']['p256dh'] ?? '', 200), 'auth' => str($sub['keys']['auth'] ?? '', 100)];
     if ($kind === 'remind' && $key !== '') $s['remind'][$key] = 0;
     if ($kind === 'wait' && $key !== '') $s['wait'][$key] = 0;
-    if ($kind === 'off' && $key !== '') { unset($s['remind'][$key], $s['wait'][$key]); }
+    if ($kind === 'play' && $key !== '') $s['play'][$key] = 0;   // сообщить, когда у спектакля появится дата
+    if ($kind === 'news') $s['news'] = 1;                           // новые даты вообще
+    if ($kind === 'off' && $key !== '') { unset($s['remind'][$key], $s['wait'][$key], $s['play'][$key]); }
     $db['subs'][$id] = $s; writeJson($PUSH_FILE, $db);
     out(['ok' => true, 'remind' => array_keys($s['remind']), 'wait' => array_keys($s['wait'])]);
 
@@ -501,9 +529,10 @@ switch ($a) {
   case 'push_stats':
     requireAuth();
     $db = pushDb(); $k = pushKeys(); $remind = 0; $wait = 0;
-    foreach ($db['subs'] as $s) { $remind += count(array_filter($s['remind'] ?? [], fn($v) => !$v)); $wait += count($s['wait'] ?? []); }
+    $news = 0; $playWait = [];
+    foreach ($db['subs'] as $s) { $remind += count(array_filter($s['remind'] ?? [], fn($v) => !$v)); $wait += count($s['wait'] ?? []); if (!empty($s['news'])) $news++; foreach (($s['play'] ?? []) as $pid => $d) if (!$d) $playWait[$pid] = ($playWait[$pid] ?? 0) + 1; }
     $mails = is_file($WAIT_FILE) ? (json_decode((string)file_get_contents($WAIT_FILE), true) ?: []) : [];
-    out(['ok' => true, 'subs' => count($db['subs']), 'remind' => $remind, 'wait' => $wait, 'mails' => count(array_filter($mails, fn($m) => empty($m['sent']))),
+    out(['ok' => true, 'subs' => count($db['subs']), 'remind' => $remind, 'wait' => $wait, 'news' => $news, 'playWait' => (object)$playWait, 'mails' => count(array_filter($mails, fn($m) => empty($m['sent']))),
       'lastRun' => $db['lastRun'] ?? null, 'lastStat' => $db['lastStat'] ?? null, 'cronUrl' => siteBase() . 'api.php?a=push_send&key=' . $k['cron']]);
 
   case 'waitlist':

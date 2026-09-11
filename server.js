@@ -69,7 +69,7 @@ function sanitize(input) {
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), venue: str(th.venue, 120), address: str(th.address, 200),
                instagram: url(th.instagram), telegram: url(th.telegram), vk: url(th.vk), email: str(th.email, 100), phone: str(th.phone, 30), ticketsUrl: url(th.ticketsUrl),
-               heroVideo: media(th.heroVideo), heroPoster: img(th.heroPoster), mapCoords: str(th.mapCoords, 40), marquee: str(th.marquee, 300), afishaPartnerId: str(th.afishaPartnerId, 20).replace(/\D/g, "") },
+               heroVideo: media(th.heroVideo), heroPoster: img(th.heroPoster), mapCoords: str(th.mapCoords, 40), faq: arr(th.faq).slice(0, 12).map(f => ({ q: str(f?.q, 120), a: str(f?.a, 600) })).filter(f => f.q), marquee: str(th.marquee, 300), afishaPartnerId: str(th.afishaPartnerId, 20).replace(/\D/g, "") },
     plays, events, reviews, gallery,
     show: { theatre: str(show.theatre, 100), title: str(show.title, 100), dates: str(show.dates, 100), heading1: str(show.heading1, 40), heading2: str(show.heading2, 40), lead: str(show.lead, 400), marquee: str(show.marquee, 300), thanks: str(show.thanks, 80), thanksNote: str(show.thanksNote, 200) },
     actors,
@@ -245,15 +245,18 @@ app.get("/api/backup", requireAuth, (req, res) => {
 });
 app.get("/api/sizes", requireAuth, (req, res) => { const sizes = {}; for (const n of fs.readdirSync(PHOTOS_DIR)) { const p = path.join(PHOTOS_DIR, n); if (fs.statSync(p).isFile()) sizes["photos/" + n] = fs.statSync(p).size; } res.json({ ok: true, sizes }); });
 app.get("/api/hit", (req, res) => {
-  const page = str(req.query.p, 60).toLowerCase().replace(/[^a-z0-9:_-]/g, ""); if (!page) return res.status(400).json({ error: "no page" });
+  const page = str(req.query.p, 60).toLowerCase().replace(/[^a-z0-9:_-]/g, ""), ev = str(req.query.ev, 20).replace(/[^a-z_]/g, ""), src = str(req.query.src, 40).toLowerCase().replace(/[^a-z0-9._-]/g, "");
+  if (!page && !ev) return res.status(400).json({ error: "no page" });
   const day = today(), h = crypto.createHash("sha256").update(`${req.ip}|${req.headers["user-agent"] || ""}|${day}`).digest("hex").slice(0, 12);
-  const v = readJson(VISITS_FILE, { days: {}, seen: {} });
-  v.days[day] ||= {}; v.days[day][page] ||= { views: 0, uniq: 0 }; v.days[day][page].views++;
-  v.seen = { [day]: v.seen[day] || {} }; v.seen[day][page] ||= {};
-  if (!v.seen[day][page][h]) { v.seen[day][page][h] = 1; v.days[day][page].uniq++; }
+  const v = readJson(VISITS_FILE, { days: {}, seen: {}, ev: {}, src: {} });
+  v.seen = { [day]: v.seen[day] || {} };
+  if (page) { v.days[day] ||= {}; v.days[day][page] ||= { views: 0, uniq: 0 }; v.days[day][page].views++; v.seen[day][page] ||= {}; if (!v.seen[day][page][h]) { v.seen[day][page][h] = 1; v.days[day][page].uniq++; } }
+  if (ev) { v.ev[day] ||= {}; v.ev[day][ev] = (v.ev[day][ev] || 0) + 1; }
+  if (src && !v.seen[day]["src:" + h]) { v.seen[day]["src:" + h] = 1; v.src[day] ||= {}; v.src[day][src] = (v.src[day][src] || 0) + 1; }
   writeJson(VISITS_FILE, v); res.json({ ok: true });
 });
-app.get("/api/visits", requireAuth, (req, res) => { const v = readJson(VISITS_FILE, { days: {} }); res.json({ ok: true, days: Object.fromEntries(Object.entries(v.days).sort().reverse()) }); });
+
+app.get("/api/visits", requireAuth, (req, res) => { const v = readJson(VISITS_FILE, { days: {}, ev: {}, src: {} }); res.json({ ok: true, days: Object.fromEntries(Object.entries(v.days).sort().reverse()), ev: v.ev || {}, src: v.src || {} }); });
 
 app.post("/api/upload", requireAuth, upload.single("photo"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "Нужен файл JPG, PNG или WebP до 8 МБ" });
@@ -343,18 +346,30 @@ async function pushRun(base) {
   if (waiting) { const partner = str(data.theatre?.afishaPartnerId, 20).replace(/\D/g, "");
     if (partner) for (const sid of new Set((data.plays || []).map(p => str(p.afishaShowId, 40).replace(/\D/g, "")).filter(Boolean))) { try { const show = await afishaShow(partner, sid); if (show) for (const e of afishaEvents(show)) sessions[e.sessionId] = e.count; } catch {} } }
   const available = e => { const sid = String(e.afishaSessionId || "").replace(/\D/g, ""); return sid && sessions[sid] > 0; };
+  const upKeys = Object.fromEntries(Object.entries(events).filter(([, e]) => hoursTo(e) > 0)), known = db.known || null;
+  const newKeys = known === null ? [] : Object.keys(upKeys).filter(k => !known.includes(k));
+  db.known = [...new Set([...(known || []), ...Object.keys(upKeys)])];
+  const upByPlay = {}; for (const [k, e] of Object.entries(upKeys)) (upByPlay[e.playId || ""] ||= []).push(k);
+  const mskHour = new Date(Date.now() + 3 * 36e5).getUTCHours();
   const stat = { sent: 0, failed: 0, removed: 0, mailed: 0 };
   for (const [id, s] of Object.entries(db.subs)) {
     const queue = [];
     for (const [key, done] of Object.entries(s.remind || {})) {
       const e = events[key]; if (!e) { delete s.remind[key]; continue; }
-      const h = hoursTo(e); if (h < -3) { delete s.remind[key]; continue; }
-      if (!done && h <= 26) { queue.push({ title: (e.date === todayMsk ? "Сегодня" : "Завтра") + ": «" + title(e) + "»", body: when(e) + ", " + (e.venue || data.theatre?.venue || "") + ". Ждём вас!", url: urlOf(e), tag: "remind-" + key }); s.remind[key] = 1; }
+      const h = hoursTo(e); if (h < -40) { delete s.remind[key]; continue; }
+      if (done == 1 && h <= -12 && mskHour >= 10) { queue.push({ title: "Вчера были на «" + title(e) + "»?", body: "Расскажите, как вам. Пара предложений — и театр их прочитает.", url: urlOf(e) + (urlOf(e).includes("?") ? "&" : "?") + "review=1&utm_source=push", tag: "review-" + key }); s.remind[key] = 2; continue; }
+      if (!done && h <= 26 && h > -3) { queue.push({ title: (e.date === todayMsk ? "Сегодня" : "Завтра") + ": «" + title(e) + "»", body: when(e) + ", " + (e.venue || data.theatre?.venue || "") + ". Ждём вас!", url: urlOf(e), tag: "remind-" + key }); s.remind[key] = 1; }
     }
     for (const [key, done] of Object.entries(s.wait || {})) {
       const e = events[key]; if (!e || hoursTo(e) < 0) { delete s.wait[key]; continue; }
       if (!done && available(e)) { queue.push({ title: "Появились билеты: «" + title(e) + "»", body: when(e) + ". Успейте, пока снова не разобрали.", url: urlOf(e), tag: "wait-" + key }); delete s.wait[key]; }
     }
+    for (const [pid, done] of Object.entries(s.play || {})) {
+      if (!plays[pid]) { delete s.play[pid]; continue; }
+      const ks = upByPlay[pid] || []; if (!ks.length) { s.play[pid] = 0; continue; }
+      if (!done) { const e = events[ks[0]]; queue.push({ title: "Назначена дата: «" + title(e) + "»", body: when(e) + ", " + (e.venue || data.theatre?.venue || "") + ". Билеты уже в продаже.", url: urlOf(e) + (urlOf(e).includes("?") ? "&" : "?") + "utm_source=push", tag: "play-" + pid }); s.play[pid] = 1; }
+    }
+    if (s.news && newKeys.length) { const first = events[newKeys[0]], n = newKeys.length; queue.push({ title: n > 1 ? "Новые даты: " + n + " показ" + (n < 5 ? "а" : "ов") : "Новая дата: «" + title(first) + "»", body: when(first) + (n > 1 ? " и ещё" : "") + ". Смотрите афишу.", url: "./?utm_source=push#afisha", tag: "news" }); }
     if (!queue.length) continue;
     s.pending = (s.pending || []).concat(queue);
     const code = await pushPoke(s.endpoint, k, contact);
@@ -383,7 +398,9 @@ app.post("/api/push_sub", (req, res) => {
   s.endpoint = endpoint; s.keys = { p256dh: str(sub.keys?.p256dh, 200), auth: str(sub.keys?.auth, 100) };
   if (kind === "remind" && key) s.remind[key] = 0;
   if (kind === "wait" && key) s.wait[key] = 0;
-  if (kind === "off" && key) { delete s.remind[key]; delete s.wait[key]; }
+  if (kind === "play" && key) (s.play ||= {})[key] = 0;
+  if (kind === "news") s.news = 1;
+  if (kind === "off" && key) { delete s.remind[key]; delete s.wait[key]; if (s.play) delete s.play[key]; }
   db.subs[id] = s; writeJson(PUSH_FILE, db);
   res.json({ ok: true, remind: Object.keys(s.remind), wait: Object.keys(s.wait) });
 });
@@ -399,8 +416,9 @@ app.all("/api/push_send", async (req, res) => {
 });
 app.get("/api/push_stats", requireAuth, (req, res) => {
   const db = pushDb(), k = pushKeys(); let remind = 0, wait = 0;
-  for (const s of Object.values(db.subs)) { remind += Object.values(s.remind || {}).filter(v => !v).length; wait += Object.keys(s.wait || {}).length; }
-  res.json({ ok: true, subs: Object.keys(db.subs).length, remind, wait, mails: readAny(WAIT_FILE, []).filter(m => !m.sent).length, lastRun: db.lastRun || null, lastStat: db.lastStat || null, cronUrl: siteBase(req) + "api/push_send?key=" + k.cron });
+  let news = 0; const playWait = {};
+  for (const s of Object.values(db.subs)) { remind += Object.values(s.remind || {}).filter(v => !v).length; wait += Object.keys(s.wait || {}).length; if (s.news) news++; for (const [pid, d] of Object.entries(s.play || {})) if (!d) playWait[pid] = (playWait[pid] || 0) + 1; }
+  res.json({ ok: true, subs: Object.keys(db.subs).length, remind, wait, news, playWait, mails: readAny(WAIT_FILE, []).filter(m => !m.sent).length, lastRun: db.lastRun || null, lastStat: db.lastStat || null, cronUrl: siteBase(req) + "api/push_send?key=" + k.cron });
 });
 app.post("/api/waitlist", (req, res) => {
   const email = str(req.body?.email, 120), key = str(req.body?.key, 80);
