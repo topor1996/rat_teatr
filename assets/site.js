@@ -802,7 +802,18 @@ window.RAT = (function () {
     };
     setTimeout(go, 80); if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(go, 120); });
   }
-  function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
+  /* меню в шапке на телефоне листается: стрелка у края, тень, один раз само подвигается */
+  function navHint() {
+    var nav = document.querySelector("nav"), ul = nav && nav.querySelector("ul"); if (!ul || nav.querySelector(".more")) return;
+    var more = document.createElement("span"); more.className = "more"; more.setAttribute("aria-hidden", "true"); more.textContent = "›"; nav.querySelector(".wrap").appendChild(more);
+    var check = function () { nav.classList.toggle("at-end", ul.scrollWidth - ul.clientWidth - ul.scrollLeft < 6); };
+    ul.addEventListener("scroll", check, { passive: true }); window.addEventListener("resize", check); check();
+    if (!reduced() && ul.scrollWidth > ul.clientWidth + 6) {
+      try { if (sessionStorage.getItem("rat_navhint")) return; sessionStorage.setItem("rat_navhint", "1"); } catch (x) {}
+      setTimeout(function () { ul.scrollTo({ left: 56, behavior: "smooth" }); setTimeout(function () { ul.scrollTo({ left: 0, behavior: "smooth" }); }, 700); }, 1200);
+    }
+  }
+  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
