@@ -807,7 +807,9 @@ window.RAT = (function () {
     var nav = document.querySelector("nav"), ul = nav && nav.querySelector("ul"); if (!ul || nav.querySelector(".more")) return;
     var more = document.createElement("span"); more.className = "more"; more.setAttribute("aria-hidden", "true"); more.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M8 5l7 7-7 7" fill="none" stroke="#000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; nav.querySelector(".wrap").appendChild(more);
     var check = function () { nav.classList.toggle("at-end", ul.scrollWidth - ul.clientWidth - ul.scrollLeft < 6); };
-    ul.addEventListener("scroll", check, { passive: true }); window.addEventListener("resize", check); check();
+    var place = function () { more.style.top = Math.round(ul.offsetTop + ul.offsetHeight / 2 - more.offsetHeight / 2) + "px"; }; // по центру строки меню
+    ul.addEventListener("scroll", check, { passive: true }); window.addEventListener("resize", function () { check(); place(); }); check(); place();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
     if (!reduced() && ul.scrollWidth > ul.clientWidth + 6) {
       try { if (sessionStorage.getItem("rat_navhint")) return; sessionStorage.setItem("rat_navhint", "1"); } catch (x) {}
       setTimeout(function () { ul.scrollTo({ left: 56, behavior: "smooth" }); setTimeout(function () { ul.scrollTo({ left: 0, behavior: "smooth" }); }, 700); }, 1200);
