@@ -1,9 +1,9 @@
 /* Service worker театра RAT: офлайн-афиша (PWA) и пуш-уведомления.
    Кэширует оболочку сайта и последние данные; пуш приходит без текста, воркер сам спрашивает у сервера, что показать. */
-var VERSION = "rat-20260913q";
+var VERSION = "rat-20260913r";
 var MEDIA = "rat-media";
 var SHELL = ["./", "index.html", "play.html", "golos.html", "404.html", "manifest.webmanifest", "assets/favicon.svg", "assets/icon-192.png", "assets/tv.webp",
-  "assets/site.css?v=20260913q", "assets/intro.css?v=20260913q", "assets/site.js?v=20260913q", "fonts/fonts.css?v=20260913q", "vendor/qrcode.min.js"];
+  "assets/site.css?v=20260913r", "assets/intro.css?v=20260913r", "assets/site.js?v=20260913r", "fonts/fonts.css?v=20260913r", "vendor/qrcode.min.js"];
 var SCOPE = new URL(self.registration.scope).pathname;
 
 self.addEventListener("install", function (e) {

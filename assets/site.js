@@ -765,6 +765,17 @@ window.RAT = (function () {
     if (!faq.length && !route) return "";
     return faq.map(function (f) { return '<details class="faq rv"><summary>' + esc(f.q) + "</summary><p>" + esc(f.a) + "</p></details>"; }).join("") + (route ? '<div class="row" style="margin-top:14px">' + route + (th.address ? '<span class="hint">' + esc(th.address) + "</span>" : "") + "</div>" : "");
   }
+  /* ---------- якорь в адресе: после загрузки данных страница выросла, и браузерный прыжок к #contacts остался выше цели — доводим сами (ждём конца заставки) ---------- */
+  function rehash() {
+    var id = (location.hash || "").slice(1); if (!id) return;
+    var tries = 0, go = function () {
+      var el = document.getElementById(id); if (!el) return;
+      if (document.documentElement.classList.contains("tv-on") && tries++ < 60) { setTimeout(go, 150); return; }
+      var prev = document.documentElement.style.scrollBehavior; document.documentElement.style.scrollBehavior = "auto";
+      el.scrollIntoView({ block: "start" }); document.documentElement.style.scrollBehavior = prev;
+    };
+    setTimeout(go, 80); if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { setTimeout(go, 120); });
+  }
   function fx() { glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); }
 
   /* ---------- появление при прокрутке ---------- */
@@ -809,6 +820,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { fx: fx, pushInit: pushInit, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { fx: fx, pushInit: pushInit, rehash: rehash, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();
