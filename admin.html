@@ -628,7 +628,7 @@ const SECTIONS = {
       <datalist id="bankList"><option>Сбербанк</option><option>Т-Банк</option><option>ВТБ</option><option>Альфа-Банк</option><option>Газпромбанк</option><option>Райффайзен</option><option>Почта Банк</option><option>Озон Банк</option><option>Яндекс Банк</option><option>МТС Банк</option><option>Совкомбанк</option><option>ПСБ</option></datalist>`,
   },
   reviews: {
-    img: null, label: r => (r.audio ? "🎙 " : "") + (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
+    img: null, label: r => (r.home ? "★ " : "") + (r.audio ? "🎙 " : "") + (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
     blank: () => ({ text: "", author: "", source: "", url: "", playId: "" }),
     form: r => `
       ${r.fromSite ? `<p class="help" style="margin:0 0 8px">✉️ Пришёл с сайта${r.date ? " " + esc(r.date) : ""}. Прочитайте и снимите галочку «Скрыть», чтобы опубликовать.</p>` : ""}
@@ -742,7 +742,46 @@ function renderStatic() {
   $("#heroPosterBox").innerHTML = pst ? `<img src="${previews[pst] || backend.photoUrl(pst) + "?" + Date.now()}" alt="">` : "Нет фото";
   document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
 }
-function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); growLong(); qrPosterInit(); renderPressPhotos(); }
+function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); growLong(); qrPosterInit(); renderPressPhotos(); homeWarn(); importInit(); }
+
+/* ---- отзывы: предупреждение «много на главной» ---- */
+function homeWarn() {
+  const w = document.getElementById("homeWarn"); if (!w || !data) return;
+  const n = (data.reviews || []).filter(r => r.home && !r.hidden).length;
+  w.style.display = n > 4 ? "block" : "none"; w.textContent = n > 4 ? `На главной отмечено ${n} отзывов — это много, главная растянется. Оставьте 3–4 самых сильных, остальные и так есть на странице отзывов.` : "";
+}
+/* ---- импорт отзывов из вставленного текста ---- */
+const MONTHS_RU = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+function parseDateRu(s) {
+  s = s.trim().toLowerCase();
+  let m = s.match(/^(\d{1,2})\s+([а-яё]+)\s+(\d{4})/); if (m) { const mi = MONTHS_RU.findIndex(x => m[2].startsWith(x.slice(0, 4))); if (mi >= 0) return `${m[3]}-${String(mi + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`; }
+  m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/); if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  return "";
+}
+function parseReviews(text) {
+  return text.replace(/\r/g, "").split(/\n\s*\n+/).map(b => b.trim()).filter(Boolean).map(block => {
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean); if (lines.length < 2) return null;
+    const author = lines.shift(); let date = "";
+    if (lines.length > 1 && parseDateRu(lines[0])) date = parseDateRu(lines.shift());
+    return { author, date, text: lines.join("\n") };
+  }).filter(r => r && r.text.length >= 10);
+}
+function importInit() {
+  const btn = document.getElementById("impBtn"); if (!btn || btn.dataset.ready) return; btn.dataset.ready = "1";
+  const sel = document.getElementById("impPlay"); sel.innerHTML = '<option value="">— ко всем —</option>' + (data.plays || []).map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("");
+  const ta = document.getElementById("impText"), hint = document.getElementById("impHint");
+  ta.addEventListener("input", () => { const n = parseReviews(ta.value).length; hint.textContent = n ? `Распознано отзывов: ${n}` : ""; });
+  btn.addEventListener("click", () => {
+    const rows = parseReviews(ta.value); if (!rows.length) { hint.textContent = "Не вижу отзывов: проверьте, что между ними пустая строка"; return; }
+    const norm = t => t.replace(/\s+/g, " ").replace(/[ёë]/g, "е").toLowerCase().slice(0, 30), have = new Set((data.reviews || []).map(r => norm(r.text || "")));
+    const src = document.getElementById("impSource").value.trim(), url = document.getElementById("impUrl").value.trim(), playId = sel.value, hidden = document.getElementById("impHidden").checked;
+    let added = 0, dup = 0;
+    rows.forEach(r => { if (have.has(norm(r.text))) { dup++; return; } have.add(norm(r.text)); data.reviews.push({ text: r.text, author: /зритель|блогер|критик/i.test(r.author) ? r.author : r.author + ", зритель", source: src, url, playId, hidden, home: false, id: "imp" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), date: r.date }); added++; });
+    ta.value = ""; hint.textContent = `Добавлено: ${added}` + (dup ? `, пропущено дублей: ${dup}` : "") + ". Не забудьте «Сохранить».";
+    markDirty(); renderList("reviews"); homeWarn();
+  });
+}
 
 /* ---- пресса: какие фото отдавать (список скрытых в theatre.pressHide) ---- */
 function pressCandidates() {
@@ -1247,6 +1286,7 @@ document.addEventListener("input", e => {
   item[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
   el.querySelector(".title").textContent = SECTIONS[key].label(item);
   if (t.dataset.f === "sbp" || t.dataset.f === "phone" || t.dataset.f === "bank") checkSbp(el, (el.querySelector("[data-f=sbp]") || {}).value);
+  if (key === "reviews" && (t.dataset.f === "home" || t.dataset.f === "hidden")) homeWarn();
   if (t.dataset.f === "url" && key === "reviews") { const v = t.value.trim(), m = v.match(/^@([A-Za-z0-9_]{4,64})$/); const n = m ? "https://t.me/" + m[1] : (v && !/^https?:\/\//i.test(v) && /^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i.test(v) ? "https://" + v : v); if (n !== v) { t.value = n; item.url = n; } }
   if (key === "plays" && (t.dataset.f === "title" || t.dataset.f === "id")) renderList("events");
   markDirty();
