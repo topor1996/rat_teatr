@@ -226,7 +226,14 @@ window.RAT = (function () {
 
   /* ---------- «Сегодня играем» ---------- */
   /* Цвет логотипа в шапке: theatre.logoColor = "acid" (зелёный) или пусто (белый, как текст) */
-  function logoColor(d) { var v = d && d.theatre && d.theatre.logoColor; document.documentElement.style.setProperty("--logo", v === "acid" ? "var(--acid)" : "currentColor"); }
+  /* Яндекс.Метрика: номер из админки (theatre.metrikaId). Ставится один раз, без вебвизора — он тяжёлый и зрителю ни к чему */
+  function metrika(d) {
+    var id = d && d.theatre && String(d.theatre.metrikaId || "").replace(/\D/g, ""); if (!id || window.__ym) return; window.__ym = id;
+    (function (m, e, t, r, i, k, a) { m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); }; m[i].l = 1 * new Date(); k = e.createElement(t); a = e.getElementsByTagName(t)[0]; k.async = 1; k.src = r; a.parentNode.insertBefore(k, a); })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+    try { ym(+id, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false }); } catch (e) {}
+  }
+  function logoColor(d) {
+    metrika(d); var v = d && d.theatre && d.theatre.logoColor; document.documentElement.style.setProperty("--logo", v === "acid" ? "var(--acid)" : "currentColor"); }
   function todayBar(d, golosHref) {
     logoColor(d);
     var box = document.getElementById("today"); if (!box) return;
@@ -1046,6 +1053,6 @@ window.RAT = (function () {
     document.head.appendChild(s);
   }
 
-  return { logoColor: logoColor, fx: fx, pushInit: pushInit, rehash: rehash, stage: stage, hallVoicesHtml: hallVoicesHtml, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
+  return { metrika: metrika, logoColor: logoColor, fx: fx, pushInit: pushInit, rehash: rehash, stage: stage, hallVoicesHtml: hallVoicesHtml, pic: pic, excerpt: excerpt, castHtml: castHtml, castMatches: castMatches, track: track, nudge: nudge, playWaitBtn: playWaitBtn, faqHtml: faqHtml, mobileBar: mobileBar, stickyBuyText: stickyBuyText, actorSlug: actorSlug, actorHasPage: actorHasPage, actorUrl: actorUrl, toTop: toTop, scrollProgress: scrollProgress, wallFilter: wallFilter, reel: reel, skeleton: skeleton, reviewForm: reviewForm, calendarLinks: calendarLinks, evKey: evKey, toast: toast, squeak: squeak, storyButton: storyButton, mediaSlider: mediaSlider, sliders: sliders, voicesHtml: voicesHtml, voicePlayers: voicePlayers, applyLeft: applyLeft, hit: hit, marqRat: marqRat, applyLive: applyLive, esc: esc, initials: initials, parseDate: parseDate, fmtLong: fmtLong, todayStr: todayStr, siteUrl: siteUrl, playUrl: playUrl, loadData: loadData, byId: byId, upcoming: upcoming, ticket: ticket, hasBadge: hasBadge, BADGES: BADGES,
     marquee: marquee, eventRow: eventRow, buyBtn: buyBtn, applyBuy: applyBuy, todayBar: todayBar, shareHtml: shareHtml, actorCard: actorCard, reviewCard: reviewCard, shot: shot, lightbox: lightbox, reveal: reveal, jsonLd: jsonLd };
 })();

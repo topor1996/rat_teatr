@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="/assets/intro.min.css?v=20260914t" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914u" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену спектакля театра RAT: перевод актёру через СБП из любого банка, сумма любая.">
 <link rel="canonical" href="https://teatr-rat.ru/golos">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Голосуй рублём — театр RAT"><meta property="og:description" content="Выбери актёра и переведи через СБП из любого банка. Сумма не важна, важен факт перевода."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/golos"><meta property="og:locale" content="ru_RU"><meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
-<link href="/fonts/fonts.css?v=20260914t" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260914u" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -518,6 +518,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
   }
   window.__golos = d; render(d.show || SHOW, d.actors);
   try { document.documentElement.style.setProperty("--logo", d.theatre && d.theatre.logoColor === "acid" ? "var(--acid)" : "currentColor"); } catch (e) {}
+  try { var mid = d.theatre && String(d.theatre.metrikaId || "").replace(/\D/g, ""); if (mid) { (function (m, e, t, r, i, k, a) { m[i] = m[i] || function () { (m[i].a = m[i].a || []).push(arguments); }; m[i].l = 1 * new Date(); k = e.createElement(t); a = e.getElementsByTagName(t)[0]; k.async = 1; k.src = r; a.parentNode.insertBefore(k, a); })(window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym"); ym(+mid, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: false }); } } catch (e) {}
   try {
     const want = new URLSearchParams(location.search).get("pay");
     if (want) { const el = document.getElementById("a-" + want); if (el) setTimeout(() => el.scrollIntoView({ block: "center" }), 60); }

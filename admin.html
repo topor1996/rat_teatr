@@ -7,7 +7,7 @@
 <link rel="icon" href="/favicon.ico?v=2" sizes="any">
 <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260914t" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260914u" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -176,6 +176,7 @@
       <button data-tab="show">Голосование</button>
       <button data-tab="print">Печать</button>
       <button data-tab="press">Пресса</button>
+      <button data-tab="seo">Счётчики</button>
       <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
       <button data-tab="push">Уведомления</button>
@@ -332,6 +333,17 @@
       </div>
     </div>
 
+    <div class="tab" id="tab-seo">
+      <div class="panel">
+        <h2>Яндекс и Google</h2>
+        <p class="help">Сюда вставляются коды из кабинетов Яндекса и Google. Сайт сам подставит их на страницы после сохранения. Пошагово, что где взять, — в README, раздел «Счётчики и вебмастер».</p>
+        <label>Яндекс.Метрика — номер счётчика</label><input data-th="metrikaId" inputmode="numeric" placeholder="12345678"><div class="hint">Метрика → Счётчики → номер рядом с названием. Счётчик подключается на всех страницах, включая голосование.</div>
+        <div class="row">
+          <div><label>Яндекс.Вебмастер — код подтверждения</label><input data-th="yandexVerification" placeholder="a1b2c3d4e5f6"><div class="hint">Вебмастер → Добавить сайт → способ «Мета-тег» → значение content.</div></div>
+          <div><label>Google Search Console — код подтверждения</label><input data-th="googleVerification" placeholder="AbCdEf…"><div class="hint">Search Console → Добавить ресурс (тип «URL-префикс») → «HTML-тег» → значение content.</div></div>
+        </div>
+      </div>
+    </div>
     <div class="tab" id="tab-press">
       <div class="panel">
         <h2>Страница «Прессе и партнёрам»</h2>

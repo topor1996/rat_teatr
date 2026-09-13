@@ -107,7 +107,7 @@ function sanitize(array $in): array {
     if ($item['photo'] !== '' || $item['video'] !== '') $gallery[] = $item; // фото или видео (ролик в бэкстейдже)
   }
   return [
-    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'pressText' => str($th['pressText'] ?? '', 6000), 'pressLead' => str($th['pressLead'] ?? '', 400), 'pressContact' => str($th['pressContact'] ?? '', 300), 'pressCredit' => str($th['pressCredit'] ?? '', 120), 'logoColor' => in_array($th['logoColor'] ?? '', ['acid', 'white'], true) ? $th['logoColor'] : '', 'pressHide' => array_values(array_filter(array_map(fn($x) => img(is_string($x) ? $x : ''), array_slice(is_array($th['pressHide'] ?? null) ? $th['pressHide'] : [], 0, 500)))), 'venue' => str($th['venue'] ?? '', 120),
+    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'pressText' => str($th['pressText'] ?? '', 6000), 'pressLead' => str($th['pressLead'] ?? '', 400), 'pressContact' => str($th['pressContact'] ?? '', 300), 'pressCredit' => str($th['pressCredit'] ?? '', 120), 'logoColor' => in_array($th['logoColor'] ?? '', ['acid', 'white'], true) ? $th['logoColor'] : '', 'metrikaId' => preg_replace('~\D~', '', str($th['metrikaId'] ?? '', 20)), 'yandexVerification' => preg_replace('~[^\w-]~', '', str($th['yandexVerification'] ?? '', 80)), 'googleVerification' => preg_replace('~[^\w=-]~', '', str($th['googleVerification'] ?? '', 120)), 'pressHide' => array_values(array_filter(array_map(fn($x) => img(is_string($x) ? $x : ''), array_slice(is_array($th['pressHide'] ?? null) ? $th['pressHide'] : [], 0, 500)))), 'venue' => str($th['venue'] ?? '', 120),
                   'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
                   'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? ''),
                   'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? ''), 'mapCoords' => str($th['mapCoords'] ?? '', 40), 'faq' => array_values(array_filter(array_map(fn($f) => is_array($f) ? ['q' => str($f['q'] ?? '', 120), 'a' => str($f['a'] ?? '', 600)] : null, array_slice(is_array($th['faq'] ?? null) ? $th['faq'] : [], 0, 12)), fn($f) => $f && $f['q'] !== '')), 'marquee' => str($th['marquee'] ?? '', 300), 'afishaPartnerId' => preg_replace('~\D~', '', str($th['afishaPartnerId'] ?? '', 20))],
@@ -155,13 +155,38 @@ function writeJson(string $file, array $v): void { $tmp = $file . '.tmp'; file_p
    Пуш уходит без текста: браузер получает «тычок», service worker спрашивает push_msg, что показать.
    Так не нужно шифровать полезную нагрузку — хватает подписи VAPID (ES256 через OpenSSL). */
 function b64u(string $s): string { return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
-/* Письмо с сайта: через postfix сервера. From — noreply на домене сайта, Reply-To — почта театра из админки */
+/* Отправка через SMTP почтового хостинга (config.php → 'smtp'): так письма уходят с настоящего ящика театра и проходят SPF.
+   Без блока 'smtp' — обычный mail() через postfix сервера (SPF домена его не знает, письма могут падать в спам). */
+function smtpSend(array $c, string $to, string $subject, string $body, string $replyTo = ''): bool {
+  $host = (string)($c['host'] ?? ''); $port = (int)($c['port'] ?? 465); $user = (string)($c['user'] ?? ''); $pass = (string)($c['pass'] ?? '');
+  $from = (string)(($c['from'] ?? '') ?: $user); $fromName = (string)($c['name'] ?? 'Театр RAT');
+  if ($host === '' || $user === '' || $pass === '') return false;
+  $ssl = $port === 465; $ctx = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true, 'SNI_enabled' => true]]);
+  $fp = @stream_socket_client(($ssl ? 'ssl://' : 'tcp://') . $host . ':' . $port, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx);
+  if (!$fp) return false;
+  stream_set_timeout($fp, 15);
+  $read = function () use ($fp) { $out = ''; while (($line = fgets($fp, 1024)) !== false) { $out .= $line; if (strlen($line) < 4 || $line[3] !== '-') break; } return $out; };
+  $cmd = function (string $s, string $ok) use ($fp, $read) { fwrite($fp, $s . "\r\n"); $r = $read(); return strpos($r, $ok) === 0 ? $r : false; };
+  if (strpos($read(), '220') !== 0) { fclose($fp); return false; }
+  $ehlo = $cmd('EHLO teatr-rat.ru', '250'); if ($ehlo === false) { fclose($fp); return false; }
+  if (!$ssl) { if ($cmd('STARTTLS', '220') === false || !@stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) { fclose($fp); return false; } if ($cmd('EHLO teatr-rat.ru', '250') === false) { fclose($fp); return false; } }
+  $enc = fn(string $s) => '=?UTF-8?B?' . base64_encode($s) . '?=';
+  $ok = $cmd('AUTH LOGIN', '334') !== false && $cmd(base64_encode($user), '334') !== false && $cmd(base64_encode($pass), '235') !== false
+    && $cmd('MAIL FROM:<' . $from . '>', '250') !== false && $cmd('RCPT TO:<' . $to . '>', '250') !== false && $cmd('DATA', '354') !== false;
+  if ($ok) {
+    $msg = "From: {$enc($fromName)} <{$from}>\r\nTo: <{$to}>\r\n" . ($replyTo ? "Reply-To: {$replyTo}\r\n" : '') . "Subject: {$enc($subject)}\r\nDate: " . date('r') . "\r\nMessage-ID: <" . bin2hex(random_bytes(8)) . "@teatr-rat.ru>\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: teatr-rat.ru\r\n\r\n" . preg_replace('~^\.~m', '..', $body);
+    $ok = $cmd($msg . "\r\n.", '250') !== false;
+  }
+  $cmd('QUIT', '221'); fclose($fp); return $ok;
+}
+/* Письмо с сайта: через SMTP из config.php, иначе через postfix сервера. From — noreply на домене сайта, Reply-To — почта театра из админки */
 function sendMail(string $to, string $subject, string $body): bool {
   global $DATA_FILE;
   if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
   $d = readData($DATA_FILE); $host = preg_replace('~^www\.~', '', (string)($_SERVER['HTTP_HOST'] ?? 'teatr-rat.ru'));
   $reply = (string)($d['theatre']['email'] ?? ''); $name = (string)(($d['theatre']['name'] ?? '') ?: 'Театр RAT');
   $enc = fn(string $s) => '=?UTF-8?B?' . base64_encode($s) . '?=';
+  global $config; if (!empty($config['smtp']['host'])) return smtpSend($config['smtp'], $to, $subject, $body, $reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? $reply : '');
   $h = "From: {$enc($name)} <noreply@{$host}>\r\n" . ($reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? "Reply-To: {$reply}\r\n" : '') . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: teatr-rat.ru";
   return @mail($to, $enc($subject), $body, $h, '-f noreply@' . $host);
 }
