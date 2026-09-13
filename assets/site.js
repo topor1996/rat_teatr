@@ -904,6 +904,19 @@ window.RAT = (function () {
       if (reduced()) return;
       ev.preventDefault();
       var url = a.href;
+      /* Карточка высокая и часто уже наполовину уехала под шапку — срыв за верхний угол тогда не виден.
+         Сначала подтягиваем карточку целиком в кадр (плавно), и только потом рвём. Если она и так вся видна — рвём сразу. */
+      var nav = document.querySelector("nav"), pad = (nav ? nav.getBoundingClientRect().bottom : 0) + 12, rc = card.getBoundingClientRect();
+      var fits = rc.height <= window.innerHeight - pad - 12, need = rc.top < pad || rc.bottom > window.innerHeight - 12;
+      var start = function () { peelCard(card, url); };
+      if (!need) { start(); return; }
+      var y = window.pageYOffset + rc.top - (fits ? Math.max(pad, (window.innerHeight - rc.height) / 2) : pad);
+      var done = false, fin = function () { if (done) return; done = true; start(); };
+      window.addEventListener("scrollend", fin, { once: true }); setTimeout(fin, 450);
+      window.scrollTo({ top: y, behavior: "smooth" });
+    });
+  }
+  function peelCard(card, url) {
       /* скотч остаётся на стене вместе с клочком бумаги: копируем каждый кусок скотча на его место в документе */
       card.querySelectorAll(".tape").forEach(function (t) {
         var r = t.getBoundingClientRect(), st = getComputedStyle(t), c = document.createElement("span"); c.className = "tape-stay";
@@ -914,7 +927,8 @@ window.RAT = (function () {
       var gone = false, go = function () { if (gone) return; gone = true; location.href = url; };
       card.addEventListener("animationend", function (e) { if (e.target === card) go(); });
       setTimeout(go, 950);
-    });
+  }
+  function peelRestore() {
     /* «Назад» в браузере возвращает страницу из кэша в том виде, в каком её покинули: сорванная карточка и клочки скотча
        остались бы на месте. Возвращаем всё как было. */
     window.addEventListener("pageshow", function (e) {
@@ -978,7 +992,7 @@ window.RAT = (function () {
     window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
     target = cur = readTarget(); apply(cur);
   }
-  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); recorderInit(); peelInit(); } /* tilt() — живая стена — отключена по просьбе театра, функция оставлена */
+  function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); recorderInit(); peelInit(); peelRestore(); } /* tilt() — живая стена — отключена по просьбе театра, функция оставлена */
 
   /* ---------- появление при прокрутке ---------- */
   function reveal() {
