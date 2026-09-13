@@ -92,7 +92,7 @@ if ($next) {
   imagettftext($im, 22, 0, $left, $H - 120, $muted, $OSW5, $play ? 'ДАТЫ СКОРО · СЛЕДИТЕ В СОЦСЕТЯХ' : 'АФИША И БИЛЕТЫ НА САЙТЕ');
 }
 // низ: адрес сайта и стикер RAT
-$host = preg_replace('~^https?://~', '', (string)($th['site'] ?? '')) ?: ($_SERVER['HTTP_HOST'] ?? 'rat-theater.rf.gd');
+$host = preg_replace('~^https?://~', '', (string)($th['site'] ?? '')) ?: ($_SERVER['HTTP_HOST'] ?? 'teatr-rat.ru');
 imagettftext($im, 16, 0, $left, $H - 30, $muted, $MONO, $host);
 $sx = $W - 150; $sy = $H - 92; imagefilledpolygon($im, [$sx, $sy + 6, $sx + 108, $sy - 4, $sx + 112, $sy + 44, $sx + 4, $sy + 54], $acid);
 imagettftext($im, 26, 4, $sx + 14, $sy + 40, $black, $SPRAY, 'RAT');
