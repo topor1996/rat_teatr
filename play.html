@@ -27,9 +27,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-latin.woff2">
-<link href="/fonts/fonts.css?v=20260914s" rel="stylesheet">
-<link href="/assets/intro.min.css?v=20260914s" rel="stylesheet">
-<link href="/assets/site.min.css?v=20260914s" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260914t" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914t" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914t" rel="stylesheet">
 </head>
 <body>
 
@@ -146,11 +146,11 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <svg class="rat"><use href="/assets/logo.svg#rat"/></svg>
     <div id="footName">Театр RAT</div>
     <div style="margin-top:6px"><a href="/">На главную</a> · <a href="/golos">Голосуй рублём</a></div>
-    <div class="credit">Сайт собрал <a href="https://t.me/an_t96" target="_blank" rel="noopener"><span class="tg">✈</span>@an_t96</a></div>
+    <div class="credit">Сайт поставил <a href="https://t.me/an_t96" target="_blank" rel="noopener"><span class="tg">✈</span>@an_t96</a></div>
   </div>
 </footer>
 
-<script src="/assets/site.min.js?v=20260914s" defer></script>
+<script src="/assets/site.min.js?v=20260914t" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -208,7 +208,7 @@ function render(d) {
     document.getElementById("others").hidden = false;
     document.getElementById("othersList").innerHTML = others.map(function (o) {
       return '<article class="card rv"><span class="tape"></span><div class="paper"><a class="poster ' + (o.poster ? "" : "ph") + '" href="' + R.playUrl(o) + '">' + (o.poster ? '<img src="' + esc(o.poster) + '" alt="' + esc(o.title) + '" loading="lazy">' : '<span class="ttl">' + esc(o.title) + "</span>") + "</a>" +
-        '<div class="body"><h3 class="title"><a href="' + R.playUrl(o) + '">' + esc(o.title) + "</a></h3>" + (o.genre ? '<span class="genre">' + esc(o.genre) + "</span>" : "") + '<p class="desc">' + esc(o.description) + '</p><div class="row"><a class="btn ghost" href="' + R.playUrl(o) + '">Подробнее</a></div></div></div></article>';
+        '<div class="body"><h3 class="title"><a href="' + R.playUrl(o) + '">' + esc(o.title) + "</a></h3>" + (o.genre ? '<span class="genre">' + esc(o.genre) + "</span>" : "") + '<p class="desc">' + esc(R.excerpt(o.description, 180)) + '</p><div class="row"><a class="btn ghost" href="' + R.playUrl(o) + '">Подробнее</a></div></div></div></article>';
     }).join("");
   }
   R.todayBar(d, "/golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "/", afisha: "#dates", buy: window.__stickyBuy || null }); R.toTop(); R.scrollProgress(); R.rehash(); R.hit("play:" + p.id);

@@ -982,7 +982,7 @@ window.RAT = (function () {
          и последний актёр к занавесу оставался мелким и далёким */
       var travel = 700 + Math.max(0, cuts.length - 1) * 320 + 120; st.style.setProperty("--travel", travel + "px");
       st.style.setProperty("--p", cam.toFixed(4));
-      poster.style.setProperty("--o", Math.max(0, 1 - cam * 2.2).toFixed(3)); poster.style.setProperty("--z", (-cam * 2400).toFixed(0) + "px"); /* постер уходит назад быстрее камеры и гаснет, а не пролетает сквозь неё */
+      poster.style.setProperty("--o", Math.max(0, 1 - cam * 4).toFixed(3)); poster.style.setProperty("--z", (-cam * 3600).toFixed(0) + "px"); /* к 25% пути постера уже нет: на узком экране он перекрывал первых актёров */ /* постер уходит назад быстрее камеры и гаснет, а не пролетает сквозь неё */
       cuts.forEach(function (c, i) { var z = -700 - i * 320, dist = z + cam * travel; /* расстояние до камеры: <0 — впереди, >0 — позади */ var o = dist < -900 ? 0 : dist < -350 ? (dist + 900) / 550 : dist <= 150 ? 1 : dist < 400 ? (400 - dist) / 250 : 0; c.style.setProperty("--o", o.toFixed(3)); });
       var on = null; capsEl.forEach(function (c) { var at = +c.dataset.at, len = +c.dataset.len || .13; if (prog >= at && prog < at + len) on = c; });
       capsEl.forEach(function (c) { c.classList.toggle("on", c === on); });

@@ -155,6 +155,21 @@ function writeJson(string $file, array $v): void { $tmp = $file . '.tmp'; file_p
    Пуш уходит без текста: браузер получает «тычок», service worker спрашивает push_msg, что показать.
    Так не нужно шифровать полезную нагрузку — хватает подписи VAPID (ES256 через OpenSSL). */
 function b64u(string $s): string { return rtrim(strtr(base64_encode($s), '+/', '-_'), '='); }
+/* Письмо с сайта: через postfix сервера. From — noreply на домене сайта, Reply-To — почта театра из админки */
+function sendMail(string $to, string $subject, string $body): bool {
+  global $DATA_FILE;
+  if (!filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+  $d = readData($DATA_FILE); $host = preg_replace('~^www\.~', '', (string)($_SERVER['HTTP_HOST'] ?? 'teatr-rat.ru'));
+  $reply = (string)($d['theatre']['email'] ?? ''); $name = (string)(($d['theatre']['name'] ?? '') ?: 'Театр RAT');
+  $enc = fn(string $s) => '=?UTF-8?B?' . base64_encode($s) . '?=';
+  $h = "From: {$enc($name)} <noreply@{$host}>\r\n" . ($reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? "Reply-To: {$reply}\r\n" : '') . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: teatr-rat.ru";
+  return @mail($to, $enc($subject), $body, $h, '-f noreply@' . $host);
+}
+/* Уведомление театру на почту из админки (если указана) */
+function notifyTheatre(string $subject, string $body): void {
+  global $DATA_FILE; $d = readData($DATA_FILE); $to = (string)($d['theatre']['email'] ?? '');
+  if ($to) sendMail($to, $subject, $body . "\n\n— " . siteBase() . "admin");
+}
 function pushKeys(): array {
   global $PUSH_KEYS;
   $k = is_file($PUSH_KEYS) ? json_decode((string)file_get_contents($PUSH_KEYS), true) : null;
@@ -285,8 +300,7 @@ function pushRun(): array {
     if ($available($e)) {
       $subject = '=?UTF-8?B?' . base64_encode('Появились билеты: «' . $title($e) . '»') . '?=';
       $body = 'Здравствуйте! На «' . $title($e) . '» ' . $when($e) . ' снова есть билеты: ' . siteBase() . $urlOf($e) . "\n\nТеатр RAT";
-      $from = ($data['theatre']['email'] ?? '') ?: ('noreply@' . ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-      $ok = @mail($m['email'], $subject, $body, "From: {$from}\r\nContent-Type: text/plain; charset=UTF-8");
+      $ok = sendMail($m['email'], 'Появились билеты: «' . $title($e) . '»', $body);
       $m['sent'] = $ok ? date('c') : 'failed'; $changed = true; if ($ok) $stat['mailed']++;
     }
   }
@@ -395,6 +409,7 @@ switch ($a) {
     $data = readData($DATA_FILE);
     $data['reviews'][] = ['text' => $text, 'author' => $author, 'source' => 'голосом с сайта', 'url' => '', 'playId' => $playId, 'hidden' => true, 'fromSite' => true, 'id' => 'r' . time() . '-' . bin2hex(random_bytes(2)), 'date' => $day, 'audio' => 'photos/' . $name];
     $tmp = $DATA_FILE . '.tmp'; file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); rename($tmp, $DATA_FILE);
+    notifyTheatre('Новый голосовой отзыв на сайте' . ($playId ? ' — ' . $playId : ''), ($author ?: 'Зритель') . ' оставил(а) голосовой отзыв. Послушать и опубликовать: админка → «Отзывы».');
     out(['ok' => true]);
 
   case 'review':
@@ -412,6 +427,7 @@ switch ($a) {
     $data = readData($DATA_FILE);
     $data['reviews'][] = ['text' => $text, 'author' => $author, 'source' => 'с сайта', 'url' => '', 'playId' => $playId, 'hidden' => true, 'fromSite' => true, 'id' => 'r' . time() . '-' . bin2hex(random_bytes(2)), 'date' => $day];
     $tmp = $DATA_FILE . '.tmp'; file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)); rename($tmp, $DATA_FILE);
+    notifyTheatre('Новый отзыв на сайте' . ($playId ? ' — ' . $playId : ''), ($author ?: 'Зритель') . " написал(а):\n\n" . $text . "\n\nОтзыв в черновиках: откройте админку → «Отзывы» и снимите галочку «Скрыть», чтобы опубликовать.");
     out(['ok' => true]);
 
   case 'inbox':
@@ -569,6 +585,12 @@ switch ($a) {
     if ($msgs) { $db['subs'][$id]['pending'] = []; writeJson($PUSH_FILE, $db); }
     out(['ok' => true, 'messages' => array_values($msgs)]);
 
+  case 'mail_test':
+    // проверка почты: api.php?a=mail_test&key=<ключ cron из push-keys.json>&to=адрес (по умолчанию почта театра)
+    if (($_GET['key'] ?? '') === '' || ($_GET['key'] ?? '') !== (pushKeys()['cron'] ?? null)) fail('Нет доступа', 403);
+    $to = str($_GET['to'] ?? '', 120) ?: (string)(readData($DATA_FILE)['theatre']['email'] ?? '');
+    $ok = sendMail($to, 'Проверка почты с сайта ' . ($_SERVER['HTTP_HOST'] ?? ''), "Это тестовое письмо с сайта театра. Если оно пришло — уведомления о новых отзывах и письма листа ожидания будут доходить.\n\nОтправлено " . date('d.m.Y H:i'));
+    out(['ok' => $ok, 'to' => $to]);
   case 'push_send':
     // обход подписок: напоминания за день и «появились билеты». Дёргается внешним cron (cron-job.org) по секретному ключу или из админки
     $k = pushKeys();
