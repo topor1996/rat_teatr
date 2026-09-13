@@ -162,7 +162,7 @@ window.RAT = (function () {
       if (m) wasOpen = true; else if (wasOpen) { wasOpen = false; setTimeout(function () { nudge("buy"); }, 800); }
       if (m && !m.querySelector(".rat-modal-head")) {
         var head = document.createElement("div"); head.className = "rat-modal-head";
-        head.innerHTML = '<svg class="rat"><use href="#rat"/></svg><span>Билеты</span><small>' + esc(th.name || "Театр RAT") + ' ✦ оплата через Афишу, билет придёт на почту</small>';
+        head.innerHTML = '<svg class="rat"><use href="/assets/logo.svg#rat"/></svg><span>Билеты</span><small>' + esc(th.name || "Театр RAT") + ' ✦ оплата через Афишу, билет придёт на почту</small>';
         m.insertBefore(head, m.firstChild);
       }
     };

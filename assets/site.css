@@ -31,7 +31,7 @@ section{padding:56px 0 20px;scroll-margin-top:70px}
 nav{position:sticky;top:0;z-index:20;background:rgba(10,10,10,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;gap:14px;padding-top:6px;padding-bottom:6px}
 .stamp{display:inline-flex;align-items:center;gap:8px;padding:5px 9px;border:2px solid #fff;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:12px;letter-spacing:.12em;text-transform:uppercase;transform:rotate(-2deg);text-decoration:none;white-space:nowrap}
-.stamp .rat{width:20px;height:20px}
+.stamp .rat{width:28px;height:20px}
 nav ul{list-style:none;margin:0 0 0 auto;padding:6px 0;display:flex;align-items:center;gap:4px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 nav ul::-webkit-scrollbar{display:none}
 nav li a{display:block;padding:7px 10px;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;white-space:nowrap;color:#ddd}
@@ -235,7 +235,7 @@ nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(
 .golos p{margin:6px 0 0;font-size:13px;max-width:460px}
 .golos .btn{border-color:#000;background:#000;color:var(--acid)}
 footer{padding:50px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
-footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block;color:var(--acid)}
+footer .rat{width:64px;height:44px;margin:0 auto 10px;display:block;color:var(--acid)}
 footer a{color:#cfcbbd}
 
 /* ---------- play page ---------- */
@@ -268,7 +268,7 @@ html.afisha-open body{position:fixed!important;width:100%!important}
 #modal_fade{background:rgba(8,8,8,.86)!important;backdrop-filter:blur(3px)}
 #modal{border:3px solid #000!important;border-radius:0!important;box-shadow:0 0 0 2px var(--acid),0 30px 80px rgba(0,0,0,.75)!important;background:#fff!important}
 .rat-modal-head{height:46px;display:flex;align-items:center;gap:12px;padding:0 60px 0 16px;background:var(--acid);color:#000;border-bottom:3px solid #000;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden}
-.rat-modal-head .rat{width:26px;height:26px;flex:none;color:#000}
+.rat-modal-head .rat{width:34px;height:24px;flex:none;color:#000}
 .rat-modal-head small{font-family:"PT Mono","PT Mono Fallback",monospace;font-weight:400;font-size:11px;letter-spacing:.04em;text-transform:none;opacity:.75;overflow:hidden;text-overflow:ellipsis}
 #modal #listim_widget{height:calc(100% - 46px)!important}
 #modal_close{height:46px!important;width:46px!important;background:#000!important;color:var(--acid)!important;border-left:3px solid #000!important}

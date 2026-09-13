@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="/assets/intro.min.css?v=20260914n" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914o" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену спектакля театра RAT: перевод актёру через СБП из любого банка, сумма любая.">
 <link rel="canonical" href="https://teatr-rat.ru/golos">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Голосуй рублём — театр RAT"><meta property="og:description" content="Выбери актёра и переведи через СБП из любого банка. Сумма не важна, важен факт перевода."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/golos"><meta property="og:locale" content="ru_RU"><meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
-<link href="/fonts/fonts.css?v=20260914n" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260914o" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -61,7 +61,7 @@
     transform:rotate(-2deg);background:rgba(0,0,0,.4);text-decoration:none;color:inherit
   }
   .stamp:hover{border-color:var(--acid);color:var(--acid)}
-  .stamp .rat{width:22px;height:22px}
+  .stamp .rat{width:30px;height:22px}
   .date{color:var(--acid);font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:13px;letter-spacing:.14em}
 
   /* ---------- hero ---------- */
@@ -243,7 +243,7 @@
     margin-bottom:14px;transform:rotate(-2deg);display:inline-block
   }
   footer .big em{font-style:normal;color:var(--acid)}
-  footer .rat{width:44px;height:44px;margin:0 auto 10px;display:block}
+  footer .rat{width:64px;height:44px;margin:0 auto 10px;display:block}
 </style>
 </head>
 <body>
@@ -271,15 +271,6 @@ el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addE
 var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="/assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
-  <symbol id="rat" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/>
-    <circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/>
-    <circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/>
-    <path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="32" cy="41" r="2.5" fill="currentColor"/>
-    <path d="M10 40l16 1M10 46l16-1M54 40l-16 1M54 46l-16-1" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-    <text x="32" y="36" text-anchor="middle" font-family="Impact,sans-serif" font-size="12" fill="currentColor" letter-spacing="1">RAT</text>
-  </symbol>
   <symbol id="sbp" viewBox="0 0 24 24">
     <path d="M4 6l4 2.5v7L4 18V6z" fill="#fff"/>
     <path d="M8 8.5l4-2.5v12l-4-2.5v-7z" fill="#f2b437"/>
@@ -290,7 +281,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
 
 <div class="wrap">
   <div class="top">
-    <a class="stamp" href="/" title="На главную"><svg class="rat"><use href="#rat"/></svg> <span class="stamp-name">Театр RAT</span></a>
+    <a class="stamp" href="/" title="На главную"><svg class="rat"><use href="/assets/logo.svg#rat"/></svg> <span class="stamp-name">Театр RAT</span></a>
     <span class="date" id="dateLine"></span>
   </div>
 
@@ -316,7 +307,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
 
 <footer>
   <div class="wrap">
-    <svg class="rat" style="color:var(--acid)"><use href="#rat"/></svg>
+    <svg class="rat" style="color:var(--acid)"><use href="/assets/logo.svg#rat"/></svg>
     <div class="big" id="thanks">Спасибо, <em>что пришли</em></div>
     <div id="thanksNote">Перевод — добровольная благодарность. Любая сумма — это уже аплодисменты.</div>
   </div>
