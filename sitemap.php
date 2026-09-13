@@ -4,13 +4,16 @@ header('Content-Type: application/xml; charset=utf-8');
 $d = json_decode((string)@file_get_contents(__DIR__ . '/data/data.json'), true) ?: [];
 $base = (!empty($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'teatr-rat.ru');
 $x = fn($v) => htmlspecialchars((string)$v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+// lastmod: все страницы собираются из data.json, поэтому дата последнего сохранения в админке — и есть дата обновления (для спектаклей и актёров — не раньше даты постера/фото)
+$dataMod = (int)@filemtime(__DIR__ . '/data/data.json') ?: time();
+$mod = fn(string $f = '') => '<lastmod>' . date('Y-m-d', ($f !== '' && is_file(__DIR__ . '/' . $f)) ? max($dataMod, (int)@filemtime(__DIR__ . '/' . $f)) : $dataMod) . '</lastmod>';
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">';
-echo '<url><loc>' . $x($base . '/') . '</loc></url><url><loc>' . $x($base . '/golos') . '</loc></url><url><loc>' . $x($base . '/press') . '</loc></url>';
+echo '<url><loc>' . $x($base . '/') . '</loc>' . $mod('index.html') . '</url><url><loc>' . $x($base . '/golos') . '</loc>' . $mod('golos.html') . '</url><url><loc>' . $x($base . '/press') . '</loc>' . $mod('press.html') . '</url>';
 require_once __DIR__ . '/render.php';
-foreach ($d['actors'] ?? [] as $a) if (rat_actor_has_page($a)) echo '<url><loc>' . $x($base . '/actor/' . rawurlencode(rat_slug($a['name']))) . '</loc><image:image><image:loc>' . $x($base . '/' . $a['photo']) . '</image:loc><image:title>' . $x($a['name']) . '</image:title></image:image></url>';
+foreach ($d['actors'] ?? [] as $a) if (rat_actor_has_page($a)) echo '<url><loc>' . $x($base . '/actor/' . rawurlencode(rat_slug($a['name']))) . '</loc>' . $mod($a['photo'] ?? '') . '<image:image><image:loc>' . $x($base . '/' . $a['photo']) . '</image:loc><image:title>' . $x($a['name']) . '</image:title></image:image></url>';
 foreach ($d['plays'] ?? [] as $p) {
   if (empty($p['id']) || !empty($p['hidden'])) continue;
-  echo '<url><loc>' . $x($base . '/play/' . rawurlencode($p['id'])) . '</loc>';
+  echo '<url><loc>' . $x($base . '/play/' . rawurlencode($p['id'])) . '</loc>' . $mod($p['poster'] ?? '');
   if (!empty($p['poster'])) echo '<image:image><image:loc>' . $x($base . '/' . $p['poster']) . '</image:loc><image:title>' . $x($p['title']) . '</image:title></image:image>';
   foreach ($p['media'] ?? [] as $m) {
     if (!empty($m['hidden']) || empty($m['src'])) continue;
