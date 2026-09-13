@@ -935,12 +935,15 @@ window.RAT = (function () {
     wrap.innerHTML = '<div class="stage" id="stage"><div class="lamp l"></div><div class="lamp r"></div><div class="cam">' +
       '<div class="floor"></div>' +
       '<div class="sl sposter" style="--z:0px;--y:-4vh">' + (p.poster ? pic(p.poster, 'alt=""') : '<div class="ph"><span class="ttl">' + esc(p.title) + "</span></div>") + "</div>" +
-      cast.map(function (c, i) { return '<div class="sl cut" style="--z:' + (-700 - i * 320) + 'px;--x:' + xs[i % xs.length] + 'vw;--y:6vh;--o:0">' + (c.photo ? pic(c.photo, 'alt="' + esc(c.name) + '" loading="lazy"') : '<div class="ph">' + esc(initials(c.name)) + "</div>") + '<div class="shadow"></div><div class="who">' + esc(c.name) + (c.role ? "<small>" + esc(c.role) + "</small>" : "") + "</div></div>"; }).join("") +
+      cast.map(function (c, i) { return '<div class="sl cut" style="--z:' + (-700 - i * 320) + 'px;--x:' + xs[i % xs.length] + 'vw;--y:6vh;--o:0">' + (c.photo ? pic(c.photo, 'alt="' + esc(c.name) + '" decoding="async"') : '<div class="ph">' + esc(initials(c.name)) + "</div>") + '<div class="shadow"></div><div class="who">' + esc(c.name) + (c.role ? "<small>" + esc(c.role) + "</small>" : "") + "</div></div>"; }).join("") +
       "</div>" + caps.map(function (c, i) { return '<div class="cap" data-at="' + c.at.toFixed(3) + '" data-len="' + c.len.toFixed(3) + '">' + c.html + "</div>"; }).join("") +
       '<div class="curtain l"></div><div class="curtain r"></div>' +
       '<div class="final"><h3>' + esc(p.title) + "</h3>" + (next ? '<div class="hint" style="position:static;animation:none;margin-bottom:12px;transform:none">' + esc(fmtLong(next)) + "</div>" : "") + '<div class="row">' + (next && !hasBadge(next, "soldout") ? buyBtn(next, p, th, "Купить билет", "light") : (next ? '<span class="btn disabled">Билетов нет</span>' : playWaitBtn(p))) + '<a class="btn ghost onDark" href="#dates">Все даты</a></div></div>' +
       '<div class="hint">листай — камера едет на сцену ↓</div></div>';
     var st = wrap.querySelector(".stage"), cuts = wrap.querySelectorAll(".cut"), capsEl = wrap.querySelectorAll(".cap"), fin = wrap.querySelector(".final"), poster = wrap.querySelector(".sposter");
+    /* Фигуры актёров стоят далеко по оси Z и с opacity 0 — с loading="lazy" браузер грузил их только когда камера подъезжала вплотную,
+       и они появлялись пустыми рамками. Поэтому без lazy, а сверх того — прогрев картинок сразу при сборке сцены. */
+    cuts.forEach(function (c) { var im = c.querySelector("img"); if (im && im.currentSrc) { var pre = new Image(); pre.src = im.currentSrc; } });
     /* Прогресс сглаживается: цель берётся из прокрутки, а картинка догоняет её с инерцией (lerp), поэтому резкие
        движения колеса не дёргают сцену, а титры не проскакивают. */
     var target = 0, cur = 0, raf = null;
