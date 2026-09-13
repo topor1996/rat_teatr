@@ -26,9 +26,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260914e" rel="stylesheet">
-<link href="assets/intro.min.css?v=20260914e" rel="stylesheet">
-<link href="assets/site.min.css?v=20260914e" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260914f" rel="stylesheet">
+<link href="assets/intro.min.css?v=20260914f" rel="stylesheet">
+<link href="assets/site.min.css?v=20260914f" rel="stylesheet">
 </head>
 <body>
 
@@ -169,7 +169,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="assets/site.min.js?v=20260914e" defer></script>
+<script src="assets/site.min.js?v=20260914f" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -185,7 +185,16 @@ function render(d) {
   /* видео или фото в шапке */
   var hm = document.getElementById("heroMedia");
   if (th.heroVideo) { hm.innerHTML = '<video autoplay muted loop playsinline preload="metadata"' + (th.heroPoster ? ' poster="' + esc(th.heroPoster) + '"' : "") + '><source src="' + esc(th.heroVideo) + '"></video>'; hm.hidden = false; }
-  else if (th.heroPoster) { hm.innerHTML = '<img src="' + esc(th.heroPoster) + '" alt="">'; hm.hidden = false; }
+  else if (th.heroPoster) {
+    hm.innerHTML = '<img class="amb" src="' + esc(th.heroPoster) + '" alt="" aria-hidden="true"><img class="main" src="' + esc(th.heroPoster) + '" alt="">'; hm.hidden = false;
+    // цвет по краям фото → фон блока, чтобы картинка целиком (contain) сливалась с полями
+    var im = hm.querySelector("img.main"); im.addEventListener("load", function () {
+      try { var cv = document.createElement("canvas"), n = 24, x = cv.getContext("2d"); cv.width = cv.height = n; x.drawImage(im, 0, 0, n, n);
+        var d = x.getImageData(0, 0, n, n).data, r = 0, g = 0, b = 0, k = 0;
+        for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) if (i === 0 || j === 0 || i === n - 1 || j === n - 1) { var o = (i * n + j) * 4; r += d[o]; g += d[o + 1]; b += d[o + 2]; k++; }
+        hm.style.backgroundColor = "rgb(" + Math.round(r / k * .6) + "," + Math.round(g / k * .6) + "," + Math.round(b / k * .6) + ")"; } catch (e) {}
+    });
+  }
 
   /* ближайший показ */
   var next = events[0];
