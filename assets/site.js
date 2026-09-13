@@ -17,7 +17,8 @@ window.RAT = (function () {
 
   /* ---------- данные ---------- */
   function loadData(fallback) {
-    var urls = ["data/data.json?t=" + Date.now(), "/api/data", "api.php?a=data"], log = [];
+    // На PHP-хостинге папка data/ закрыта от веба, поэтому сначала api.php; на GitHub Pages его нет — там сразу data.json
+    var urls = /github\.io$/.test(location.hostname) ? ["data/data.json?t=" + Date.now(), "/api/data"] : ["api.php?a=data", "data/data.json?t=" + Date.now(), "/api/data"], log = [];
     return urls.reduce(function (chain, url) {
       return chain.then(function (found) {
         if (found) return found;

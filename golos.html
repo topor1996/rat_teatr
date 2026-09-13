@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.min.css?v=20260914d" rel="stylesheet">
+<link href="assets/intro.min.css?v=20260914e" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену. Перевод актёру через СБП из любого банка.">
 <link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link href="fonts/fonts.css?v=20260914d" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260914e" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -510,7 +510,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
 (async () => {
   let d = { show: SHOW, actors: ACTORS };
   // 1) сервер server.js, 2) файл data/data.json (GitHub Pages, любая статика), 3) PHP-хостинг
-  for (const url of ["/api/data", "data/data.json?t=" + Date.now(), "api.php?a=data"]) {
+  for (const url of (/github\.io$/.test(location.hostname) ? ["data/data.json?t=" + Date.now(), "/api/data"] : ["api.php?a=data", "data/data.json?t=" + Date.now(), "/api/data"])) {
     try {
       const r = await fetch(url, { cache: "no-store" });
       if (!r.ok) continue;
