@@ -107,7 +107,7 @@ function sanitize(array $in): array {
     if ($item['photo'] !== '' || $item['video'] !== '') $gallery[] = $item; // фото или видео (ролик в бэкстейдже)
   }
   return [
-    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'venue' => str($th['venue'] ?? '', 120),
+    'theatre' => ['name' => str($th['name'] ?? '', 100), 'tagline' => str($th['tagline'] ?? '', 200), 'about' => str($th['about'] ?? '', 3000), 'pressText' => str($th['pressText'] ?? '', 6000), 'venue' => str($th['venue'] ?? '', 120),
                   'address' => str($th['address'] ?? '', 200), 'instagram' => url($th['instagram'] ?? ''), 'telegram' => url($th['telegram'] ?? ''), 'vk' => url($th['vk'] ?? ''),
                   'email' => str($th['email'] ?? '', 100), 'phone' => str($th['phone'] ?? '', 30), 'ticketsUrl' => url($th['ticketsUrl'] ?? ''),
                   'heroVideo' => media($th['heroVideo'] ?? ''), 'heroPoster' => img($th['heroPoster'] ?? ''), 'mapCoords' => str($th['mapCoords'] ?? '', 40), 'faq' => array_values(array_filter(array_map(fn($f) => is_array($f) ? ['q' => str($f['q'] ?? '', 120), 'a' => str($f['a'] ?? '', 600)] : null, array_slice(is_array($th['faq'] ?? null) ? $th['faq'] : [], 0, 12)), fn($f) => $f && $f['q'] !== '')), 'marquee' => str($th['marquee'] ?? '', 300), 'afishaPartnerId' => preg_replace('~\D~', '', str($th['afishaPartnerId'] ?? '', 20))],

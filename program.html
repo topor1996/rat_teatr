@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Программка — Театр RAT</title>
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  @page{size:A4 landscape;margin:8mm}
+  *{box-sizing:border-box}
+  body{margin:0;background:#2a2a2a;font-family:"PT Mono","PT Mono Fallback",monospace;color:#0a0a0a;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .bar{position:sticky;top:0;z-index:5;background:#0a0a0a;color:#eee;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px}
+  .bar button,.bar a{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border:2px solid #c9ff3d;background:#c9ff3d;color:#000;cursor:pointer;text-decoration:none;font-size:13px}
+  .bar a{background:transparent;color:#eee;border-color:#444}
+  .bar select{font:inherit;padding:6px 8px;background:#111;color:#eee;border:1px solid #444}
+  .bar label{display:flex;align-items:center;gap:6px}
+  /* лист А4 альбомный, на нём две программки А5 (148×210) — режется пополам */
+  .sheet{width:281mm;height:194mm;margin:16px auto;display:grid;grid-template-columns:1fr 1fr;gap:0;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.6);page-break-after:always}
+  .sheet:last-child{page-break-after:auto}
+  .a5{position:relative;padding:9mm 9mm 8mm;display:flex;flex-direction:column;overflow:hidden;background:#f1eee4;border-right:1px dashed #999}
+  .a5:last-child{border-right:0}
+  .top{display:flex;justify-content:space-between;align-items:center;gap:4mm}
+  .stamp{border:2px solid #000;padding:2px 7px;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:9pt;letter-spacing:.12em;text-transform:uppercase;transform:rotate(-2deg);white-space:nowrap}
+  .venue{font-size:7.5pt;color:#5a574f;text-align:right;line-height:1.3}
+  h1{margin:5mm 0 0;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;font-size:30pt;line-height:.9;text-transform:uppercase;letter-spacing:-.005em;overflow-wrap:anywhere}
+  .genre{display:inline-block;margin-top:3mm;padding:2px 7px;background:#000;color:#c9ff3d;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:8.5pt;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-1deg)}
+  .meta{margin-top:2.5mm;font-size:8pt;color:#5a574f}
+  .meta b{color:#000}
+  .dates{margin-top:3mm;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:9.5pt;text-transform:uppercase;letter-spacing:.04em}
+  .dates span{display:inline-block;background:#c9ff3d;padding:1px 6px;margin:0 4px 3px 0;transform:rotate(-1deg)}
+  .desc{margin-top:4mm;font-size:8.6pt;line-height:1.42;white-space:pre-line;overflow:hidden}
+  .desc.long{font-size:7.9pt;line-height:1.36}
+  h2{margin:4mm 0 1.5mm;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:10pt;text-transform:uppercase;letter-spacing:.1em;border-bottom:2px solid #000;padding-bottom:1mm}
+  .cast{columns:2;column-gap:5mm;font-size:8.4pt;line-height:1.4}
+  .cast div{break-inside:avoid;display:flex;justify-content:space-between;gap:3mm;border-bottom:1px dotted #bbb;padding:.6mm 0}
+  .cast .n{font-family:"Oswald","Oswald Fallback",sans-serif;font-size:9pt;text-transform:uppercase;letter-spacing:.03em}
+  .cast .r{color:#5a574f;text-align:right}
+  .team{margin-top:2mm;font-size:7.8pt;color:#5a574f;white-space:pre-line}
+  .foot{margin-top:auto;padding-top:3mm;border-top:2px solid #000;display:grid;grid-template-columns:auto auto 1fr;gap:5mm;align-items:center}
+  .qr{width:24mm;text-align:center;font-size:6.5pt;line-height:1.2}
+  .qr .box{width:24mm;height:24mm;background:#fff;border:1.5px solid #000;padding:1.2mm}
+  .qr img,.qr canvas{width:100%;height:100%;display:block}
+  .qr b{display:block;margin-top:1mm;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:7.5pt;text-transform:uppercase;letter-spacing:.06em}
+  .contacts{font-size:7.5pt;color:#5a574f;line-height:1.5}
+  .contacts .site{display:inline-block;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:10pt;letter-spacing:.06em;background:#000;color:#c9ff3d;padding:1px 6px;margin-bottom:1mm}
+  .empty{padding:20mm;text-align:center;color:#5a574f;width:100%}
+  @media print{body{background:#fff}.bar{display:none}.sheet{margin:0;box-shadow:none;width:auto;height:194mm}}
+</style></head><body>
+<div class="bar">
+  <button onclick="window.print()">Печать / сохранить PDF</button>
+  <label>Спектакль: <select id="pick"></select></label>
+  <label><input type="checkbox" id="two" checked> две на лист А4 (альбомный), резать пополам</label>
+  <a href="admin">← в админку</a>
+  <span style="color:#8f8b80">Всё берётся с сайта: название, жанр, описание, состав, ближайшие даты. QR ведут на отзывы и голосование.</span>
+</div>
+<div id="out"></div>
+<script src="vendor/qrcode.min.js"></script>
+<script>
+var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+var base = location.origin + location.pathname.replace(/[^\/]*$/, "");
+var M = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"], W = ["вс","пн","вт","ср","чт","пт","сб"];
+function fmt(e) { var p = e.date.split("-").map(Number), d = new Date(p[0], p[1] - 1, p[2]); return p[2] + " " + M[p[1] - 1] + ", " + W[d.getDay()] + (e.time ? " · " + e.time : ""); }
+function a5(p, d) {
+  var th = d.theatre || {}, today = new Date().toISOString().slice(0, 10);
+  var ev = (d.events || []).filter(function (e) { return e.playId === p.id && !e.hidden && e.date >= today; }).sort(function (a, b) { return (a.date + a.time).localeCompare(b.date + b.time); }).slice(0, 4);
+  var cast = (p.castList || []).filter(function (c) { return c.name; });
+  var desc = String(p.description || "").trim(), lim = cast.length > 6 ? 700 : 950;
+  if (desc.length > lim) desc = desc.slice(0, lim).replace(/\s+\S*$/, "") + "…";
+  var site = base.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  return '<div class="a5">' +
+    '<div class="top"><span class="stamp">' + esc(th.name || "Театр RAT") + '</span><div class="venue">' + esc(th.venue || "") + (th.address ? "<br>" + esc(th.address) : "") + "</div></div>" +
+    "<h1>" + esc(p.title) + "</h1>" +
+    (p.genre ? '<div><span class="genre">' + esc(p.genre) + "</span></div>" : "") +
+    '<div class="meta">' + (p.duration ? "<b>" + esc(p.duration) + "</b>" : "") + (p.age ? (p.duration ? " · " : "") + "<b>" + esc(p.age) + "</b>" : "") + (p.duration || p.age ? " · " : "") + "без антракта" + "</div>" +
+    (ev.length ? '<div class="dates">' + ev.map(function (e) { return "<span>" + esc(fmt(e)) + "</span>"; }).join("") + "</div>" : "") +
+    (desc ? '<div class="desc' + (desc.length > 600 ? " long" : "") + '">' + esc(desc) + "</div>" : "") +
+    (cast.length ? "<h2>Действующие лица и исполнители</h2><div class=\"cast\">" + cast.map(function (c) { return '<div><span class="n">' + esc(c.name) + '</span><span class="r">' + esc(c.role || "") + "</span></div>"; }).join("") + "</div>" : "") +
+    (p.cast ? '<div class="team">' + esc(p.cast) + "</div>" : "") +
+    '<div class="foot">' +
+      '<div class="qr"><div class="box"><div class="q" data-url="' + esc(base + "play.html?id=" + encodeURIComponent(p.id) + "&utm_source=program#reviews") + '"></div></div><b>Отзыв</b>после спектакля</div>' +
+      '<div class="qr"><div class="box"><div class="q" data-url="' + esc(base + "golos?utm_source=program") + '"></div></div><b>Голосуй рублём</b>за реальную историю</div>' +
+      '<div class="contacts"><span class="site">' + esc(site) + "</span><br>" + (th.telegram ? "Telegram: " + esc(th.telegram.replace(/^https?:\/\/(t\.me|telegram\.me)\//, "@")) + "<br>" : "") + (th.email ? esc(th.email) + "<br>" : "") + "Билеты и афиша на сайте</div>" +
+    "</div></div>";
+}
+function render(d) {
+  var q = new URLSearchParams(location.search), id = q.get("id"), plays = (d.plays || []).filter(function (p) { return !p.hidden; });
+  var pick = document.getElementById("pick"); pick.innerHTML = plays.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === id ? " selected" : "") + ">" + esc(p.title) + "</option>"; }).join("");
+  var p = plays.filter(function (x) { return x.id === id; })[0] || plays[0];
+  var out = document.getElementById("out");
+  if (!p) { out.innerHTML = '<div class="sheet"><div class="empty">Нет спектаклей</div></div>'; return; }
+  var two = document.getElementById("two").checked;
+  out.innerHTML = '<div class="sheet"' + (two ? "" : ' style="grid-template-columns:1fr;width:148mm"') + ">" + a5(p, d) + (two ? a5(p, d) : "") + "</div>";
+  document.querySelectorAll(".q").forEach(function (el) { if (window.QRCode) new QRCode(el, { text: el.dataset.url, width: 300, height: 300, correctLevel: QRCode.CorrectLevel.M }); });
+  document.title = "Программка «" + p.title + "» — " + (d.theatre && d.theatre.name || "Театр RAT");
+  pick.onchange = function () { location.search = "?id=" + encodeURIComponent(pick.value); };
+  document.getElementById("two").onchange = function () { render(d); };
+}
+fetch("api.php?a=data", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return fetch("data/data.json").then(function (r) { return r.json(); }); }).then(render);
+</script>
+</body></html>

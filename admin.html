@@ -160,7 +160,7 @@
       <div class="links">
         <a class="btn ghost sm" href="./" target="_blank">Сайт ↗</a>
         <a class="btn ghost sm" href="golos" target="_blank">Голосование ↗</a>
-        <a class="btn ghost sm" href="poster.html" target="_blank">Афиша на печать ↗</a>
+        <a class="btn ghost sm" href="#" data-goto="print">Печать ↗</a>
         <button class="btn ghost sm" id="logout">Выйти</button>
       </div>
     </div>
@@ -173,7 +173,7 @@
       <button data-tab="gallery">Бэкстейдж</button>
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
-      <button data-tab="qr">QR-афиша</button>
+      <button data-tab="print">Печать</button>
       <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
       <button data-tab="push">Уведомления</button>
@@ -231,6 +231,7 @@
         </div>
         <label>Слоган (под заголовком на главной)</label><input data-th="tagline">
         <label>О театре</label><textarea data-th="about" style="min-height:120px"></textarea>
+        <label>Текст для прессы и партнёров (страница <a href="press.html" target="_blank">press.html</a>; пусто — берутся слоган и «О театре»)</label><textarea data-th="pressText" style="min-height:120px" placeholder="Три абзаца: кто вы, что играете, чем отличаетесь. Журналисты копируют это в статьи как есть."></textarea>
         <div class="row">
           <div><label>Где играем</label><input data-th="venue"></div>
           <div><label>Адрес</label><input data-th="address"></div>
@@ -329,9 +330,18 @@
       </div>
     </div>
 
-    <div class="tab" id="tab-qr">
+    <div class="tab" id="tab-print">
       <div class="panel">
-        <h2>QR-афиша на печать</h2>
+        <h2>Что печатать</h2>
+        <p class="help">Всё собирается из данных сайта, ничего рисовать не нужно. Открывается в новой вкладке, там кнопка «Печать / сохранить PDF».</p>
+        <div class="row">
+          <div><label>Афиша А4</label><div class="btns"><a class="btn" href="poster.html" target="_blank">Открыть афишу ↗</a></div><div class="hint">Ближайшие показы с датами, ценами и QR на сайт.</div></div>
+          <div><label>Программка спектакля (А5, две на лист)</label><div class="btns" style="display:flex;gap:8px;flex-wrap:wrap"><select id="progPick" style="max-width:260px"></select><a class="btn" id="progOpen" href="program.html" target="_blank">Открыть программку ↗</a></div><div class="hint">Название, жанр, описание, состав с ролями, ближайшие даты, QR на отзывы и голосование.</div></div>
+        </div>
+        <p class="help" style="margin-top:12px">Страница для журналистов и площадок: <a href="press.html" target="_blank">press.html</a> — о театре, спектакли, фото в полном размере, логотип, контакты. Текст для неё на вкладке «О театре».</p>
+      </div>
+      <div class="panel">
+        <h2>QR-афиша (карточки на стол и сиденья)</h2>
         <p class="help">Карточки с QR-кодом на стол или сиденья: 4 на лист А4. Каждая строка редактируется, QR собирается сам из ссылки. Настройки запоминаются в этом браузере. Пустая строка — не печатается.</p>
         <div class="row">
           <div><label>Штамп сверху</label><input data-qr="stamp" placeholder="Театр RAT"></div>
@@ -694,7 +704,7 @@ function qrLoad() { try { const j = JSON.parse(localStorage.getItem("qrPoster") 
 function qrEncode(cfg) { return btoa(unescape(encodeURIComponent(JSON.stringify(cfg)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
 let qrTimer = null;
 function qrApply(save) {
-  const tab = document.getElementById("tab-qr"); if (!tab) return;
+  const tab = document.getElementById("tab-print"); if (!tab) return;
   const cfg = {}; QR_KEYS.forEach(k => { const el = tab.querySelector(`[data-qr="${k}"]`); if (el) cfg[k] = el.value; });
   if (save) { try { localStorage.setItem("qrPoster", JSON.stringify(cfg)); } catch (e) {} }
   const h = document.getElementById("qrHint"); if (h) { const ok = /^https?:\/\/\S+$/.test(cfg.qr.trim()); h.textContent = ok ? "Ссылка в порядке" : "Нужна полная ссылка, начиная с https://"; h.className = "hint " + (ok ? "good" : "bad"); }
@@ -703,7 +713,9 @@ function qrApply(save) {
   clearTimeout(qrTimer); qrTimer = setTimeout(() => { document.getElementById("qrPreview").src = "qr-poster.html?preview=1&c=" + enc; }, 250);
 }
 function qrPosterInit() {
-  const tab = document.getElementById("tab-qr"); if (!tab || tab.dataset.ready) return; tab.dataset.ready = "1";
+  const tab = document.getElementById("tab-print"); if (!tab) return;
+  const pick = document.getElementById("progPick"); if (pick) { pick.innerHTML = (data.plays || []).filter(p => !p.hidden).map(p => `<option value="${esc(p.id)}">${esc(p.title)}</option>`).join("") || "<option value=''>нет спектаклей</option>"; const upd = () => { document.getElementById("progOpen").href = "program.html?id=" + encodeURIComponent(pick.value); }; pick.onchange = upd; upd(); }
+  if (tab.dataset.ready) return; tab.dataset.ready = "1";
   const fill = cfg => QR_KEYS.forEach(k => { const el = tab.querySelector(`[data-qr="${k}"]`); if (el) el.value = cfg[k]; });
   fill(qrLoad()); qrApply(false);
   tab.addEventListener("input", e => { if (e.target.dataset.qr !== undefined) qrApply(true); });
