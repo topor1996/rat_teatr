@@ -237,6 +237,10 @@ nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(
 footer{padding:50px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
 footer .rat{width:64px;height:44px;margin:0 auto 10px;display:block;color:var(--acid)}
 footer a{color:#cfcbbd}
+footer .credit{margin-top:26px;font-family:"PT Mono","PT Mono Fallback",monospace;font-size:11px;color:#6f6b60;letter-spacing:.02em}
+footer .credit a{display:inline-block;margin-left:6px;padding:3px 9px;background:#000;color:var(--acid);text-decoration:none;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid #2a2a2a;transform:rotate(-1.5deg);transition:transform .15s,border-color .15s}
+footer .credit a:hover{transform:rotate(0) translateY(-1px);border-color:var(--acid)}
+footer .credit .tg{display:inline-block;margin-right:5px;transform:rotate(-12deg)}
 
 /* ---------- play page ---------- */
 .phero[hidden]{display:none}

@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="/assets/intro.min.css?v=20260914q" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914r" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену спектакля театра RAT: перевод актёру через СБП из любого банка, сумма любая.">
 <link rel="canonical" href="https://teatr-rat.ru/golos">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Голосуй рублём — театр RAT"><meta property="og:description" content="Выбери актёра и переведи через СБП из любого банка. Сумма не важна, важен факт перевода."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/golos"><meta property="og:locale" content="ru_RU"><meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
-<link href="/fonts/fonts.css?v=20260914q" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260914r" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -238,6 +238,10 @@
   }
 
   footer{padding:30px 0 60px;text-align:center;color:#8f8b80;font-size:12px;position:relative;z-index:1}
+  footer .credit{margin-top:26px;font-family:"PT Mono","PT Mono Fallback",monospace;font-size:11px;color:#6f6b60;letter-spacing:.02em}
+  footer .credit a{display:inline-block;margin-left:6px;padding:3px 9px;background:#000;color:var(--acid);text-decoration:none;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:12px;letter-spacing:.06em;border:1.5px solid #2a2a2a;transform:rotate(-1.5deg);transition:transform .15s,border-color .15s}
+  footer .credit a:hover{transform:rotate(0) translateY(-1px);border-color:var(--acid)}
+  footer .credit .tg{display:inline-block;margin-right:5px;transform:rotate(-12deg)}
   footer .big{
     font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:clamp(34px,8vw,64px);color:#fff;line-height:1;
     margin-bottom:14px;transform:rotate(-2deg);display:inline-block
@@ -310,6 +314,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <svg class="rat" style="color:var(--acid)"><use href="/assets/logo.svg#rat"/></svg>
     <div class="big" id="thanks">Спасибо, <em>что пришли</em></div>
     <div id="thanksNote">Перевод — добровольная благодарность. Любая сумма — это уже аплодисменты.</div>
+    <div class="credit">Сайт собрал <a href="https://t.me/an_t96" target="_blank" rel="noopener"><span class="tg">✈</span>@an_t96</a></div>
   </div>
 </footer>
 
