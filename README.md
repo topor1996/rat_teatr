@@ -17,7 +17,7 @@
 - `assets/` — общие стили и скрипт главной и страниц спектаклей, обложка для превью ссылок `og-cover.png`, фавиконки.
 - `render.php`, `index.php`, `play.php` — на PHP-хостинге подставляют в страницы Open Graph и разметку schema.org из `data/data.json`, чтобы Telegram, WhatsApp и Яндекс видели название, описание и постер. На GitHub Pages страницы отдаются как есть, с общей обложкой.
 - `data/data.json` — все данные (театр, спектакли, показы, актёры), `photos/` — фото и постеры.
-- `api.php` + `config.php` — бэкенд для PHP-хостинга (InfinityFree), вход по паролю.
+- `api.php` + `config.php` — бэкенд для PHP-хостинга (сейчас teatr-rat.ru, раньше InfinityFree), вход по паролю.
 - `.htaccess` — короткие адреса `/golos` и `/admin` на Apache; папки `golos/` и `admin/` делают то же на GitHub Pages.
 - `fonts/` и `vendor/` — шрифты и скрипт QR-кода лежат на своём хостинге, ничего не грузится с Google и CDN.
 - `server.js`, `Dockerfile` — вариант с Node.js для платного хостинга (не обязателен).
@@ -98,7 +98,29 @@
 - `404.html` — страница «не найдено» в стиле сайта (`.htaccess` → `ErrorDocument`, GitHub Pages подхватывает сам).
 - `robots.txt`, `sitemap.xml` (на PHP-хостинге генерируется `sitemap.php` из данных). После деплоя: добавить сайт в Яндекс.Вебмастер (webmaster.yandex.ru, подтверждение через мета-тег или файл) и завести карточку в Яндекс.Бизнесе (business.yandex.ru) с ссылкой на сайт.
 
-## Бесплатный вариант 2: PHP-хостинг (InfinityFree), вход по паролю
+## Хостинг teatr-rat.ru (текущий, с 13 сентября 2026)
+
+Сайт живёт на своём сервере: Debian 12, Apache 2.4 + PHP 8.4 (FPM, пользователь `www-data`), GD, cURL, OpenSSL, Let's Encrypt. Домен `https://teatr-rat.ru`. Доступ: `ssh -i ~/.ssh/id_ed25519 teatr@teatr-rat.ru`, корень сайта `/home/teatr/public` (в Apache: `AllowOverride All`, `.htaccess` работает).
+
+**Выкладка** — rsync из корня репозитория, только код (данные и фото на сервере трогать нельзя, их пишет PHP от `www-data`):
+
+```bash
+rsync -az -e "ssh -i ~/.ssh/id_ed25519" --exclude .git --exclude node_modules --exclude 'data/' --exclude 'photos/' --exclude '*.zip' --exclude config.php --exclude .claude --exclude .DS_Store --exclude Dockerfile --exclude 'package*.json' --exclude server.js --exclude build.sh --exclude assets/site.js --exclude assets/site.css --exclude assets/intro.css ./ teatr@teatr-rat.ru:public/
+```
+
+Перед этим `./build.sh` (страницы подключают `.min`-файлы) и, если менялась статика, поднять `?v=` в страницах и `VERSION` в `sw.js`.
+
+Что устроено на сервере и почему:
+- `data/`, `photos/`, `data/history`, `data/og` — права 777, файлы внутри 666: PHP работает от `www-data`, а файлы заливались от `teatr`, sudo нет. Новые файлы PHP создаёт от `www-data`.
+- `config.php` с паролем админки лежит только на сервере (`cat ~/public/config.php`), в git не попадает. Сменить пароль можно из админки — тогда появится `data/password.json`, он приоритетнее.
+- `.user.ini` в корне: `upload_max_filesize=12M`, `post_max_size=14M`, `memory_limit=256M` — для PHP-FPM лимиты задаются так, `php_value` в `.htaccess` не работает.
+- `data/.htaccess` с `Require all denied`: данные (ключи пушей, подписки, хэш пароля) не читаются из браузера; страницы берут их через `api.php?a=data` (в `site.js` и `golos.html` это следующий вариант после `data/data.json`).
+- В `.htaccess` добавлен `DirectorySlash Off`: папки `admin/` и `golos/` (для GitHub Pages) иначе перехватывали адреса `/admin` и `/golos`, и mod_dir с правилами переписывания зацикливали редирект.
+- Пуши: cron для `api.php?a=push_send&key=…` можно поставить прямо на сервере (`crontab -e` у пользователя `teatr`, раз в час `curl -s "https://teatr-rat.ru/api.php?a=push_send&key=…" >/dev/null`), cron-job.org больше не нужен. Ключи VAPID перенесены, но подписки браузеров привязаны к старому домену — подписчики подпишутся заново.
+
+Переезд с InfinityFree: код — из репозитория, `data/` и `photos/` скачаны со старого хоста (InfinityFree отдаёт файлы только браузеру: перед запросами нужно решить его JS-проверку `aes.js` и подставить cookie `__test`; это сделано скриптом в Node), в `data.json` проставлено поле `site`. На старом домене `rat-theater.rf.gd` стоит `.htaccess` с 301-редиректом на новый.
+
+## Бесплатный вариант 2: PHP-хостинг (InfinityFree), вход по паролю — устарело, оставлено для истории
 
 Подходит, если не хочется возиться с токенами GitHub. Работает на любом хостинге с PHP 7.4+, включая бесплатный InfinityFree.
 

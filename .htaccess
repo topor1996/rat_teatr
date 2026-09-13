@@ -2,6 +2,8 @@
 DirectoryIndex index.php index.html
 AddType application/manifest+json .webmanifest
 RewriteEngine On
+# Папки admin/ и golos/ (для GitHub Pages) не должны перехватывать адреса /admin и /golos: без этого mod_dir добавляет слэш и получается цикл редиректов
+DirectorySlash Off
 RewriteRule ^admin/$ /admin [R=301,L]
 RewriteRule ^admin$ admin.html [L]
 RewriteRule ^golos/$ /golos [R=301,L]
