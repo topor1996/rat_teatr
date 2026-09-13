@@ -199,7 +199,7 @@
       <div id="list-actors"></div>
       <button class="btn ghost" data-add="actors">+ Добавить актёра</button>
       <div class="panel" style="margin-top:22px;font-size:12px;color:var(--muted)">
-        <b style="color:var(--text)">Как зритель переводит деньги.</b> Достаточно телефона актёра и названия его банка: на странице голосования зритель выбирает «Сбербанк» или «Т-Банк» — откроется его приложение с уже подставленным номером, — или «Другой банк» и переводит по номеру через СБП. Удобнее всего — страница оплаты в <a href="https://cloudtips.ru/" target="_blank" rel="noopener">CloudTips</a> (сервис чаевых Т-Банка, регистрируется физлицо за пару минут, деньги приходят на любую карту): вставьте её ссылку в поле «Ссылка на страницу оплаты» — кнопка «Перевести» поведёт прямо туда, а зритель выберет СБП или карту сам. Ссылку <code>qr.nspk.ru</code> банки дают только самозанятым и ИП.
+        <b style="color:var(--text)">Как зритель переводит деньги.</b> Достаточно телефона актёра и названия его банка: на странице голосования зритель выбирает свой банк из списка участников СБП — номер копируется и открывается его приложение (Сбер и Т-Банк подставляют номер сами), — либо переводит по номеру вручную. Ссылку <code>https://qr.nspk.ru/...</code> банки дают только самозанятым и ИП; если у актёра она есть, вставьте — кнопка поведёт прямо на неё.
       </div>
     </div>
 
@@ -534,7 +534,7 @@ const SECTIONS = {
       </div>
       <label>Описание сцены</label><textarea data-f="scene">${esc(a.scene)}</textarea>
       <label>Телефон для перевода (СБП)</label><input data-f="phone" type="tel" value="${esc(a.phone)}" placeholder="8 900 000-00-00 — можно без +7"><div class="hint" data-hint="sbp"></div>
-      <label>Ссылка на страницу оплаты (необязательно: CloudTips, qr.nspk.ru)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://pay.cloudtips.ru/p/...">
+      <label>Ссылка QR СБП (необязательно, только у самозанятых и ИП)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/...">
       <datalist id="bankList"><option>Сбербанк</option><option>Т-Банк</option><option>ВТБ</option><option>Альфа-Банк</option><option>Газпромбанк</option><option>Райффайзен</option><option>Почта Банк</option><option>Озон Банк</option><option>Яндекс Банк</option><option>МТС Банк</option><option>Совкомбанк</option><option>ПСБ</option></datalist>`,
   },
   reviews: {
@@ -599,8 +599,8 @@ function checkSbp(el, v) {
   const h = el.querySelector("[data-hint=sbp]"); if (!h) return; v = (v || "").trim();
   const ph = (el.querySelector("[data-f=phone]") || {}).value || "", d = ph.replace(/\D/g, ""), okTel = d.length === 11 || d.length === 10;
   const bank = ((el.querySelector("[data-f=bank]") || {}).value || "").trim();
-  if (/^https:\/\/(qr\.nspk\.ru|pay\.cloudtips\.ru)\//.test(v)) { h.textContent = "Есть страница оплаты — кнопка «Перевести» ведёт прямо на неё, зритель выберет свой банк там"; h.className = "hint good"; }
-  else if (v && /^https?:\/\//.test(v)) { h.textContent = "Ссылка на страницу оплаты — кнопка «Перевести» ведёт на неё. Убедитесь, что она открывается у всех"; h.className = "hint good"; }
+  if (/^https:\/\/qr\.nspk\.ru\//.test(v)) { h.textContent = "Есть ссылка QR СБП — кнопка ведёт прямо на неё"; h.className = "hint good"; }
+  else if (v && /^https?:\/\//.test(v)) { h.textContent = "Это не qr.nspk.ru — кнопка всё равно поведёт на эту ссылку, проверьте, что она открывается у всех"; h.className = "hint bad"; }
   else if (v) { h.textContent = "Ссылка должна начинаться с https:// — пока не используется"; h.className = "hint bad"; }
   else if (!ph) { h.textContent = "Без телефона кнопка перевода будет неактивна"; h.className = "hint bad"; }
   else if (!okTel) { h.textContent = "Номер должен быть из 11 цифр: +7 9XX XXX-XX-XX"; h.className = "hint bad"; }
