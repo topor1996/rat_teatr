@@ -53,7 +53,7 @@
 </div>
 
 <div class="sheet" id="sheet">
-  <div class="top"><span class="stamp"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="41" r="2.5" fill="currentColor"/></svg><span id="thName">Театр RAT</span></span><span class="site" id="siteHost">rat-theater.rf.gd</span></div>
+  <div class="top"><span class="stamp"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="41" r="2.5" fill="currentColor"/></svg><span id="thName">Театр RAT</span></span><span class="site" id="siteHost">teatr-rat.ru</span></div>
   <h1>Афи<em>ша</em></h1>
   <p class="sub" id="tagline"></p>
   <div class="band" id="band"></div>
@@ -73,7 +73,7 @@ function draw() {
   var events = R.upcoming(d).slice(0, n);
   document.getElementById("thName").textContent = th.name || "Театр RAT";
   document.getElementById("tagline").textContent = th.tagline || "";
-  var host = location.host || "rat-theater.rf.gd", base = R.siteUrl();
+  var host = location.host || "teatr-rat.ru", base = R.siteUrl();
   document.getElementById("siteHost").textContent = host; document.getElementById("url").textContent = host;
   document.getElementById("venue").textContent = [th.venue, th.address].filter(Boolean).join(" · ");
   var items = ["Афиша", th.name || "Театр RAT", "Билеты", "Голосуй рублём"]; var band = ""; for (var k = 0; k < 6; k++) items.forEach(function (t) { band += t + " ✦ "; });

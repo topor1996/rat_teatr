@@ -6,4 +6,4 @@ Disallow: /data/
 Disallow: /poster.html
 Allow: /
 
-Sitemap: https://rat-theater.rf.gd/sitemap.xml
+Sitemap: https://teatr-rat.ru/sitemap.xml
