@@ -317,9 +317,15 @@ window.RAT = (function () {
 
   /* ---------- отзывы ---------- */
   /* plays — словарь спектаклей по id (на главной): тогда над текстом подпись, к какому спектаклю отзыв, со ссылкой */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".rev .more"); if (!b) return;
+    var card = b.closest(".rev"), open = card.classList.toggle("open"); b.textContent = open ? "Свернуть" : "Развернуть";
+    if (!open) card.scrollIntoView({ block: "nearest" });
+  });
   function reviewCard(r, plays) {
     var p = plays && r.playId && plays[r.playId];
-    return '<div class="rev rv"><span class="tape"></span><span class="q">“</span>' + (p ? '<a class="play" href="' + esc(playUrl(p)) + '">' + esc(p.title) + "</a>" : "") + "<p>" + esc(r.text) + "</p>" +
+    var long = String(r.text || "").length > 420; /* длинные отзывы свёрнуты, кнопка «Развернуть» */
+    return '<div class="rev rv' + (long ? " long" : "") + '"><span class="tape"></span><span class="q">“</span>' + (p ? '<a class="play" href="' + esc(playUrl(p)) + '">' + esc(p.title) + "</a>" : "") + '<p class="rt">' + esc(r.text) + "</p>" + (long ? '<button type="button" class="more">Развернуть</button>' : "") +
       '<div class="who">' + esc(r.author || "Зритель") + (r.source ? (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.source) + "</a>" : '<a>' + esc(r.source) + "</a>") : "") + "</div></div>";
   }
 
