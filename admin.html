@@ -627,7 +627,7 @@ const SECTIONS = {
         <div><label>Источник</label><input data-f="source" value="${esc(r.source)}" placeholder="Афиша Daily"></div>
         <div><label>Спектакль</label><select data-f="playId"><option value="" ${!r.playId ? "selected" : ""}>— ко всем —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === r.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
       </div>
-      <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://...">`,
+      <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://… или @канал из Telegram"><div class="hint">Можно вставить «@канал» — станет ссылкой на t.me. Адрес без https:// тоже подойдёт.</div>`,
   },
   gallery: {
     img: "photo", label: g => (g.video ? "🎬 " : "") + (g.caption || (g.video ? "Видео" : "Фото")),
@@ -1234,6 +1234,7 @@ document.addEventListener("input", e => {
   item[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
   el.querySelector(".title").textContent = SECTIONS[key].label(item);
   if (t.dataset.f === "sbp" || t.dataset.f === "phone" || t.dataset.f === "bank") checkSbp(el, (el.querySelector("[data-f=sbp]") || {}).value);
+  if (t.dataset.f === "url" && key === "reviews") { const v = t.value.trim(), m = v.match(/^@([A-Za-z0-9_]{4,64})$/); const n = m ? "https://t.me/" + m[1] : (v && !/^https?:\/\//i.test(v) && /^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i.test(v) ? "https://" + v : v); if (n !== v) { t.value = n; item.url = n; } }
   if (key === "plays" && (t.dataset.f === "title" || t.dataset.f === "id")) renderList("events");
   markDirty();
 });

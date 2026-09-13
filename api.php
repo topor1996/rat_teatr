@@ -42,7 +42,12 @@ function readData(string $file): array {
   return is_array($j) ? $j : ['show' => ['theatre' => '', 'title' => '', 'dates' => ''], 'actors' => []];
 }
 function str($v, int $max = 500): string { return mb_substr(trim((string)($v ?? '')), 0, $max); }
-function url($v): string { $v = str($v, 500); return preg_match('~^https?://\S+$~', $v) ? $v : ''; }
+function url($v): string {
+  $v = str($v, 500);
+  if (preg_match('~^@([A-Za-z0-9_]{4,64})$~', $v, $m)) $v = 'https://t.me/' . $m[1]; // «@канал» из Telegram
+  elseif ($v !== '' && !preg_match('~^https?://~i', $v) && preg_match('~^[a-z0-9.-]+\.[a-z]{2,}(/\S*)?$~i', $v)) $v = 'https://' . $v; // «t.me/канал», «vk.com/…» без схемы
+  return preg_match('~^https?://\S+$~', $v) ? $v : '';
+}
 function img($v): string { $v = str($v); return preg_match('~^photos/[\w.-]+$~', $v) ? $v : ''; }
 function playMedia($v): array {
   $out = [];

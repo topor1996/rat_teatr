@@ -44,7 +44,7 @@ function writeData(data) {
   fs.renameSync(tmp, DATA_FILE);
 }
 const str = (v, max = 500) => String(v ?? "").trim().slice(0, max);
-const url = v => /^https?:\/\/\S+$/.test(str(v)) ? str(v) : "";
+const url = v => { let s = str(v, 500); const m = s.match(/^@([A-Za-z0-9_]{4,64})$/); if (m) s = "https://t.me/" + m[1]; else if (s && !/^https?:\/\//i.test(s) && /^[a-z0-9.-]+\.[a-z]{2,}(\/\S*)?$/i.test(s)) s = "https://" + s; return /^https?:\/\/\S+$/.test(s) ? s : ""; };
 const img = v => /^photos\/[\w.-]+$/.test(str(v)) ? str(v) : "";
 const media = v => /^photos\/[\w.-]+$/.test(str(v)) ? str(v) : "";
 function sanitize(input) {
