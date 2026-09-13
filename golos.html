@@ -206,6 +206,8 @@
   .pay-to{font-size:12px;color:var(--muted);margin:-4px 0 8px}
   .pay-sub{font-size:12px;color:#000;margin:12px 0 2px}
   .pay-note{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.35}
+  .pay-fail{font-size:12px;color:#000;background:#fff3b0;border:2px solid #000;padding:8px 10px;margin-top:8px;line-height:1.4}
+  .pay-fail a{color:#000;font-weight:700}
   .pay .bank{padding:9px 12px}
   .pay-to b{color:#000}
   .pay-h{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#000;margin:0 0 8px}
@@ -224,10 +226,10 @@
     margin-top:10px;padding:12px;border:2px dashed #000;font-size:12px;color:var(--muted);background:var(--paper-2)
   }
   .phone b{color:#000}
-  .phone .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
-  .phone .val{font-family:"Oswald","Oswald Fallback",sans-serif;font-size:20px;font-weight:600;color:#000;letter-spacing:.03em;white-space:nowrap}
+  .phone .row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .phone .val{font-family:"Oswald","Oswald Fallback",sans-serif;font-size:clamp(17px,4.6vw,20px);font-weight:600;color:#000;letter-spacing:.03em;white-space:nowrap}
   .copy{
-    flex:none;padding:7px 8px;border:2px solid #000;background:#fff;color:#000;
+    flex:none;margin-left:auto;padding:7px 8px;border:2px solid #000;background:#fff;color:#000;
     font:inherit;font-size:11px;cursor:pointer;text-transform:uppercase;letter-spacing:.05em
   }
   .copy.done{background:var(--acid)}
@@ -467,11 +469,12 @@ const payLinks = (tel, bank) => {
   const hit = BANK_IDS.find(b => b[0].test(bank || "")), member = hit ? "&workflowType=SBPTransfer&bankMemberId=" + hit[1] : "";
   return {
     sber: "https://www.sberbank.com/sms/pbpn?requisiteNumber=" + tel,
+    sberApp: "sberbankonline://payments/p2p?type=phone_number&requisiteNumber=" + tel,
     tbApp: "tinkoffbank://Main/PayByMobileNumber?numberPhone=" + tel + member,
     tbWeb: "https://www.tinkoff.ru/mybank/payments/persons/phone/?predefined=" + encodeURIComponent(JSON.stringify({ phone: "+" + tel }))
   };
 };
-const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent), isAndroid = /android/i.test(navigator.userAgent);
+const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent), isAndroid = /android/i.test(navigator.userAgent), isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const payUrl = a => a.sbp && /^https?:\/\//.test(a.sbp) ? a.sbp : location.origin + location.pathname.replace(/[^\/]*$/, "") + "golos?pay=" + slug(a.name);
 
 function render(SHOW, ACTORS) {
@@ -515,9 +518,10 @@ grid.innerHTML = ACTORS.map((a, i) => {
         </div>
       </div>
       <div class="pay-sub">Или сразу в приложение — номер подставится сам:</div>
-      <a class="bank sber" href="${esc(links.sber)}" target="_blank" rel="noopener"><span class="ic">С</span><span class="nm">Сбербанк</span></a>
-      <a class="bank tb" href="${esc(links.tbWeb)}" data-app="${esc(links.tbApp)}" target="_blank" rel="noopener"><span class="ic">Т</span><span class="nm">Т-Банк</span></a>
-      <div class="pay-note">Если приложение не открылось (так бывает на iPhone), переведите по номеру выше.</div>
+      <a class="bank sber" href="${esc(links.sber)}" data-ios="${esc(links.sberApp)}" data-bank="Сбера" target="_blank" rel="noopener"><span class="ic">С</span><span class="nm">Сбербанк</span></a>
+      <a class="bank tb" href="${esc(links.tbWeb)}" data-app="${esc(links.tbApp)}" data-ios="${esc(links.tbApp)}" data-bank="Т-Банка" target="_blank" rel="noopener"><span class="ic">Т</span><span class="nm">Т-Банк</span></a>
+      <div class="pay-fail" hidden>Приложение <span class="pf-bank"></span> не открылось — переведите по номеру выше. <a class="pf-web" href="#" target="_blank" rel="noopener">Веб-версия</a><span class="pf-cert" hidden>: сайт Сбера в Safari открывается только с сертификатом Минцифры или в Яндекс Браузере</span>.</div>
+      <div class="pay-note">Кнопки открывают приложение банка с подставленным номером. На iPhone это работает не у всех: приложения Сбера и Т-Банка удалены из App Store, и версии «с сайта банка» ссылок не понимают.</div>
     </div>` : "";
   return `
   <article class="card" id="a-${slug(a.name)}">
@@ -588,14 +592,27 @@ grid.addEventListener("click", async e => {
     try { navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&ev=golos"); } catch {}
     return;
   }
-  if (t.dataset.app !== undefined) {
-    // Схему tinkoffbank:// пробуем только на Android: на iPhone приложения банков ставятся в обход App Store
-    // и схему не регистрируют — Safari показывает «адрес недействителен». Там идём по обычной ссылке tinkoff.ru.
-    if (!isAndroid) return;
-    e.preventDefault();
-    const web = t.href; location.href = t.dataset.app;
-    setTimeout(() => { if (!document.hidden) { const w = window.open(web, "_blank"); if (!w) location.href = web; } }, 1400);
-    return;
+  if (t.dataset.ios !== undefined || t.dataset.app !== undefined) {
+    const web = t.href, pay = t.closest(".pay"), fail = pay.querySelector(".pay-fail");
+    if (isAndroid && t.dataset.app) {
+      // Android: сначала схема приложения, через 1,4 с — веб-версия (Сбер на Android открывается по обычной https-ссылке)
+      e.preventDefault(); location.href = t.dataset.app;
+      setTimeout(() => { if (!document.hidden) { const w = window.open(web, "_blank"); if (!w) location.href = web; } }, 1400);
+      return;
+    }
+    if (isIOS && t.dataset.ios) {
+      // iPhone: универсальные https-ссылки понимают только сборки из App Store (их нет), поэтому пробуем схему приложения.
+      // Если приложение не установлено или это «веб-версия с сайта банка», Safari покажет «адрес недействителен» —
+      // тогда показываем подсказку, а в веб-версию Сбера не отправляем: в Safari она не открывается (российский сертификат).
+      e.preventDefault(); fail.hidden = true; location.href = t.dataset.ios;
+      setTimeout(() => {
+        if (document.hidden) return;
+        fail.querySelector(".pf-bank").textContent = t.dataset.bank; fail.querySelector(".pf-web").href = web;
+        fail.querySelector(".pf-cert").hidden = !t.classList.contains("sber"); fail.hidden = false;
+      }, 1600);
+      return;
+    }
+    return; // компьютер: обычная ссылка в веб-версию
   }
   if (t.dataset.phone !== undefined) {
     const p = document.getElementById("ph-" + t.dataset.phone);
