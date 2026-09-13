@@ -923,37 +923,50 @@ window.RAT = (function () {
     if (!cast.length) cast = (actors || []).filter(function (a) { return castMatches(a, p); }).map(function (a) { return { name: a.name, role: "", photo: a.photo }; });
     cast = cast.slice(0, 6);
     var sentences = String(p.description || "").replace(/\s+/g, " ").split(/(?<=[.!?…])\s+/).filter(function (x) { return x.length > 25 && x.length < 140; }).slice(0, 3);
+    /* Титры: жанр и до трёх предложений описания, по очереди и без наложений — каждому ровная доля проезда камеры,
+       чтобы его можно было прочитать, не ловя момент. Имена актёров не дублируем: они подписаны под самими фигурами. */
     var caps = [];
-    if (p.genre) caps.push({ at: .06, html: "<em>" + esc(p.genre) + "</em>" });
-    sentences.forEach(function (t, i) { caps.push({ at: .18 + i * .16, html: esc(t) }); });
-    cast.forEach(function (c, i) { caps.push({ at: .22 + i * .1, html: esc(c.name) + (c.role ? " <em>— " + esc(c.role) + "</em>" : "") }); });
-    caps.sort(function (a, b) { return a.at - b.at; });
+    if (p.genre) caps.push({ html: "<em>" + esc(p.genre) + "</em>" });
+    sentences.forEach(function (t) { caps.push({ html: esc(t) }); });
+    var step = caps.length ? (.74 - .05) / caps.length : 0;
+    caps.forEach(function (c, i) { c.at = .05 + i * step; c.len = step * .88; });
     var next = d && d.events ? upcoming(d).filter(function (e) { return e.playId === p.id; })[0] : null, th = d ? d.theatre : {};
     var xs = [-38, 36, -18, 24, -30, 30];
     wrap.innerHTML = '<div class="stage" id="stage"><div class="lamp l"></div><div class="lamp r"></div><div class="cam">' +
       '<div class="floor"></div>' +
       '<div class="sl sposter" style="--z:0px;--y:-4vh">' + (p.poster ? pic(p.poster, 'alt=""') : '<div class="ph"><span class="ttl">' + esc(p.title) + "</span></div>") + "</div>" +
       cast.map(function (c, i) { return '<div class="sl cut" style="--z:' + (-700 - i * 320) + 'px;--x:' + xs[i % xs.length] + 'vw;--y:6vh;--o:0">' + (c.photo ? pic(c.photo, 'alt="' + esc(c.name) + '" loading="lazy"') : '<div class="ph">' + esc(initials(c.name)) + "</div>") + '<div class="shadow"></div><div class="who">' + esc(c.name) + (c.role ? "<small>" + esc(c.role) + "</small>" : "") + "</div></div>"; }).join("") +
-      "</div>" + caps.map(function (c, i) { return '<div class="cap" data-at="' + c.at + '">' + c.html + "</div>"; }).join("") +
+      "</div>" + caps.map(function (c, i) { return '<div class="cap" data-at="' + c.at.toFixed(3) + '" data-len="' + c.len.toFixed(3) + '">' + c.html + "</div>"; }).join("") +
       '<div class="curtain l"></div><div class="curtain r"></div>' +
       '<div class="final"><h3>' + esc(p.title) + "</h3>" + (next ? '<div class="hint" style="position:static;animation:none;margin-bottom:12px;transform:none">' + esc(fmtLong(next)) + "</div>" : "") + '<div class="row">' + (next && !hasBadge(next, "soldout") ? buyBtn(next, p, th, "Купить билет", "light") : (next ? '<span class="btn disabled">Билетов нет</span>' : playWaitBtn(p))) + '<a class="btn ghost onDark" href="#dates">Все даты</a></div></div>' +
       '<div class="hint">листай — камера едет на сцену ↓</div></div>';
     var st = wrap.querySelector(".stage"), cuts = wrap.querySelectorAll(".cut"), capsEl = wrap.querySelectorAll(".cap"), fin = wrap.querySelector(".final"), poster = wrap.querySelector(".sposter");
-    var ticking = false;
-    var upd = function () {
-      ticking = false;
-      var r = wrap.getBoundingClientRect(), total = r.height - window.innerHeight, prog = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+    /* Прогресс сглаживается: цель берётся из прокрутки, а картинка догоняет её с инерцией (lerp), поэтому резкие
+       движения колеса не дёргают сцену, а титры не проскакивают. */
+    var target = 0, cur = 0, raf = null;
+    var readTarget = function () { var r = wrap.getBoundingClientRect(), total = r.height - window.innerHeight; return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0; };
+    var apply = function (prog) {
       var cam = Math.min(prog / .78, 1); /* 0..0.78 — проезд, дальше занавес */
       st.style.setProperty("--p", cam.toFixed(4));
       poster.style.setProperty("--o", Math.max(0, 1 - cam * 2.2).toFixed(3)); poster.style.setProperty("--z", (-cam * 2400).toFixed(0) + "px"); /* постер уходит назад быстрее камеры и гаснет, а не пролетает сквозь неё */
       cuts.forEach(function (c, i) { var z = -700 - i * 320, dist = z + cam * 1500; /* расстояние до камеры: <0 — впереди, >0 — позади */ var o = dist < -900 ? 0 : dist < -350 ? (dist + 900) / 550 : dist <= 150 ? 1 : dist < 400 ? (400 - dist) / 250 : 0; c.style.setProperty("--o", o.toFixed(3)); });
-      var cur = null; capsEl.forEach(function (c) { var at = +c.dataset.at; if (prog >= at && prog < at + .13) cur = c; });
-      capsEl.forEach(function (c) { c.classList.toggle("on", c === cur); });
+      var on = null; capsEl.forEach(function (c) { var at = +c.dataset.at, len = +c.dataset.len || .13; if (prog >= at && prog < at + len) on = c; });
+      capsEl.forEach(function (c) { c.classList.toggle("on", c === on); });
       var cprog = Math.max(0, (prog - .78) / .16); st.style.setProperty("--c", Math.min(1, cprog).toFixed(3));
       var f = Math.max(0, (prog - .9) / .1); st.style.setProperty("--f", Math.min(1, f).toFixed(3)); fin.classList.toggle("on", f > .5); st.classList.toggle("done", prog > .97);
     };
-    var onScroll = function () { if (document.hidden) { upd(); return; } if (!ticking) { ticking = true; requestAnimationFrame(upd); } };
-    window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll); upd();
+    var loop = function () {
+      cur += (target - cur) * .14; if (Math.abs(target - cur) < .0005) cur = target;
+      apply(cur);
+      if (cur !== target) raf = requestAnimationFrame(loop); else raf = null;
+    };
+    var onScroll = function () {
+      target = readTarget();
+      if (document.hidden) { cur = target; apply(cur); return; }
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true }); window.addEventListener("resize", onScroll);
+    target = cur = readTarget(); apply(cur);
   }
   function fx() { navHint(); glitch(); spray(); marqLive(); reviewInit(); copyInit(); wallFilterInit(); recorderInit(); peelInit(); } /* tilt() — живая стена — отключена по просьбе театра, функция оставлена */
 
