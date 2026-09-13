@@ -7,7 +7,7 @@
 <link rel="icon" href="/favicon.ico?v=2" sizes="any">
 <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260914o" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260914p" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -231,6 +231,7 @@
           <div><label>Общая ссылка на билеты</label><input data-th="ticketsUrl" placeholder="https://www.teatrdoc.ru/performances/"></div>
           <div><label>ID партнёра в Афише (tickets.afisha.ru)</label><input data-th="afishaPartnerId" placeholder="37"><p class="hint">У Театра.doc — 37. Если пусто, кнопки «Купить билет» просто ведут по ссылкам. Как найти ID: на teatrdoc.ru правой кнопкой → «Посмотреть код», Ctrl+F «openModal».</p></div>
         </div>
+        <label>Логотип в шапке</label><select data-th="logoColor"><option value="">Белый (как текст меню)</option><option value="acid">Зелёный (фирменный)</option></select>
         <label>Слоган (под заголовком на главной)</label><input data-th="tagline">
         <label>О театре</label><textarea data-th="about" style="min-height:120px"></textarea>
         <div class="row">

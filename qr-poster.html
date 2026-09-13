@@ -21,7 +21,8 @@
   .card.dark{background:#0a0a0a;color:#f4f2ea;border-color:#444}
   .card.light{background:#fff;color:#0a0a0a}
   .top{width:100%;display:flex;justify-content:center;align-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:9pt;letter-spacing:.12em;text-transform:uppercase}
-  .stamp{border:1.5px solid currentColor;padding:1.5mm 2.5mm;transform:rotate(-2deg)}
+  .stamp{display:inline-flex;align-items:center;gap:2mm;border:1.5px solid currentColor;padding:1.5mm 2.5mm;transform:rotate(-2deg)}
+  .stamp svg{width:8mm;height:5.6mm}
   .title{margin-top:6mm;line-height:.9;text-transform:uppercase}
   .title .a{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:30pt}
   .title .b{display:block;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:32pt;color:#c9ff3d;transform:rotate(-2.5deg);margin-top:1mm}
@@ -57,7 +58,7 @@ var preview = q.get("preview") === "1";
 if (preview) { document.body.classList.add("preview"); cfg.count = 1; document.getElementById("bar").hidden = true; }
 function card() {
   return '<div class="card ' + cfg.theme + '">' +
-    (cfg.stamp ? '<div class="top"><span class="stamp">' + esc(cfg.stamp) + "</span></div>" : "") +
+    (cfg.stamp ? '<div class="top"><span class="stamp"><svg><use href="/assets/logo.svg#rat"/></svg>' + esc(cfg.stamp) + "</span></div>" : "") +
     '<div class="title">' + (cfg.t1 ? '<span class="a">' + esc(cfg.t1) + "</span>" : "") + (cfg.t2 ? '<span class="b">' + esc(cfg.t2) + "</span>" : "") + "</div>" +
     '<div class="sub">' + esc(cfg.sub) + "</div>" +
     '<div class="qrbox"><div class="qr"></div></div>' +
