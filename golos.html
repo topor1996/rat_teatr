@@ -209,10 +209,11 @@
   .pay-fail{font-size:12px;color:#000;background:#fff3b0;border:2px solid #000;padding:8px 10px;margin-top:8px;line-height:1.4}
   .pay-fail a,.pay-fail button{color:#000;font-weight:700;font:inherit;background:none;border:0;padding:0;text-decoration:underline;cursor:pointer}
   .pay-h{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#000;margin:0 0 8px}
-  .banks{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .banks{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px}
   .bank{display:flex;align-items:center;gap:8px;min-width:0;padding:8px 9px;border:2px solid #000;background:#fff;color:#000;text-decoration:none;cursor:pointer;font:inherit;font-size:13px;font-weight:700;text-align:left;min-height:44px}
   .bank:hover{background:#000;color:#fff}
-  .bank .ic{flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:13px;color:#fff;background:#000;object-fit:contain;overflow:hidden}
+  .bank .ic{flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:13px;color:#fff;object-fit:contain;overflow:hidden;background:transparent}
+  .bank span.ic{background:#000}
   .bank .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .bank.more{grid-column:1/-1;justify-content:center;background:transparent}
   .bank.more:hover{background:#000}
