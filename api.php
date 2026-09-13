@@ -186,7 +186,8 @@ function sendMail(string $to, string $subject, string $body): bool {
   $d = readData($DATA_FILE); $host = preg_replace('~^www\.~', '', (string)($_SERVER['HTTP_HOST'] ?? 'teatr-rat.ru'));
   $reply = (string)($d['theatre']['email'] ?? ''); $name = (string)(($d['theatre']['name'] ?? '') ?: 'Театр RAT');
   $enc = fn(string $s) => '=?UTF-8?B?' . base64_encode($s) . '?=';
-  global $config; if (!empty($config['smtp']['host'])) return smtpSend($config['smtp'], $to, $subject, $body, $reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? $reply : '');
+  global $config; $smtp = $config['smtp'] ?? null;
+  if (!empty($smtp['host']) && !empty($smtp['pass']) && $smtp['pass'] !== 'ВСТАВЬТЕ_ПАРОЛЬ' && smtpSend($smtp, $to, $subject, $body, $reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? $reply : '')) return true; // иначе — через postfix сервера
   $h = "From: {$enc($name)} <noreply@{$host}>\r\n" . ($reply && filter_var($reply, FILTER_VALIDATE_EMAIL) ? "Reply-To: {$reply}\r\n" : '') . "MIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\nX-Mailer: teatr-rat.ru";
   return @mail($to, $enc($subject), $body, $h, '-f noreply@' . $host);
 }
