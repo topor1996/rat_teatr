@@ -20,7 +20,8 @@
   .press .fact{background:var(--paper);color:var(--ink);padding:14px 16px;box-shadow:0 10px 24px rgba(0,0,0,.4);transform:rotate(-.6deg)}
   .press .fact:nth-child(2n){transform:rotate(.7deg)}
   .press .fact b{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#5a574f;margin-bottom:4px}
-  .press .fact a{color:#000}
+  .press .fact a{color:#000;overflow-wrap:anywhere}
+  .press .fact small{display:block;margin-top:4px;font-size:11px;color:#5a574f}
   .press .dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
   .press .dl a{display:block;background:var(--paper);color:var(--ink);text-decoration:none;padding:10px;box-shadow:0 10px 24px rgba(0,0,0,.4)}
   .press .dl a img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#222}
@@ -95,7 +96,7 @@ window.addEventListener("DOMContentLoaded", function () {
     ph = ph.filter(function (x) { if (seen[x.src]) return false; seen[x.src] = 1; return true; });
     document.getElementById("photos").innerHTML = ph.map(function (x) { return card(x.src, x.title, x.sub); }).join("") || '<div class="note">Фото появятся, когда театр их загрузит.</div>';
     var tg = th.telegram ? '<a href="' + esc(th.telegram) + '" target="_blank" rel="noopener">' + esc(th.telegram.replace(/^https?:\/\/(t\.me|telegram\.me)\//, "@")) + "</a>" : "";
-    document.getElementById("contacts").innerHTML = fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", th.ticketsUrl ? '<a href="' + esc(th.ticketsUrl) + '" target="_blank" rel="noopener">' + esc(th.ticketsUrl.replace(/^https?:\/\//, "").replace(/\/$/, "")) + "</a>" : "");
+    document.getElementById("contacts").innerHTML = fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", '<a href="./#afisha">' + esc(location.host) + "/#afisha</a>" + (th.ticketsUrl ? "<small>Покупка прямо на сайте, ближайшие показы в афише. Площадка: " + esc(th.ticketsUrl.replace(/^https?:\/\//, "").split("/")[0]) + "</small>" : ""));
     if (window.RAT && RAT.reveal) RAT.reveal();
   };
   fetch("api.php?a=data", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return fetch("data/data.json").then(function (r) { return r.json(); }); }).then(load);
