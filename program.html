@@ -70,7 +70,7 @@ function a5(p, d) {
     '<div class="top"><span class="stamp">' + esc(th.name || "Театр RAT") + '</span><div class="venue">' + esc(th.venue || "") + (th.address ? "<br>" + esc(th.address) : "") + "</div></div>" +
     "<h1>" + esc(p.title) + "</h1>" +
     (p.genre ? '<div><span class="genre">' + esc(p.genre) + "</span></div>" : "") +
-    '<div class="meta">' + (p.duration ? "<b>" + esc(p.duration) + "</b>" : "") + (p.age ? (p.duration ? " · " : "") + "<b>" + esc(p.age) + "</b>" : "") + (p.duration || p.age ? " · " : "") + "без антракта" + "</div>" +
+    '<div class="meta">' + (p.duration ? "<b>" + esc(p.duration) + "</b>" : "") + (p.age ? (p.duration ? " · " : "") + "<b>" + esc(p.age) + "</b>" : "") + "</div>" +
     (ev.length ? '<div class="dates">' + ev.map(function (e) { return "<span>" + esc(fmt(e)) + "</span>"; }).join("") + "</div>" : "") +
     (desc ? '<div class="desc' + (desc.length > 600 ? " long" : "") + '">' + esc(desc) + "</div>" : "") +
     (cast.length ? "<h2>Действующие лица и исполнители</h2><div class=\"cast\">" + cast.map(function (c) { return '<div><span class="n">' + esc(c.name) + '</span><span class="r">' + esc(c.role || "") + "</span></div>"; }).join("") + "</div>" : "") +
