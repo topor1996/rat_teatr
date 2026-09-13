@@ -26,6 +26,9 @@
   .msg h1{margin:0;font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;text-transform:uppercase;font-size:clamp(34px,8vw,84px);line-height:.95;letter-spacing:.02em;animation:blink 1.4s steps(2,end) infinite}
   @keyframes blink{50%{opacity:.35}}
   .msg p{margin:12px 0 22px;color:#9c978a;font-size:14px;max-width:520px}
+  .msg .logo{position:absolute;left:18px;top:14px;color:#c9ff3d;text-decoration:none;display:inline-flex;align-items:center;gap:8px;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;border:2px solid #f4f2ea;padding:5px 9px;transform:rotate(-2deg)}
+  .msg .logo svg{width:34px;height:24px;color:#c9ff3d}
+  .msg .logo span{color:#f4f2ea}
   .msg .code{position:absolute;right:18px;top:12px;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:clamp(40px,9vw,90px);color:#c9ff3d;transform:rotate(6deg);opacity:.9}
   .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
   .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border:2.5px solid #c9ff3d;background:#c9ff3d;color:#000;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer}
@@ -39,6 +42,7 @@
 <body>
 <div class="scr" aria-hidden="true"><div class="noise"></div><div class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="roll"></div><div class="scan"></div><div class="vig"></div></div>
 <main class="msg">
+  <a class="logo" href="/"><svg><use href="/assets/logo.svg#rat"/></svg><span>Театр RAT</span></a>
   <span class="code">404</span>
   <h1>Нет сигнала</h1>
   <p>Такого канала в сетке нет: страница переехала или адрес с опечаткой. Афиша и билеты в эфире.</p>
