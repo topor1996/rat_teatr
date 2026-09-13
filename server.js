@@ -125,6 +125,8 @@ app.use("/assets", express.static(path.join(ROOT, "assets"), { maxAge: "1d" }));
 app.use("/fonts", express.static(path.join(ROOT, "fonts"), { maxAge: "30d" }));
 app.use("/vendor", express.static(path.join(ROOT, "vendor"), { maxAge: "30d" }));
 app.get("/play.html", (req, res) => res.sendFile(path.join(ROOT, "play.html")));
+app.get("/play/:id", (req, res) => res.sendFile(path.join(ROOT, "play.html")));
+app.get("/actor/:id", (req, res) => res.sendFile(path.join(ROOT, "actor.html")));
 app.get("/data/data.json", (req, res) => { res.set("Cache-Control", "no-store"); res.json(readData()); });
 app.use("/photos", express.static(PHOTOS_DIR, { maxAge: "1d" }));
 
@@ -220,7 +222,7 @@ app.get("/calendar.ics", (req, res) => {
     if (e.hidden || !e.date || e.date < since || (e.playId && !plays[e.playId])) continue;
     const p = plays[e.playId], title = p ? p.title : (e.note || "Спектакль"), time = e.time || "19:00";
     const start = new Date(e.date + "T" + time + ":00+03:00"); let mins = 90; const m = /(\d+)\s*час/.exec(p?.duration || ""), mm = /(\d+)\s*мин/.exec(p?.duration || ""); if (m) mins = +m[1] * 60 + (mm ? +mm[1] : 0); else if (mm) mins = +mm[1];
-    const end = new Date(start.getTime() + mins * 6e4), url = p ? base + "play.html?id=" + encodeURIComponent(p.id) : base, ticket = e.ticketUrl || p?.ticketUrl || th.ticketsUrl || "";
+    const end = new Date(start.getTime() + mins * 6e4), url = p ? base + "play/" + encodeURIComponent(p.id) : base, ticket = e.ticketUrl || p?.ticketUrl || th.ticketsUrl || "";
     L.push("BEGIN:VEVENT", "UID:" + e.date + "-" + time.replace(":", "") + "-" + (e.playId || "show") + "@" + req.get("host"), "DTSTAMP:" + z(new Date()), "DTSTART:" + z(start), "DTEND:" + z(end),
       "SUMMARY:" + esc((e.badges || []).includes("soldout") ? "[аншлаг] " : "") + esc(title + " — " + name), "LOCATION:" + esc((e.venue || th.venue || "") + (th.address ? ", " + th.address : "")),
       "DESCRIPTION:" + esc([p?.genre, p ? (p.description || "").slice(0, 300) : "", e.note, ticket ? "Билеты: " + ticket : "", url].filter(Boolean).join("\n")), "URL:" + url, "STATUS:CONFIRMED", "BEGIN:VALARM", "TRIGGER:-PT24H", "ACTION:DISPLAY", "DESCRIPTION:" + esc("Завтра: " + title), "END:VALARM", "END:VEVENT");
@@ -349,7 +351,7 @@ async function pushRun(base) {
   const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
   const when = e => { const [, m, d] = e.date.split("-").map(Number); return d + " " + MONTHS[m - 1] + (e.time ? " в " + e.time : ""); };
   const title = e => plays[e.playId]?.title || e.note || "Спектакль";
-  const urlOf = e => plays[e.playId] ? "play.html?id=" + encodeURIComponent(e.playId) : "./";
+  const urlOf = e => plays[e.playId] ? "play/" + encodeURIComponent(e.playId) : "./";
   const hoursTo = e => (new Date(e.date + "T" + (e.time || "19:00") + ":00+03:00") - Date.now()) / 36e5;
   const todayMsk = new Date(Date.now() + 3 * 36e5).toISOString().slice(0, 10);
   const mails = readAny(WAIT_FILE, []);
@@ -443,7 +445,7 @@ app.post("/api/waitlist", (req, res) => {
 
 app.get("/sitemap.xml", (req, res) => {
   const d = readData(); const base = `${req.protocol}://${req.get("host")}`;
-  const urls = ["/", "/golos", ...(d.plays || []).map(p => "/play.html?id=" + encodeURIComponent(p.id))];
+  const urls = ["/", "/golos", ...(d.plays || []).map(p => "/play/" + encodeURIComponent(p.id))];
   res.type("application/xml").send('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' + urls.map(u => `<url><loc>${base}${u.replace(/&/g, "&amp;")}</loc></url>`).join("") + "</urlset>");
 });
 

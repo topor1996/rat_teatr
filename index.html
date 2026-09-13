@@ -14,21 +14,21 @@
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
 <!--/OG-->
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Театр RAT">
-<link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260914m" rel="stylesheet">
-<link href="assets/intro.min.css?v=20260914m" rel="stylesheet">
-<link href="assets/site.min.css?v=20260914m" rel="stylesheet">
+<link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/oswald-400-700-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-latin.woff2">
+<link href="/fonts/fonts.css?v=20260914n" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914n" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914n" rel="stylesheet">
 </head>
 <body>
 
@@ -52,7 +52,7 @@ if(skip||(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(inte
 var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");el.classList.add("pre");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
 el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);
 /* ждём картинку телевизора не дольше 900 мс: на медленной сети заставку пропускаем, чтобы не держать чёрный экран */
-var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
+var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="/assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">
@@ -68,7 +68,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
 
 <nav>
   <div class="wrap">
-    <a class="stamp" href="./"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <a class="stamp" href="/"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
     <ul>
       <li><a href="#afisha">Афиша</a></li>
       <li><a href="#plays">Спектакли</a></li>
@@ -77,8 +77,8 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
       <li><a href="#backstage">Бэкстейдж</a></li>
       <li><a href="#about">О театре</a></li>
       <li><a href="#contacts">Контакты</a></li>
-      <li><a href="press">Прессе</a></li>
-      <li><a class="cta" href="golos">Голосуй рублём</a></li>
+      <li><a href="/press">Прессе</a></li>
+      <li><a class="cta" href="/golos">Голосуй рублём</a></li>
     </ul>
   </div>
 </nav>
@@ -152,7 +152,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <div id="shareBox" style="margin-top:26px"></div>
   </section>
 
-  <a class="golos" href="golos" style="text-decoration:none">
+  <a class="golos" href="/golos" style="text-decoration:none">
     <div class="big">Голосуй рублём</div>
     <div><p>После спектакля зрители выбирают лучшую сцену и переводят актёру благодарность через СБП. Любой банк, любая сумма.</p></div>
     <span class="btn">Открыть</span>
@@ -166,11 +166,11 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <div id="diag" style="color:#ff3b2f;font-size:11px;margin-bottom:10px;white-space:pre-wrap"></div>
     <svg class="rat"><use href="#rat"/></svg>
     <div id="footName">Театр RAT</div>
-    <div style="margin-top:6px"><a href="golos">Голосуй рублём</a> · <a href="press">Прессе и партнёрам</a></div>
+    <div style="margin-top:6px"><a href="/golos">Голосуй рублём</a> · <a href="/press">Прессе и партнёрам</a></div>
   </div>
 </footer>
 
-<script src="assets/site.min.js?v=20260914m" defer></script>
+<script src="/assets/site.min.js?v=20260914n" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -280,7 +280,7 @@ function render(d) {
   document.querySelectorAll('nav li a[href^="#"]').forEach(function (a) { var sec = document.getElementById(a.getAttribute("href").slice(1)); if (sec && sec.hidden) a.parentNode.hidden = true; });
 
   document.getElementById("calsub").innerHTML = R.calendarLinks();
-  R.todayBar(d, "golos"); R.jsonLd(d); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "./" }); R.toTop(); R.scrollProgress(); R.rehash(); R.hit("home");
+  R.todayBar(d, "/golos"); R.jsonLd(d); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "/" }); R.toTop(); R.scrollProgress(); R.rehash(); R.hit("home");
 }
 
 RAT.marquee(["Театр RAT", "Афиша", "Спектакли", "Билеты", "Голосуй рублём"]);

@@ -13,7 +13,9 @@ window.RAT = (function () {
 
   /* адрес сайта для ссылок в соцсети и разметки */
   var siteUrl = function () { return location.origin + location.pathname.replace(/[^\/]*$/, ""); };
-  var playUrl = function (p) { return "play.html?id=" + encodeURIComponent(p.id); };
+  /* Адреса без .html (правила в .htaccess); на GitHub Pages переписывания нет — там старый вид */
+  var gh = /github\.io$/.test(location.hostname);
+  var playUrl = function (p) { return gh ? "play.html?id=" + encodeURIComponent(p.id) : "/play/" + encodeURIComponent(p.id); };
 
   /* ---------- данные ---------- */
   function loadData(fallback) {
@@ -238,7 +240,7 @@ window.RAT = (function () {
       if (!live) { var h = Math.floor(diff / 3600e3), m = Math.floor(diff % 3600e3 / 60e3); when = h > 0 ? "через " + h + " ч " + m + " мин" : "через " + m + " мин"; }
       box.innerHTML = '<div class="wrap"><span class="lbl">' + (live ? "Спектакль идёт" : "Сегодня играем") + '</span>' +
         '<span class="txt"><b>' + esc(name) + "</b> · " + esc(ev.time || "") + " · " + esc(ev.venue || d.theatre.venue || "") + (when ? " · " + when : "") + "</span>" +
-        (live ? '<a class="btn" href="' + (golosHref || "golos") + '">Голосуй рублём</a>'
+        (live ? '<a class="btn" href="' + (golosHref || (gh ? "golos" : "/golos")) + '">Голосуй рублём</a>'
               : (hasBadge(ev, "soldout") ? '<span class="btn disabled">Билетов нет</span>' : (buyBtn(ev, p, d.theatre, "Билеты") || '<a class="btn" href="#afisha">Билеты</a>'))) + "</div>";
       box.hidden = false;
     };
@@ -265,7 +267,7 @@ window.RAT = (function () {
   var TRANSLIT = { а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "e", ж: "zh", з: "z", и: "i", й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t", у: "u", ф: "f", х: "h", ц: "c", ч: "ch", ш: "sh", щ: "sch", ъ: "", ы: "y", ь: "", э: "e", ю: "yu", я: "ya" };
   function actorSlug(name) { return String(name || "").toLowerCase().split("").map(function (ch) { return TRANSLIT[ch] !== undefined ? TRANSLIT[ch] : ch; }).join("").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60); }
   function actorHasPage(a) { return !!(a && a.photo && (a.bio || a.roles)); }
-  function actorUrl(a) { return "actor.html?id=" + encodeURIComponent(actorSlug(a.name)); }
+  function actorUrl(a) { return gh ? "actor.html?id=" + encodeURIComponent(actorSlug(a.name)) : "/actor/" + encodeURIComponent(actorSlug(a.name)); }
   /* картинка с уменьшенной копией: photos/x.webp → photos/x-s.webp; если копии нет (старые фото, GitHub Pages) — берётся оригинал */
   function pic(path, attrs) {
     if (!path) return "";
@@ -542,7 +544,7 @@ window.RAT = (function () {
       .catch(function (err) { if (err instanceof Error) throw err; return fetch("api/" + nodePath, opts).then(chk); });
   }
   var b64u8 = function (s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
-  function swReady() { return navigator.serviceWorker.register("sw.js").then(function () { return navigator.serviceWorker.ready; }); }
+  function swReady() { return navigator.serviceWorker.register(gh ? "sw.js" : "/sw.js").then(function () { return navigator.serviceWorker.ready; }); }
   function pushSubscribe() {
     if (!pushOk()) {
       var ios = /iP(hone|ad)/.test(navigator.userAgent) && !navigator.standalone;
@@ -632,7 +634,7 @@ window.RAT = (function () {
       var gl = ev.target.closest('a[href="golos"],a[href$="/golos"],a[href^="golos#"]'); if (gl) track("golos");
     });
     // офлайн-афиша (PWA): регистрируем service worker сразу, кнопка «Установить» появится, если браузер разрешит
-    if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register("sw.js").catch(function () {});
+    if ("serviceWorker" in navigator && window.isSecureContext) navigator.serviceWorker.register(gh ? "sw.js" : "/sw.js").catch(function () {});
     var deferred = null;
     window.addEventListener("beforeinstallprompt", function (e) {
       e.preventDefault(); deferred = e;
@@ -745,7 +747,7 @@ window.RAT = (function () {
   var RAT_SVG = '<svg class="rat" viewBox="0 0 64 28" aria-hidden="true"><path d="M21 17c0-8 8-11 16-11 7 0 11 2 14 5l11 6-11 4c-3 3-7 4-14 4-8 0-16-1-16-8z" fill="#000"/><circle cx="48" cy="8" r="3.2" fill="#000"/><path d="M21 17C13 15 9 25 1 21" fill="none" stroke="#000" stroke-width="2.2" stroke-linecap="round"/><path d="M28 24l-2 4M34 25v3M43 25l-1 3M48 23l2 5" stroke="#000" stroke-width="2.6" stroke-linecap="round"/><circle cx="54" cy="15" r="1.4" fill="#c9ff3d"/></svg>';
   function mobileBar(opts) {
     opts = opts || {}; if (document.querySelector(".mbar")) return;
-    var home = opts.home || "./";
+    var home = opts.home || (gh ? "./" : "/");
     document.body.insertAdjacentHTML("beforeend", '<nav class="mbar" aria-label="Быстрые действия">' +
       '<a href="' + esc(opts.afisha || home + "#afisha") + '"><span class="ic">📅</span>Афиша</a>' +
       (opts.buy ? '<button type="button" class="buy sticky" data-mbuy><b>' + esc(opts.buy.label || "Купить") + '</b><small>' + esc(opts.buy.sub || "") + "</small></button>" : '<button type="button" class="buy" data-mbuy><span class="ic">🎟</span>Билеты</button>') +

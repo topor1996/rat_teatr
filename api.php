@@ -219,7 +219,7 @@ function pushRun(): array {
   $months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   $when = function (array $e) use ($months) { [$y, $m, $d] = array_map('intval', explode('-', $e['date'])); return $d . ' ' . $months[$m - 1] . (($e['time'] ?? '') ? ' в ' . $e['time'] : ''); };
   $title = function (array $e) use ($plays) { return $plays[$e['playId'] ?? '']['title'] ?? ($e['note'] ?: 'Спектакль'); };
-  $urlOf = function (array $e) use ($plays) { return isset($plays[$e['playId'] ?? '']) ? 'play.html?id=' . rawurlencode($e['playId']) : './'; };
+  $urlOf = function (array $e) use ($plays) { return isset($plays[$e['playId'] ?? '']) ? 'play/' . rawurlencode($e['playId']) : './'; };
   $hoursTo = function (array $e) use ($tz, $now) { $dt = new DateTime($e['date'] . ' ' . (($e['time'] ?? '') ?: '19:00'), $tz); return ($dt->getTimestamp() - $now->getTimestamp()) / 3600; };
   // остатки билетов нужны только если кто-то ждёт
   $waiting = false; foreach ($db['subs'] as $s) if (!empty($s['wait'])) { $waiting = true; break; }

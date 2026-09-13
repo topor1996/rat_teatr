@@ -7,9 +7,9 @@
 <meta name="description" content="Театр RAT для журналистов и площадок: о театре, спектакли, фото в высоком разрешении, логотип, контакты.">
 <link rel="canonical" href="https://teatr-rat.ru/press">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Прессе и партнёрам — Театр RAT"><meta property="og:description" content="О театре, спектакли, фото в высоком разрешении, логотип, контакты."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/press"><meta property="og:locale" content="ru_RU">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link href="fonts/fonts.css?v=20260914m" rel="stylesheet">
-<link href="assets/site.min.css?v=20260914m" rel="stylesheet">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link href="/fonts/fonts.css?v=20260914n" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914n" rel="stylesheet">
 <style>
   .press h1{font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;font-size:clamp(40px,8vw,84px);line-height:.9;text-transform:uppercase;margin:34px 0 8px}
   .press h1 em{font-style:normal;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-weight:400;color:var(--acid);display:inline-block;transform:rotate(-2deg)}
@@ -38,14 +38,14 @@
 <svg width="0" height="0" style="position:absolute"><symbol id="rat" viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="20" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="44" cy="20" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M18 26c2 10 8 18 14 20 6-2 12-10 14-20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="41" r="2.5" fill="currentColor"/></symbol></svg>
 <nav>
   <div class="wrap">
-    <a class="stamp" href="./"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <a class="stamp" href="/"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
     <ul>
-      <li><a href="./#afisha">Афиша</a></li>
-      <li><a href="./#plays">Спектакли</a></li>
-      <li><a href="./#troupe">Команда</a></li>
-      <li><a href="./#contacts">Контакты</a></li>
-      <li><a href="press">Прессе</a></li>
-      <li><a class="cta" href="golos">Голосуй рублём</a></li>
+      <li><a href="/#afisha">Афиша</a></li>
+      <li><a href="/#plays">Спектакли</a></li>
+      <li><a href="/#troupe">Команда</a></li>
+      <li><a href="/#contacts">Контакты</a></li>
+      <li><a href="/press">Прессе</a></li>
+      <li><a class="cta" href="/golos">Голосуй рублём</a></li>
     </ul>
   </div>
 </nav>
@@ -71,8 +71,8 @@
   <h2>Контакты</h2>
   <div class="facts" id="contacts"></div>
 </main>
-<footer><div class="wrap"><svg class="rat"><use href="#rat"/></svg><div id="footName">Театр RAT</div><div style="margin-top:6px"><a href="./">На главную</a></div></div></footer>
-<script src="assets/site.min.js?v=20260914m" defer></script>
+<footer><div class="wrap"><svg class="rat"><use href="#rat"/></svg><div id="footName">Театр RAT</div><div style="margin-top:6px"><a href="/">На главную</a></div></div></footer>
+<script src="/assets/site.min.js?v=20260914n" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
@@ -84,10 +84,10 @@ window.addEventListener("DOMContentLoaded", function () {
     document.title = "Прессе и партнёрам — " + (th.name || "Театр RAT");
     document.getElementById("navName").textContent = th.name || "Театр RAT"; document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
     document.getElementById("about").textContent = (th.pressText || "").trim() || [th.tagline, th.about].filter(Boolean).join("\n\n");
-    document.getElementById("facts").innerHTML = fact("Площадка", esc(th.venue || "")) + fact("Адрес", esc(th.address || "")) + fact("Спектаклей в репертуаре", plays.length ? String(plays.length) : "") + fact("Сайт", '<a href="./">' + esc(location.host) + "</a>");
+    document.getElementById("facts").innerHTML = fact("Площадка", esc(th.venue || "")) + fact("Адрес", esc(th.address || "")) + fact("Спектаклей в репертуаре", plays.length ? String(plays.length) : "") + fact("Сайт", '<a href="/">' + esc(location.host) + "</a>");
     document.getElementById("plays").innerHTML = plays.map(function (p) {
       var cast = (p.castList || []).map(function (c) { return c.name; }).filter(Boolean).join(", ");
-      return '<div class="fact"><b>' + esc(p.genre || "спектакль") + "</b><strong>" + esc(p.title) + "</strong>" + (p.duration || p.age ? "<br><small>" + esc([p.duration, p.age].filter(Boolean).join(" · ")) + "</small>" : "") + (cast ? "<br><small>В ролях: " + esc(cast) + "</small>" : "") + '<br><a href="play.html?id=' + encodeURIComponent(p.id) + '">страница спектакля →</a></div>';
+      return '<div class="fact"><b>' + esc(p.genre || "спектакль") + "</b><strong>" + esc(p.title) + "</strong>" + (p.duration || p.age ? "<br><small>" + esc([p.duration, p.age].filter(Boolean).join(" · ")) + "</small>" : "") + (cast ? "<br><small>В ролях: " + esc(cast) + "</small>" : "") + '<br><a href="/play/' + encodeURIComponent(p.id) + '">страница спектакля →</a></div>';
     }).join("") || '<div class="fact">Репертуар обновляется.</div>';
     document.getElementById("logos").innerHTML = card("assets/favicon.svg", "Логотип, SVG", "вектор, любой размер", "logo") + card("assets/icon-512.png", "Логотип, PNG", "512×512, тёмный фон", "logo") + card("og.php", "Обложка 1200×630", "с ближайшим показом", "logo");
     var seen = {}, ph = [];
@@ -97,7 +97,7 @@ window.addEventListener("DOMContentLoaded", function () {
     ph = ph.filter(function (x) { if (seen[x.src]) return false; seen[x.src] = 1; return true; });
     document.getElementById("photos").innerHTML = ph.map(function (x) { return card(x.src, x.title, x.sub); }).join("") || '<div class="note">Фото появятся, когда театр их загрузит.</div>';
     var tg = th.telegram ? '<a href="' + esc(th.telegram) + '" target="_blank" rel="noopener">' + esc(th.telegram.replace(/^https?:\/\/(t\.me|telegram\.me)\//, "@")) + "</a>" : "";
-    document.getElementById("contacts").innerHTML = fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", '<a href="./#afisha">' + esc(location.host) + "/#afisha</a>" + (th.ticketsUrl ? "<small>Покупка прямо на сайте, ближайшие показы в афише. Площадка: " + esc(th.ticketsUrl.replace(/^https?:\/\//, "").split("/")[0]) + "</small>" : ""));
+    document.getElementById("contacts").innerHTML = fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", '<a href="/#afisha">' + esc(location.host) + "/#afisha</a>" + (th.ticketsUrl ? "<small>Покупка прямо на сайте, ближайшие показы в афише. Площадка: " + esc(th.ticketsUrl.replace(/^https?:\/\//, "").split("/")[0]) + "</small>" : ""));
     if (window.RAT && RAT.reveal) RAT.reveal();
   };
   fetch("api.php?a=data", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return fetch("data/data.json").then(function (r) { return r.json(); }); }).then(load);

@@ -37,13 +37,13 @@ function rat_render(string $file, ?string $playId = null, ?string $actorSlug = n
     $title = $actor['name'] . ' — ' . (preg_match('~актрис~iu', (string)($actor['bio'] ?? '')) ? 'актриса' : 'актёр') . ' театра ' . preg_replace('~^Театр\s+~iu', '', $name);
     $desc = $clean(($actor['role'] ?? '') . ($actor['role'] ?? '' ? '. ' : '') . mb_substr($actor['bio'] ?? ($actor['roles'] ?? ''), 0, 180));
     $image = $base . $actor['photo'];
-    $url = $base . 'actor.html?id=' . rawurlencode($actorSlug);
+    $url = $base . 'actor/' . rawurlencode($actorSlug);
   } elseif ($play) {
     $next = null; foreach ($upcoming as $ev) if (($ev['playId'] ?? '') === $play['id']) { $next = $ev; break; }
     $title = '«' . $play['title'] . '» — спектакль театра ' . preg_replace('~^Театр\s+~iu', '', $name) . ($next ? ', ' . $fmt($next) : '') . ', ' . $city;
     $desc = $clean(($play['genre'] ? $play['genre'] . '. ' : '') . ($next ? 'Ближайший показ ' . $fmt($next) . ', ' . ($next['venue'] ?: ($th['venue'] ?? '')) . '. ' : '') . mb_substr($clean($play['description'] ?? ''), 0, 160) . ' Билеты на сайте.');
     $image = $base . 'og.php?id=' . rawurlencode($play['id']) . ($next ? '&d=' . $next['date'] : '');
-    $url = $base . 'play.html?id=' . rawurlencode($play['id']);
+    $url = $base . 'play/' . rawurlencode($play['id']);
   } else {
     $next = $upcoming[0] ?? null;
     $title = $name . ' — независимый театр, ' . $city . ': спектакли, афиша, билеты';
@@ -74,7 +74,7 @@ function rat_render(string $file, ?string $playId = null, ?string $actorSlug = n
       'eventStatus' => 'https://schema.org/EventScheduled', 'eventAttendanceMode' => 'https://schema.org/OfflineEventAttendanceMode',
       'location' => ['@type' => 'Place', 'name' => $ev['venue'] ?: ($th['venue'] ?? ''), 'address' => $th['address'] ?? ''],
       'performer' => ['@type' => 'TheaterGroup', 'name' => $name], 'organizer' => ['@type' => 'Organization', 'name' => $name, 'url' => $base],
-      'url' => $p ? $base . 'play.html?id=' . rawurlencode($p['id']) : $base];
+      'url' => $p ? $base . 'play/' . rawurlencode($p['id']) : $base];
     if (!empty($p['poster'])) $item['image'] = $base . $p['poster'];
     if ($ticket) $item['offers'] = ['@type' => 'Offer', 'url' => $ticket, 'priceCurrency' => 'RUB', 'availability' => in_array('soldout', $ev['badges'] ?? [], true) ? 'https://schema.org/SoldOut' : 'https://schema.org/InStock'];
     $graph[] = $item;

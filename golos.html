@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
-<link href="assets/intro.min.css?v=20260914m" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914n" rel="stylesheet">
 <title>Голосуй рублём — театр RAT</title>
 <meta name="description" content="Голосуй рублём за лучшую сцену спектакля театра RAT: перевод актёру через СБП из любого банка, сумма любая.">
 <link rel="canonical" href="https://teatr-rat.ru/golos">
 <meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Голосуй рублём — театр RAT"><meta property="og:description" content="Выбери актёра и переведи через СБП из любого банка. Сумма не важна, важен факт перевода."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/golos"><meta property="og:locale" content="ru_RU"><meta name="twitter:card" content="summary_large_image">
-<link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link href="fonts/fonts.css?v=20260914m" rel="stylesheet">
+<link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
+<link href="/fonts/fonts.css?v=20260914n" rel="stylesheet">
 <style>
   :root{
     --black:#0a0a0a;
@@ -268,7 +268,7 @@ if(skip||(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(inte
 var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");el.classList.add("pre");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
 el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);
 /* ждём картинку телевизора не дольше 900 мс: на медленной сети заставку пропускаем, чтобы не держать чёрный экран */
-var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
+var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="/assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">
@@ -290,7 +290,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
 
 <div class="wrap">
   <div class="top">
-    <a class="stamp" href="./" title="На главную"><svg class="rat"><use href="#rat"/></svg> <span class="stamp-name">Театр RAT</span></a>
+    <a class="stamp" href="/" title="На главную"><svg class="rat"><use href="#rat"/></svg> <span class="stamp-name">Театр RAT</span></a>
     <span class="date" id="dateLine"></span>
   </div>
 
@@ -333,7 +333,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </div>
 
-<script src="vendor/qrcode.min.js"></script>
+<script src="/vendor/qrcode.min.js"></script>
 <script>
 /* =====================================================================
    НАСТРОЙКИ — запасные данные. Если сайт запущен через server.js,
@@ -492,7 +492,7 @@ grid.innerHTML = ACTORS.map((a, i) => {
       <div class="body">
         <h2 class="name">${esc(a.name)}</h2>
         <span class="role">${esc(a.role)}</span>
-        ${a.photo && (a.bio || a.roles) ? `<a class="apage" href="actor.html?id=${slug(a.name)}">страница актёра →</a>` : ""}
+        ${a.photo && (a.bio || a.roles) ? `<a class="apage" href="/actor/${slug(a.name)}">страница актёра →</a>` : ""}
         <p class="scene">${esc(a.scene)}</p>
         ${can ? `<a class="btn" href="${esc(link)}" target="_blank" rel="noopener" data-go><svg><use href="#sbp"/></svg> Перевести через СБП</a>`
           : `<a class="btn disabled" href="#"><svg><use href="#sbp"/></svg> Перевести</a>`}

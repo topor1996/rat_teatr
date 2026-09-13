@@ -14,21 +14,21 @@
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
 <!--/OG-->
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-<link rel="icon" href="assets/favicon-32.png" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Театр RAT">
-<link rel="preload" as="image" href="assets/tv.webp" fetchpriority="high">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/oswald-400-700-cyrillic.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-cyrillic.woff2">
-<link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/rubik-spray-paint-400-latin.woff2">
-<link href="fonts/fonts.css?v=20260914m" rel="stylesheet">
-<link href="assets/intro.min.css?v=20260914m" rel="stylesheet">
-<link href="assets/site.min.css?v=20260914m" rel="stylesheet">
+<link rel="preload" as="image" href="/assets/tv.webp" fetchpriority="high">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/oswald-400-700-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-cyrillic.woff2">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-latin.woff2">
+<link href="/fonts/fonts.css?v=20260914n" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914n" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914n" rel="stylesheet">
 </head>
 <body>
 
@@ -52,7 +52,7 @@ if(skip||(!force&&(matchMedia("(prefers-reduced-motion: reduce)").matches||(inte
 var k=innerWidth<=480?.74:1;el.style.setProperty("--zoom",(Math.max(innerWidth/237,innerHeight/222)/k+1.2).toFixed(2));h.classList.add("tv-on");el.classList.add("pre");var done=function(){if(el.parentNode)el.parentNode.removeChild(el);h.classList.remove("tv-on")};
 el.addEventListener("animationend",function(e){if(e.target===el)done()});el.addEventListener("click",done);
 /* ждём картинку телевизора не дольше 900 мс: на медленной сети заставку пропускаем, чтобы не держать чёрный экран */
-var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
+var started=false,start=function(){if(started)return;started=true;el.classList.remove("pre");setTimeout(done,4500)};var img=new Image();img.src="/assets/tv.webp";(img.decode?img.decode():Promise.resolve()).then(start,function(){});if(img.complete)start();setTimeout(function(){if(!started)done()},900)})();</script>
 
 <svg width="0" height="0" style="position:absolute">
   <symbol id="rat" viewBox="0 0 64 64">
@@ -68,21 +68,21 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
 
 <nav>
   <div class="wrap">
-    <a class="stamp" href="./"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <a class="stamp" href="/"><svg class="rat"><use href="#rat"/></svg> <span id="navName">Театр RAT</span></a>
     <ul>
-      <li><a href="./#afisha">Афиша</a></li>
-      <li><a href="./#plays">Спектакли</a></li>
-      <li><a href="./#troupe">Команда</a></li>
-      <li><a href="./#contacts">Контакты</a></li>
-      <li><a href="press">Прессе</a></li>
-      <li><a class="cta" href="golos">Голосуй рублём</a></li>
+      <li><a href="/#afisha">Афиша</a></li>
+      <li><a href="/#plays">Спектакли</a></li>
+      <li><a href="/#troupe">Команда</a></li>
+      <li><a href="/#contacts">Контакты</a></li>
+      <li><a href="/press">Прессе</a></li>
+      <li><a class="cta" href="/golos">Голосуй рублём</a></li>
     </ul>
   </div>
 </nav>
 <div class="today" id="today" hidden></div>
 
 <main class="wrap">
-  <div id="notFound" class="empty" hidden style="margin-top:40px">Такого спектакля нет. <a href="./">На главную</a></div>
+  <div id="notFound" class="empty" hidden style="margin-top:40px">Такого спектакля нет. <a href="/">На главную</a></div>
   <section class="phero" id="phero" hidden>
     <a class="poster" id="pPoster" href="#"></a>
     <div>
@@ -139,7 +139,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <div class="plays" id="othersList"></div>
   </section>
 
-  <a class="golos" href="golos" style="text-decoration:none">
+  <a class="golos" href="/golos" style="text-decoration:none">
     <div class="big">Голосуй рублём</div>
     <div><p>После спектакля зрители выбирают лучшую сцену и переводят актёру благодарность через СБП.</p></div>
     <span class="btn">Открыть</span>
@@ -153,18 +153,18 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <div id="diag" style="color:#ff3b2f;font-size:11px;margin-bottom:10px;white-space:pre-wrap"></div>
     <svg class="rat"><use href="#rat"/></svg>
     <div id="footName">Театр RAT</div>
-    <div style="margin-top:6px"><a href="./">На главную</a> · <a href="golos">Голосуй рублём</a></div>
+    <div style="margin-top:6px"><a href="/">На главную</a> · <a href="/golos">Голосуй рублём</a></div>
   </div>
 </footer>
 
-<script src="assets/site.min.js?v=20260914m" defer></script>
+<script src="/assets/site.min.js?v=20260914n" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
 
 function render(d) {
   var R = RAT, esc = R.esc, th = d.theatre, map = R.byId(d);
-  var id = new URLSearchParams(location.search).get("id") || "", p = map[id];
+  var id = (location.pathname.match(/\/play\/([\w-]+)/) || [])[1] || new URLSearchParams(location.search).get("id") || "", p = map[id];
   document.getElementById("navName").textContent = th.name || "Театр RAT";
   document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
   if (!p) { document.getElementById("notFound").hidden = false; document.title = "Спектакль не найден — " + (th.name || "Театр RAT"); return; }
@@ -184,7 +184,7 @@ function render(d) {
   document.getElementById("pDesc").textContent = p.description || "";
   var castHtml = R.castHtml(p, d.actors);
   if (castHtml) { var c = document.getElementById("pCast"); c.innerHTML = "<b>Играют:</b> " + castHtml; c.hidden = false; }
-  document.getElementById("pRow").innerHTML = (nextOf ? (!R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>' : R.playWaitBtn(p) + '<a class="btn ghost onDark" href="./#afisha">Афиша</a>');
+  document.getElementById("pRow").innerHTML = (nextOf ? (!R.hasBadge(nextOf, "soldout") ? R.buyBtn(nextOf, p, th, "Купить билет", "light") : "") + '<a class="btn ghost onDark" href="#dates">Все даты</a>' : R.playWaitBtn(p) + '<a class="btn ghost onDark" href="/#afisha">Афиша</a>');
   document.getElementById("pShare").innerHTML = R.shareHtml(url, p.title + " — " + (th.name || "Театр RAT")).replace(/<\/div>$/, '<button class="btn light sm" data-story="1" type="button">Картинка «Я иду»</button></div>');
   window.__storyCtx = { p: p, events: events, th: th };
   window.__stickyBuy = R.stickyBuyText(nextOf, p);
@@ -218,7 +218,7 @@ function render(d) {
         '<div class="body"><h3 class="title"><a href="' + R.playUrl(o) + '">' + esc(o.title) + "</a></h3>" + (o.genre ? '<span class="genre">' + esc(o.genre) + "</span>" : "") + '<p class="desc">' + esc(o.description) + '</p><div class="row"><a class="btn ghost" href="' + R.playUrl(o) + '">Подробнее</a></div></div></div></article>';
     }).join("");
   }
-  R.todayBar(d, "golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "./", afisha: "#dates", buy: window.__stickyBuy || null }); R.toTop(); R.scrollProgress(); R.rehash(); R.hit("play:" + p.id);
+  R.todayBar(d, "/golos"); R.jsonLd(d, p); R.reveal(); R.lightbox(); R.marqRat(); R.fx(); R.pushInit(); R.mobileBar({ home: "/", afisha: "#dates", buy: window.__stickyBuy || null }); R.toTop(); R.scrollProgress(); R.rehash(); R.hit("play:" + p.id);
 }
 RAT.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [] }).then(function (d) { try { render(d); } catch (e) { var g = document.getElementById("diag"); if (g) g.textContent += "\nОшибка отрисовки: " + e.message; } });
 });

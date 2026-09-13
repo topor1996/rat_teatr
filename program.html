@@ -76,7 +76,7 @@ function a5(p, d) {
     (cast.length ? "<h2>Действующие лица и исполнители</h2><div class=\"cast\">" + cast.map(function (c) { return '<div><span class="n">' + esc(c.name) + '</span><span class="r">' + esc(c.role || "") + "</span></div>"; }).join("") + "</div>" : "") +
     (p.cast ? '<div class="team">' + esc(p.cast) + "</div>" : "") +
     '<div class="foot">' +
-      '<div class="qr"><div class="box"><div class="q" data-url="' + esc(base + "play.html?id=" + encodeURIComponent(p.id) + "&utm_source=program#reviews") + '"></div></div><b>Отзыв</b>после спектакля</div>' +
+      '<div class="qr"><div class="box"><div class="q" data-url="' + esc(base + "play/" + encodeURIComponent(p.id) + "?utm_source=program#reviews") + '"></div></div><b>Отзыв</b>после спектакля</div>' +
       '<div class="qr"><div class="box"><div class="q" data-url="' + esc(base + "golos?utm_source=program") + '"></div></div><b>Голосуй рублём</b>за реальную историю</div>' +
       '<div class="contacts"><span class="site">' + esc(site) + "</span><br>" + (th.telegram ? "Telegram: " + esc(th.telegram.replace(/^https?:\/\/(t\.me|telegram\.me)\//, "@")) + "<br>" : "") + (th.email ? esc(th.email) + "<br>" : "") + "Билеты и афиша на сайте</div>" +
     "</div></div>";
