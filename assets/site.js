@@ -915,6 +915,13 @@ window.RAT = (function () {
       card.addEventListener("animationend", function (e) { if (e.target === card) go(); });
       setTimeout(go, 950);
     });
+    /* «Назад» в браузере возвращает страницу из кэша в том виде, в каком её покинули: сорванная карточка и клочки скотча
+       остались бы на месте. Возвращаем всё как было. */
+    window.addEventListener("pageshow", function (e) {
+      if (!e.persisted) return;
+      document.querySelectorAll(".peel").forEach(function (c) { c.classList.remove("peel"); });
+      document.querySelectorAll(".tape-stay").forEach(function (t) { t.remove(); });
+    });
   }
   /* ---------- сцена по скроллу: камера едет вглубь, постер уходит назад, актёры выходят из темноты, титры, занавес ---------- */
   function stage(p, d, actors) {
