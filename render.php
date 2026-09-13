@@ -28,28 +28,30 @@ function rat_render(string $file, ?string $playId = null, ?string $actorSlug = n
   $months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
   $fmt = function ($ev) use ($months) { [$y, $m, $dd] = array_map('intval', explode('-', $ev['date'])); return $dd . ' ' . $months[$m - 1] . (($ev['time'] ?? '') ? ', ' . $ev['time'] : ''); };
 
+  $clean = fn($s) => trim((string)preg_replace('~\s+~u', ' ', (string)$s));
+  $city = trim(explode(',', (string)($th['address'] ?? ''))[0]) ?: 'Москва';
   $actor = null;
   if ($actorSlug !== null) foreach ($d['actors'] ?? [] as $a) if (rat_slug($a['name'] ?? '') === $actorSlug && rat_actor_has_page($a)) { $actor = $a; break; }
   if ($actor) {
     $next = null;
-    $title = $actor['name'] . ' — ' . $name;
-    $desc = trim(($actor['role'] ?? '') . ($actor['role'] ?? '' ? '. ' : '') . mb_substr($actor['bio'] ?? ($actor['roles'] ?? ''), 0, 180));
+    $title = $actor['name'] . ' — ' . (preg_match('~актрис~iu', (string)($actor['bio'] ?? '')) ? 'актриса' : 'актёр') . ' театра ' . preg_replace('~^Театр\s+~iu', '', $name);
+    $desc = $clean(($actor['role'] ?? '') . ($actor['role'] ?? '' ? '. ' : '') . mb_substr($actor['bio'] ?? ($actor['roles'] ?? ''), 0, 180));
     $image = $base . $actor['photo'];
     $url = $base . 'actor.html?id=' . rawurlencode($actorSlug);
   } elseif ($play) {
     $next = null; foreach ($upcoming as $ev) if (($ev['playId'] ?? '') === $play['id']) { $next = $ev; break; }
-    $title = $play['title'] . ' — ' . $name;
-    $desc = trim(($play['genre'] ? $play['genre'] . '. ' : '') . ($next ? 'Ближайший показ ' . $fmt($next) . '. ' : '') . mb_substr($play['description'] ?? '', 0, 180));
+    $title = '«' . $play['title'] . '» — спектакль театра ' . preg_replace('~^Театр\s+~iu', '', $name) . ($next ? ', ' . $fmt($next) : '') . ', ' . $city;
+    $desc = $clean(($play['genre'] ? $play['genre'] . '. ' : '') . ($next ? 'Ближайший показ ' . $fmt($next) . ', ' . ($next['venue'] ?: ($th['venue'] ?? '')) . '. ' : '') . mb_substr($clean($play['description'] ?? ''), 0, 160) . ' Билеты на сайте.');
     $image = $base . 'og.php?id=' . rawurlencode($play['id']) . ($next ? '&d=' . $next['date'] : '');
     $url = $base . 'play.html?id=' . rawurlencode($play['id']);
   } else {
     $next = $upcoming[0] ?? null;
-    $title = $name;
-    $desc = trim(($th['tagline'] ?? '') . ($next ? ' Ближайший показ: ' . (($byId[$next['playId'] ?? ''] ?? null)['title'] ?? 'спектакль') . ', ' . $fmt($next) . '.' : ''));
+    $title = $name . ' — независимый театр, ' . $city . ': спектакли, афиша, билеты';
+    $desc = $clean(($th['tagline'] ?? '') . ' Играем в ' . ($th['venue'] ?? 'Театр.doc') . ($th['address'] ?? '' ? ' (' . $th['address'] . ')' : '') . '.' . ($next ? ' Ближайший показ: ' . (($byId[$next['playId'] ?? ''] ?? null)['title'] ?? 'спектакль') . ', ' . $fmt($next) . '.' : '') . ' Афиша и билеты на сайте.');
     $image = $base . 'og.php' . ($next ? '?d=' . $next['date'] : '');
     $url = $base;
   }
-  $og = "<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n" . ($actor ? "" : "<meta property=\"og:image:width\" content=\"1200\">\n<meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:type\" content=\"image/png\">") . "\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
+  $og = "<link rel=\"canonical\" href=\"{$e($url)}\">\n<meta property=\"og:type\" content=\"website\">\n<meta property=\"og:site_name\" content=\"{$e($name)}\">\n<meta property=\"og:title\" content=\"{$e($title)}\">\n<meta property=\"og:description\" content=\"{$e($desc)}\">\n<meta property=\"og:image\" content=\"{$e($image)}\">\n" . ($actor ? "" : "<meta property=\"og:image:width\" content=\"1200\">\n<meta property=\"og:image:height\" content=\"630\">\n<meta property=\"og:image:type\" content=\"image/png\">") . "\n<meta property=\"og:url\" content=\"{$e($url)}\">\n<meta property=\"og:locale\" content=\"ru_RU\">\n<meta name=\"twitter:card\" content=\"summary_large_image\">\n<meta name=\"description\" content=\"{$e($desc)}\">";
   // og:video: Telegram и VK показывают ролик прямо в превью. На странице спектакля — первое видео из медиа, на главной — видео шапки
   $video = null;
   if ($play) { foreach ($play['media'] ?? [] as $m) if (($m['type'] ?? '') === 'video' && empty($m['hidden']) && !empty($m['src'])) { $video = $m['src']; break; } }
