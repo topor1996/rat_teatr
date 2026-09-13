@@ -173,6 +173,7 @@
       <button data-tab="gallery">Бэкстейдж</button>
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
+      <button data-tab="qr">QR-афиша</button>
       <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
       <button data-tab="push">Уведомления</button>
@@ -328,6 +329,34 @@
       </div>
     </div>
 
+    <div class="tab" id="tab-qr">
+      <div class="panel">
+        <h2>QR-афиша на печать</h2>
+        <p class="help">Карточки с QR-кодом на стол или сиденья: 4 на лист А4. Каждая строка редактируется, QR собирается сам из ссылки. Настройки запоминаются в этом браузере. Пустая строка — не печатается.</p>
+        <div class="row">
+          <div><label>Штамп сверху</label><input data-qr="stamp" placeholder="Театр RAT"></div>
+          <div><label>Тема</label><select data-qr="theme"><option value="dark">Тёмная (чёрная карточка)</option><option value="light">Светлая (белая карточка)</option></select></div>
+        </div>
+        <div class="row">
+          <div><label>Заголовок, строка 1</label><input data-qr="t1" placeholder="Голосуй"></div>
+          <div><label>Заголовок, строка 2 (кислотная)</label><input data-qr="t2" placeholder="рублём"></div>
+        </div>
+        <label>Подзаголовок</label><input data-qr="sub" placeholder="за реальную историю">
+        <label>Подсказка под QR</label><textarea data-qr="steps" rows="2" placeholder="Наведи камеру → выбери актёра → переведи через СБП из любого банка"></textarea>
+        <div class="row">
+          <div><label>Куда ведёт QR (ссылка)</label><input data-qr="qr" placeholder="https://teatr-rat.ru/golos"><div class="hint" id="qrHint"></div></div>
+          <div><label>Адрес текстом (плашка внизу)</label><input data-qr="urlText" placeholder="teatr-rat.ru/golos"></div>
+        </div>
+        <div class="row">
+          <div><label>Сколько карточек</label><select data-qr="count"><option>4</option><option selected>8</option><option>12</option><option>16</option><option>20</option></select></div>
+          <div><label>&nbsp;</label><div class="btns"><a class="btn" id="qrOpen" href="qr-poster.html" target="_blank">Открыть для печати ↗</a> <button type="button" class="btn ghost" id="qrReset">Сбросить к стандартным</button></div></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Как будет выглядеть</h2>
+        <div style="background:#2a2a2a;padding:14px;overflow:auto"><iframe id="qrPreview" title="Предпросмотр карточки" style="width:390px;height:560px;border:0;display:block;background:transparent"></iframe></div>
+      </div>
+    </div>
     <div class="tab" id="tab-show">
       <div class="panel">
         <h2>Страница «Голосуй рублём»</h2>
@@ -652,7 +681,35 @@ function renderStatic() {
   $("#heroPosterBox").innerHTML = pst ? `<img src="${previews[pst] || backend.photoUrl(pst) + "?" + Date.now()}" alt="">` : "Нет фото";
   document.querySelectorAll("[data-show]").forEach(i => i.value = data.show[i.dataset.show] || "");
 }
-function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); growLong(); }
+function renderAll() { renderStatic(); Object.keys(SECTIONS).forEach(renderList); growLong(); qrPosterInit(); }
+
+/* ---- QR-афиша: тексты правятся здесь, страница qr-poster.html рисует карточки и QR по параметрам в адресе ---- */
+const QR_KEYS = ["stamp", "theme", "t1", "t2", "sub", "steps", "qr", "urlText", "count"];
+function qrDefaults() {
+  const base = location.origin + location.pathname.replace(/[^\/]*$/, "").replace(/admin\/?$/, "");
+  return { stamp: (data && data.theatre && data.theatre.name) || "Театр RAT", theme: "dark", t1: "Голосуй", t2: "рублём", sub: "за реальную историю",
+    steps: "Наведи камеру → выбери актёра → переведи через СБП из любого банка", qr: base + "golos", urlText: base.replace(/^https?:\/\//, "").replace(/\/$/, "") + "/golos", count: "8" };
+}
+function qrLoad() { try { const j = JSON.parse(localStorage.getItem("qrPoster") || "null"); if (j && typeof j === "object") return Object.assign(qrDefaults(), j); } catch (e) {} return qrDefaults(); }
+function qrEncode(cfg) { return btoa(unescape(encodeURIComponent(JSON.stringify(cfg)))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+let qrTimer = null;
+function qrApply(save) {
+  const tab = document.getElementById("tab-qr"); if (!tab) return;
+  const cfg = {}; QR_KEYS.forEach(k => { const el = tab.querySelector(`[data-qr="${k}"]`); if (el) cfg[k] = el.value; });
+  if (save) { try { localStorage.setItem("qrPoster", JSON.stringify(cfg)); } catch (e) {} }
+  const h = document.getElementById("qrHint"); if (h) { const ok = /^https?:\/\/\S+$/.test(cfg.qr.trim()); h.textContent = ok ? "Ссылка в порядке" : "Нужна полная ссылка, начиная с https://"; h.className = "hint " + (ok ? "good" : "bad"); }
+  const enc = qrEncode(cfg);
+  document.getElementById("qrOpen").href = "qr-poster.html?c=" + enc;
+  clearTimeout(qrTimer); qrTimer = setTimeout(() => { document.getElementById("qrPreview").src = "qr-poster.html?preview=1&c=" + enc; }, 250);
+}
+function qrPosterInit() {
+  const tab = document.getElementById("tab-qr"); if (!tab || tab.dataset.ready) return; tab.dataset.ready = "1";
+  const fill = cfg => QR_KEYS.forEach(k => { const el = tab.querySelector(`[data-qr="${k}"]`); if (el) el.value = cfg[k]; });
+  fill(qrLoad()); qrApply(false);
+  tab.addEventListener("input", e => { if (e.target.dataset.qr !== undefined) qrApply(true); });
+  tab.addEventListener("change", e => { if (e.target.dataset.qr !== undefined) qrApply(true); });
+  document.getElementById("qrReset").addEventListener("click", () => { try { localStorage.removeItem("qrPoster"); } catch (e) {} fill(qrDefaults()); qrApply(false); });
+}
 /* ---- длинный текст виден целиком: однострочное поле с длинным значением превращается в textarea, все textarea растут под содержимое ---- */
 const fitTa = ta => { ta.style.height = "auto"; ta.style.height = Math.max(ta.scrollHeight + 2, ta.classList.contains("grow") ? 0 : 64) + "px"; };
 function toGrow(inp, keepFocus) {

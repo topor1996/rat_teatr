@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>QR-афиша на печать — Театр RAT</title>
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  @page{size:A4;margin:8mm}
+  *{box-sizing:border-box}
+  body{margin:0;background:#2a2a2a;font-family:"PT Mono","PT Mono Fallback",monospace;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.preview{background:transparent;padding:0}
+  .bar{position:sticky;top:0;z-index:5;background:#0a0a0a;color:#eee;padding:10px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:13px}
+  .bar button,.bar a{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:8px 14px;border:2px solid #c9ff3d;background:#c9ff3d;color:#000;cursor:pointer;text-decoration:none;font-size:13px}
+  .bar a{background:transparent;color:#eee;border-color:#444}
+  .sheet{width:194mm;height:281mm;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4mm;page-break-after:always;margin:16px auto;background:#fff;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .sheet:last-child{page-break-after:auto}
+  .preview .sheet{display:block;width:auto;height:auto;margin:0;box-shadow:none;background:transparent}
+  .preview .card{width:92mm;height:136mm}
+  .card{position:relative;border:1.2px dashed #999;padding:8mm 7mm;display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden}
+  .card.dark{background:#0a0a0a;color:#f4f2ea;border-color:#444}
+  .card.light{background:#fff;color:#0a0a0a}
+  .top{width:100%;display:flex;justify-content:center;align-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:9pt;letter-spacing:.12em;text-transform:uppercase}
+  .stamp{border:1.5px solid currentColor;padding:1.5mm 2.5mm;transform:rotate(-2deg)}
+  .title{margin-top:6mm;line-height:.9;text-transform:uppercase}
+  .title .a{display:block;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:30pt}
+  .title .b{display:block;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:32pt;color:#c9ff3d;transform:rotate(-2.5deg);margin-top:1mm}
+  .light .title .b{color:#7a9a00}
+  .sub{margin-top:3mm;font-size:8.5pt;letter-spacing:.04em;min-height:1em}
+  .qrbox{margin:5mm 0 4mm;background:#fff;padding:3mm;border:2px solid #0a0a0a;width:52mm;height:52mm}
+  .qrbox img,.qrbox canvas{width:100%;height:100%;display:block}
+  .steps{font-size:8pt;line-height:1.35;max-width:70mm;color:#bbb;white-space:pre-line} .light .steps{color:#555}
+  .url{margin-top:auto;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:13pt;letter-spacing:.06em;background:#c9ff3d;color:#000;padding:1.5mm 4mm;transform:rotate(-1.5deg);max-width:100%;overflow-wrap:anywhere}
+  .url:empty{display:none}
+  @media print{body{background:#fff}.bar{display:none}.sheet{margin:0;box-shadow:none}}
+</style></head><body>
+<div class="bar" id="bar">
+  <button onclick="window.print()">Печать / сохранить PDF</button>
+  <a href="admin">← в админку</a>
+  <span style="color:#8f8b80" id="note">Лист А4, 4 карточки на лист. Тексты и QR настраиваются в админке на вкладке «QR-афиша».</span>
+</div>
+<div id="sheets"></div>
+<script src="vendor/qrcode.min.js"></script>
+<script>
+/* Параметры приходят из админки в адресе: ?c=<base64url JSON>. Без параметров — карточка по умолчанию на страницу голосования. */
+var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+function decode(s) { try { s = s.replace(/-/g, "+").replace(/_/g, "/"); return JSON.parse(decodeURIComponent(escape(atob(s)))); } catch (e) { return null; } }
+var q = new URLSearchParams(location.search), base = location.origin + location.pathname.replace(/[^\/]*$/, "");
+var c = (q.get("c") && decode(q.get("c"))) || {};
+var cfg = {
+  stamp: c.stamp != null ? c.stamp : "Театр RAT", t1: c.t1 != null ? c.t1 : "Голосуй", t2: c.t2 != null ? c.t2 : "рублём", sub: c.sub != null ? c.sub : "за реальную историю",
+  steps: c.steps != null ? c.steps : "Наведи камеру → выбери актёра → переведи через СБП из любого банка",
+  urlText: c.urlText != null ? c.urlText : base.replace(/^https?:\/\//, "").replace(/\/$/, "") + "/golos", qr: c.qr || base + "golos",
+  theme: c.theme === "light" ? "light" : "dark", count: Math.max(1, Math.min(24, +c.count || 8))
+};
+var preview = q.get("preview") === "1";
+if (preview) { document.body.classList.add("preview"); cfg.count = 1; document.getElementById("bar").hidden = true; }
+function card() {
+  return '<div class="card ' + cfg.theme + '">' +
+    (cfg.stamp ? '<div class="top"><span class="stamp">' + esc(cfg.stamp) + "</span></div>" : "") +
+    '<div class="title">' + (cfg.t1 ? '<span class="a">' + esc(cfg.t1) + "</span>" : "") + (cfg.t2 ? '<span class="b">' + esc(cfg.t2) + "</span>" : "") + "</div>" +
+    '<div class="sub">' + esc(cfg.sub) + "</div>" +
+    '<div class="qrbox"><div class="qr"></div></div>' +
+    '<div class="steps">' + esc(cfg.steps) + "</div>" +
+    '<div class="url">' + esc(cfg.urlText) + "</div></div>";
+}
+var html = "", n = cfg.count;
+while (n > 0) { var k = Math.min(4, n); html += '<div class="sheet">' + new Array(k + 1).join(card()) + "</div>"; n -= k; }
+document.getElementById("sheets").innerHTML = html;
+document.querySelectorAll(".qr").forEach(function (el) {
+  if (window.QRCode) new QRCode(el, { text: cfg.qr, width: 480, height: 480, correctLevel: QRCode.CorrectLevel.M, colorDark: "#0a0a0a", colorLight: "#ffffff" });
+  else el.textContent = cfg.qr;
+});
+document.title = (cfg.t1 + " " + cfg.t2).trim() + " — QR-афиша";
+</script>
+</body></html>
