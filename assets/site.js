@@ -304,8 +304,10 @@ window.RAT = (function () {
   document.addEventListener("keydown", function (e) { if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("flip")) { e.preventDefault(); e.target.classList.toggle("on"); } });
 
   /* ---------- отзывы ---------- */
-  function reviewCard(r) {
-    return '<div class="rev rv"><span class="tape"></span><span class="q">“</span><p>' + esc(r.text) + "</p>" +
+  /* plays — словарь спектаклей по id (на главной): тогда над текстом подпись, к какому спектаклю отзыв, со ссылкой */
+  function reviewCard(r, plays) {
+    var p = plays && r.playId && plays[r.playId];
+    return '<div class="rev rv"><span class="tape"></span><span class="q">“</span>' + (p ? '<a class="play" href="' + esc(playUrl(p)) + '">' + esc(p.title) + "</a>" : "") + "<p>" + esc(r.text) + "</p>" +
       '<div class="who">' + esc(r.author || "Зритель") + (r.source ? (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' + esc(r.source) + "</a>" : '<a>' + esc(r.source) + "</a>") : "") + "</div></div>";
   }
 

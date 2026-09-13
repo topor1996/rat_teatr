@@ -188,6 +188,9 @@ nav li a.cta{background:var(--acid);color:#000;font-weight:700;transform:rotate(
 .rev .tape{position:absolute;width:64px;height:18px;background:var(--tape);left:20px;top:-9px;transform:rotate(-4deg)}
 .rev .q{position:absolute;top:2px;right:12px;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-size:64px;line-height:1;color:var(--acid);opacity:.9}
 .rev p{margin:0;font-size:14px;line-height:1.5}
+.rev .play{display:inline-block;max-width:calc(100% - 60px);margin:0 0 12px;padding:3px 8px;background:#000;color:var(--acid);text-decoration:none;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:500;font-size:11px;letter-spacing:.1em;text-transform:uppercase;transform:rotate(-1deg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:top}
+.rev .play::before{content:"о спектакле · ";color:#9a9a9a}
+.rev .play:hover{background:var(--acid);color:#000}
 .rev .who{margin-top:14px;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
 .rev .who a{color:var(--muted);text-decoration:none;font-family:"PT Mono","PT Mono Fallback",monospace;text-transform:none;letter-spacing:0;font-size:11px;display:block;margin-top:2px}
 .rev .who a:hover{color:#000;text-decoration:underline}
