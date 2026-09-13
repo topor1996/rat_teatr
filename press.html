@@ -51,7 +51,7 @@
 </nav>
 <main class="wrap press">
   <h1>Прессе <em>и партнёрам</em></h1>
-  <p class="lead">Всё, что обычно просят журналисты и площадки: тексты о театре, спектакли, фото в высоком разрешении, логотип и контакты. Материалы можно использовать в публикациях о театре со ссылкой на источник.</p>
+  <p class="lead" id="lead">Всё, что обычно просят журналисты и площадки: тексты о театре, спектакли, фото в высоком разрешении, логотип и контакты. Материалы можно использовать в публикациях о театре со ссылкой на источник.</p>
 
   <h2>О театре</h2>
   <div class="txt" id="about"></div>
@@ -66,7 +66,7 @@
 
   <h2>Фото в высоком разрешении</h2>
   <div class="dl" id="photos"></div>
-  <p class="note">Нажмите на фото — скачается оригинал в полном размере. При публикации указывайте: фото — Театр RAT.</p>
+  <p class="note" id="credit">Нажмите на фото — скачается оригинал в полном размере. При публикации указывайте: фото — Театр RAT.</p>
 
   <h2>Контакты</h2>
   <div class="facts" id="contacts"></div>
@@ -84,6 +84,8 @@ window.addEventListener("DOMContentLoaded", function () {
     document.title = "Прессе и партнёрам — " + (th.name || "Театр RAT");
     document.getElementById("navName").textContent = th.name || "Театр RAT"; document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
     document.getElementById("about").textContent = (th.pressText || "").trim() || [th.tagline, th.about].filter(Boolean).join("\n\n");
+    if ((th.pressLead || "").trim()) document.getElementById("lead").textContent = th.pressLead.trim();
+    document.getElementById("credit").textContent = "Нажмите на фото — скачается оригинал в полном размере. При публикации указывайте: " + ((th.pressCredit || "").trim() || "фото — " + (th.name || "Театр RAT")) + ".";
     document.getElementById("facts").innerHTML = fact("Площадка", esc(th.venue || "")) + fact("Адрес", esc(th.address || "")) + fact("Спектаклей в репертуаре", plays.length ? String(plays.length) : "") + fact("Сайт", '<a href="/">' + esc(location.host) + "</a>");
     document.getElementById("plays").innerHTML = plays.map(function (p) {
       var cast = (p.castList || []).map(function (c) { return c.name; }).filter(Boolean).join(", ");
@@ -97,7 +99,7 @@ window.addEventListener("DOMContentLoaded", function () {
     ph = ph.filter(function (x) { if (seen[x.src]) return false; seen[x.src] = 1; return true; });
     document.getElementById("photos").innerHTML = ph.map(function (x) { return card(x.src, x.title, x.sub); }).join("") || '<div class="note">Фото появятся, когда театр их загрузит.</div>';
     var tg = th.telegram ? '<a href="' + esc(th.telegram) + '" target="_blank" rel="noopener">' + esc(th.telegram.replace(/^https?:\/\/(t\.me|telegram\.me)\//, "@")) + "</a>" : "";
-    document.getElementById("contacts").innerHTML = fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", '<a href="/#afisha">' + esc(location.host) + "/#afisha</a>" + (th.ticketsUrl ? "<small>Покупка прямо на сайте, ближайшие показы в афише. Площадка: " + esc(th.ticketsUrl.replace(/^https?:\/\//, "").split("/")[0]) + "</small>" : ""));
+    document.getElementById("contacts").innerHTML = fact("Для прессы", esc((th.pressContact || "").trim())) + fact("Почта", th.email ? '<a href="mailto:' + esc(th.email) + '">' + esc(th.email) + "</a>" : "") + fact("Телефон", th.phone ? '<a href="tel:' + esc(th.phone.replace(/[^\d+]/g, "")) + '">' + esc(th.phone) + "</a>" : "") + fact("Telegram", tg) + fact("VK", th.vk ? '<a href="' + esc(th.vk) + '" target="_blank" rel="noopener">' + esc(th.vk.replace(/^https?:\/\//, "")) + "</a>" : "") + fact("Билеты", '<a href="/#afisha">' + esc(location.host) + "/#afisha</a>" + (th.ticketsUrl ? "<small>Покупка прямо на сайте, ближайшие показы в афише. Площадка: " + esc(th.ticketsUrl.replace(/^https?:\/\//, "").split("/")[0]) + "</small>" : ""));
     if (window.RAT && RAT.reveal) RAT.reveal();
   };
   fetch("api.php?a=data", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return fetch("data/data.json").then(function (r) { return r.json(); }); }).then(load);

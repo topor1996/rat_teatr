@@ -174,6 +174,7 @@
       <button data-tab="theatre">О театре</button>
       <button data-tab="show">Голосование</button>
       <button data-tab="print">Печать</button>
+      <button data-tab="press">Пресса</button>
       <button data-tab="check">Проверка</button>
       <button data-tab="visits">Посещения</button>
       <button data-tab="push">Уведомления</button>
@@ -231,7 +232,6 @@
         </div>
         <label>Слоган (под заголовком на главной)</label><input data-th="tagline">
         <label>О театре</label><textarea data-th="about" style="min-height:120px"></textarea>
-        <label>Текст для прессы и партнёров (страница <a href="press" target="_blank">teatr-rat.ru/press</a>; пусто — берутся слоган и «О театре»)</label><textarea data-th="pressText" style="min-height:120px" placeholder="Три абзаца: кто вы, что играете, чем отличаетесь. Журналисты копируют это в статьи как есть."></textarea>
         <div class="row">
           <div><label>Где играем</label><input data-th="venue"></div>
           <div><label>Адрес</label><input data-th="address"></div>
@@ -330,6 +330,18 @@
       </div>
     </div>
 
+    <div class="tab" id="tab-press">
+      <div class="panel">
+        <h2>Страница «Прессе и партнёрам»</h2>
+        <p class="help">Адрес <a href="press" target="_blank">teatr-rat.ru/press</a>, ссылка есть в меню сайта. Спектакли, состав, фото, логотип и контакты подставляются сами из других вкладок; здесь только тексты, которые видят журналисты. Пустое поле — текст по умолчанию.</p>
+        <label>Вводный абзац под заголовком</label><textarea data-th="pressLead" style="min-height:70px" placeholder="Всё, что обычно просят журналисты и площадки: тексты о театре, спектакли, фото в высоком разрешении, логотип и контакты. Материалы можно использовать в публикациях о театре со ссылкой на источник."></textarea>
+        <label>О театре — текст для копирования в статьи</label><textarea data-th="pressText" style="min-height:160px" placeholder="Три абзаца: кто вы, что играете, чем отличаетесь. Пусто — берутся слоган и «О театре»."></textarea>
+        <div class="row">
+          <div><label>Контакт для прессы</label><input data-th="pressContact" placeholder="Имя, телефон или почта, время ответа"><div class="hint">Отдельная карточка в контактах: кто отвечает журналистам. Пусто — карточки нет.</div></div>
+          <div><label>Подпись к фото при публикации</label><input data-th="pressCredit" placeholder="фото — Театр RAT"><div class="hint">Что просить указывать под фотографиями.</div></div>
+        </div>
+      </div>
+    </div>
     <div class="tab" id="tab-print">
       <div class="panel">
         <h2>Что печатать</h2>
@@ -338,7 +350,7 @@
           <div><label>Афиша А4</label><div class="btns"><a class="btn" href="poster.html" target="_blank">Открыть афишу ↗</a></div><div class="hint">Ближайшие показы с датами, ценами и QR на сайт.</div></div>
           <div><label>Программка спектакля (А5, две на лист)</label><div class="btns" style="display:flex;gap:8px;flex-wrap:wrap"><select id="progPick" style="max-width:260px"></select><a class="btn" id="progOpen" href="program.html" target="_blank">Открыть программку ↗</a></div><div class="hint">Название, жанр, описание, состав с ролями, ближайшие даты, QR на отзывы и голосование.</div></div>
         </div>
-        <p class="help" style="margin-top:12px">Страница для журналистов и площадок: <a href="press" target="_blank">teatr-rat.ru/press</a> — о театре, спектакли, фото в полном размере, логотип, контакты. Текст для неё на вкладке «О театре».</p>
+        <p class="help" style="margin-top:12px">Страница для журналистов и площадок: <a href="press" target="_blank">teatr-rat.ru/press</a>. Её тексты — на вкладке «Пресса».</p>
       </div>
       <div class="panel">
         <h2>QR-афиша (карточки на стол и сиденья)</h2>
