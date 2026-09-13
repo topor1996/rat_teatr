@@ -98,10 +98,12 @@ function sanitize(array $in): array {
                  'price' => str($e['price'] ?? '', 40), 'ticketUrl' => url($e['ticketUrl'] ?? ''), 'afishaSessionId' => preg_replace('~\D~', '', str($e['afishaSessionId'] ?? '', 40)), 'note' => str($e['note'] ?? '', 120), 'badges' => $badges, 'hidden' => !empty($e['hidden'])];
   }
   usort($events, fn($x, $y) => strcmp($x['date'] . $x['time'], $y['date'] . $y['time']));
-  foreach ($lst('reviews', 100) as $r) {
+  foreach ($lst('reviews', 300) as $r) {
     if (!is_array($r)) continue;
-    $item = ['text' => str($r['text'] ?? '', 800), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40), 'hidden' => !empty($r['hidden'])];
-    if (!empty($r['fromSite'])) { $item['fromSite'] = true; $item['id'] = preg_replace('~[^\w-]~', '', (string)($r['id'] ?? '')); $item['date'] = str($r['date'] ?? '', 10); }
+    $item = ['text' => str($r['text'] ?? '', 3000), 'author' => str($r['author'] ?? '', 100), 'source' => str($r['source'] ?? '', 100), 'url' => url($r['url'] ?? ''), 'playId' => str($r['playId'] ?? '', 40), 'hidden' => !empty($r['hidden']), 'home' => !empty($r['home'])];
+    if (!empty($r['id'])) $item['id'] = preg_replace('~[^\w-]~', '', (string)$r['id']);
+    if (!empty($r['date'])) $item['date'] = str($r['date'], 10);
+    if (!empty($r['fromSite'])) $item['fromSite'] = true;
     $item['audio'] = media($r['audio'] ?? ''); // голосовой отзыв: файл в photos/
     if ($item['text'] !== '' || $item['audio'] !== '') $reviews[] = $item;
   }

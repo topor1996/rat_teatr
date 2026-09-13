@@ -8,7 +8,7 @@ $x = fn($v) => htmlspecialchars((string)$v, ENT_XML1 | ENT_QUOTES, 'UTF-8');
 $dataMod = (int)@filemtime(__DIR__ . '/data/data.json') ?: time();
 $mod = fn(string $f = '') => '<lastmod>' . date('Y-m-d', ($f !== '' && is_file(__DIR__ . '/' . $f)) ? max($dataMod, (int)@filemtime(__DIR__ . '/' . $f)) : $dataMod) . '</lastmod>';
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n" . '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">';
-echo '<url><loc>' . $x($base . '/') . '</loc>' . $mod('index.html') . '</url><url><loc>' . $x($base . '/golos') . '</loc>' . $mod('golos.html') . '</url><url><loc>' . $x($base . '/press') . '</loc>' . $mod('press.html') . '</url>';
+echo '<url><loc>' . $x($base . '/') . '</loc>' . $mod('index.html') . '</url><url><loc>' . $x($base . '/golos') . '</loc>' . $mod('golos.html') . '</url><url><loc>' . $x($base . '/press') . '</loc>' . $mod('press.html') . '</url><url><loc>' . $x($base . '/reviews') . '</loc>' . $mod('reviews.html') . '</url>';
 require_once __DIR__ . '/render.php';
 foreach ($d['actors'] ?? [] as $a) if (rat_actor_has_page($a)) echo '<url><loc>' . $x($base . '/actor/' . rawurlencode(rat_slug($a['name']))) . '</loc>' . $mod($a['photo'] ?? '') . '<image:image><image:loc>' . $x($base . '/' . $a['photo']) . '</image:loc><image:title>' . $x($a['name']) . '</image:title></image:image></url>';
 foreach ($d['plays'] ?? [] as $p) {

@@ -7,7 +7,7 @@
 <link rel="icon" href="/favicon.ico?v=2" sizes="any">
 <link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
 <meta name="robots" content="noindex">
-<link href="fonts/fonts.css?v=20260914u" rel="stylesheet">
+<link href="fonts/fonts.css?v=20260914v" rel="stylesheet">
 <style>
   :root{--bg:#0d0d0d;--panel:#171717;--line:#2a2a2a;--text:#eee;--muted:#8f8b80;--acid:#c9ff3d;--red:#ff3b2f;--ok:#4cd964}
   *{box-sizing:border-box}
@@ -210,7 +210,19 @@
 
     <!-- Отзывы -->
     <div class="tab" id="tab-reviews">
-      <p class="help"><b>Отзывы зрителей и прессы.</b> Показываются на главной в разделе «Говорят» и на странице спектакля, если отзыв к нему привязан.</p>
+      <p class="help"><b>Отзывы зрителей и прессы.</b> Все видимые отзывы — на странице <a href="/reviews" target="_blank">teatr-rat.ru/reviews</a> и на странице спектакля, к которому привязаны. На главной — только с галочкой «На главной» (лучше 3–4; если ни одной — первые три).</p>
+      <div id="homeWarn" class="hint bad" style="display:none;margin:0 0 12px;font-size:13px"></div>
+      <div class="panel" id="importPanel">
+        <h2>Импорт отзывов</h2>
+        <p class="help">Скопируйте отзывы с любого сайта (Яндекс.Афиша, Афиша, Telegram, ВК) и вставьте сюда одним куском. Формат: первая строка — автор, вторая — дата (можно пропустить), дальше текст; отзывы разделяются пустой строкой. Дубли по тексту пропускаются.</p>
+        <textarea id="impText" style="min-height:160px" placeholder="Арсений Игошев&#10;4 сентября 2026&#10;Don't look up, но в московском театре…&#10;&#10;Мария С.&#10;13 июля 2026&#10;Современный молодой коллектив!…"></textarea>
+        <div class="row3">
+          <div><label>Источник</label><input id="impSource" placeholder="Яндекс.Афиша"></div>
+          <div><label>Ссылка на источник</label><input id="impUrl" placeholder="https://… или @канал"></div>
+          <div><label>Спектакль</label><select id="impPlay"></select></div>
+        </div>
+        <div class="btns" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn" id="impBtn">Добавить в отзывы</button><label class="chk" style="margin:0"><input type="checkbox" id="impHidden"> Как черновики (скрыть до проверки)</label><span class="hint" id="impHint"></span></div>
+      </div>
       <div id="list-reviews"></div>
       <button class="btn ghost" data-add="reviews">+ Добавить отзыв</button>
     </div>
@@ -627,7 +639,8 @@ const SECTIONS = {
         <div><label>Источник</label><input data-f="source" value="${esc(r.source)}" placeholder="Афиша Daily"></div>
         <div><label>Спектакль</label><select data-f="playId"><option value="" ${!r.playId ? "selected" : ""}>— ко всем —</option>${data.plays.map(p => `<option value="${esc(p.id)}" ${p.id === r.playId ? "selected" : ""}>${esc(p.title)}</option>`).join("")}</select></div>
       </div>
-      <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://… или @канал из Telegram"><div class="hint">Можно вставить «@канал» — станет ссылкой на t.me. Адрес без https:// тоже подойдёт.</div>`,
+      <label>Ссылка на источник</label><input data-f="url" value="${esc(r.url)}" placeholder="https://… или @канал из Telegram"><div class="hint">Можно вставить «@канал» — станет ссылкой на t.me. Адрес без https:// тоже подойдёт.</div>
+      <div class="row" style="margin-top:8px"><div><label>Дата</label><input data-f="date" type="date" value="${esc(r.date || "")}"></div><div><label>&nbsp;</label><label class="chk" style="margin:0"><input type="checkbox" data-f="home" ${r.home ? "checked" : ""}> На главной (3–4 лучших)</label></div></div>`,
   },
   gallery: {
     img: "photo", label: g => (g.video ? "🎬 " : "") + (g.caption || (g.video ? "Видео" : "Фото")),

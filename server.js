@@ -64,7 +64,7 @@ function sanitize(input) {
     date: str(e.date, 10), time: str(e.time, 5), playId: str(e.playId, 40), venue: str(e.venue, 120),
     hidden: !!e.hidden, price: str(e.price, 40), ticketUrl: url(e.ticketUrl), afishaSessionId: str(e.afishaSessionId, 40).replace(/\D/g, ""), note: str(e.note, 120), badges: arr(e.badges).filter(b => BADGES.includes(b)),
   })).filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.date)).sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
-  const reviews = arr(input.reviews).slice(0, 100).map(r => ({ hidden: !!r.hidden, text: str(r.text, 800), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.fromSite ? { fromSite: true, id: str(r.id, 40).replace(/[^\w-]/g, ""), date: str(r.date, 10) } : {}), audio: media(r.audio) })).filter(r => r.text || r.audio);
+  const reviews = arr(input.reviews).slice(0, 300).map(r => ({ hidden: !!r.hidden, home: !!r.home, text: str(r.text, 3000), author: str(r.author, 100), source: str(r.source, 100), url: url(r.url), playId: str(r.playId, 40), ...(r.id ? { id: str(r.id, 40).replace(/[^\w-]/g, "") } : {}), ...(r.date ? { date: str(r.date, 10) } : {}), ...(r.fromSite ? { fromSite: true } : {}), audio: media(r.audio) })).filter(r => r.text || r.audio);
   const gallery = arr(input.gallery).slice(0, 200).map(g => ({ photo: img(g.photo), video: media(g.video), poster: img(g.poster), caption: str(g.caption, 140), alt: str(g.alt, 200), playId: str(g.playId, 40), hidden: !!g.hidden, actors: arr(g.actors).slice(0, 20).map(n => str(n, 100)).filter(Boolean) })).filter(g => g.photo || g.video);
   return {
     theatre: { name: str(th.name, 100), tagline: str(th.tagline, 200), about: str(th.about, 3000), pressText: str(th.pressText, 6000), pressLead: str(th.pressLead, 400), pressContact: str(th.pressContact, 300), pressCredit: str(th.pressCredit, 120), logoColor: ['acid', 'white'].includes(th.logoColor) ? th.logoColor : '', metrikaId: str(th.metrikaId, 20).replace(/\D/g, ''), yandexVerification: str(th.yandexVerification, 80).replace(/[^\w-]/g, ''), googleVerification: str(th.googleVerification, 120).replace(/[^\w=-]/g, ''), pressLogos: arr(th.pressLogos).map(String).filter(x => ['acid', 'white', 'dark'].includes(x)), pressHide: arr(th.pressHide).slice(0, 500).map(x => img(x)).filter(Boolean), venue: str(th.venue, 120), address: str(th.address, 200),
@@ -127,6 +127,7 @@ app.use("/vendor", express.static(path.join(ROOT, "vendor"), { maxAge: "30d" }))
 app.get("/play.html", (req, res) => res.sendFile(path.join(ROOT, "play.html")));
 app.get("/play/:id", (req, res) => res.sendFile(path.join(ROOT, "play.html")));
 app.get("/actor/:id", (req, res) => res.sendFile(path.join(ROOT, "actor.html")));
+app.get("/reviews", (req, res) => res.sendFile(path.join(ROOT, "reviews.html")));
 app.get("/data/data.json", (req, res) => { res.set("Cache-Control", "no-store"); res.json(readData()); });
 app.use("/photos", express.static(PHOTOS_DIR, { maxAge: "1d" }));
 

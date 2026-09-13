@@ -10,6 +10,8 @@ RewriteRule ^golos/$ /golos [R=301,L]
 RewriteRule ^golos$ golos.html [L]
 RewriteRule ^press/$ /press [R=301,L]
 RewriteRule ^press$ press.html [L]
+RewriteRule ^reviews/$ /reviews [R=301,L]
+RewriteRule ^reviews$ reviews.html [L]
 # Адреса без .html: /play/<id> и /actor/<slug>. Старые play.html?id=… отвечают 301 на новые
 RewriteCond %{QUERY_STRING} ^id=([\w-]+)$
 RewriteRule ^play\.html$ /play/%1? [R=301,L]

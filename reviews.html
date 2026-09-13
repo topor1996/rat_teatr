@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Отзывы — Театр RAT</title>
+<meta name="description" content="Что зрители и критики пишут о спектаклях театра RAT: отзывы с Яндекс.Афиши, из Telegram и с сайта.">
+<link rel="canonical" href="https://teatr-rat.ru/reviews">
+<meta property="og:type" content="website"><meta property="og:site_name" content="Театр RAT"><meta property="og:title" content="Отзывы — Театр RAT"><meta property="og:description" content="Что зрители пишут после спектаклей театра RAT."><meta property="og:image" content="https://teatr-rat.ru/og.php"><meta property="og:url" content="https://teatr-rat.ru/reviews"><meta property="og:locale" content="ru_RU">
+<link rel="icon" href="/favicon.ico?v=2" sizes="any">
+<link rel="icon" href="/assets/favicon.svg?v=2" type="image/svg+xml">
+<link href="/fonts/fonts.css?v=20260914v" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914v" rel="stylesheet">
+<style>
+  .revpage h1{font-family:"Oswald","Oswald Fallback",Impact,sans-serif;font-weight:700;font-size:clamp(40px,8vw,84px);line-height:.9;text-transform:uppercase;margin:34px 0 8px}
+  .revpage h1 em{font-style:normal;font-family:"Rubik Spray Paint","Spray Fallback",Impact,sans-serif;font-weight:400;color:var(--acid);display:inline-block;transform:rotate(-2deg)}
+  .revpage .lead{color:#cfcbbd;max-width:640px;font-size:15px;margin:0 0 18px}
+  .revpage .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 26px}
+  .revpage .chips button{font:inherit;font-family:"Oswald","Oswald Fallback",sans-serif;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:8px 12px;border:2px solid #444;background:transparent;color:#eee;cursor:pointer}
+  .revpage .chips button.on{background:var(--acid);color:#000;border-color:var(--acid)}
+  .revpage .chips button small{font-family:"PT Mono","PT Mono Fallback",monospace;text-transform:none;letter-spacing:0;color:inherit;opacity:.7;margin-left:6px}
+  .revpage .none{color:var(--muted);padding:30px 0}
+  .revpage .reviews{margin-top:10px}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="stamp" href="/"><svg class="rat"><use href="/assets/logo.svg#rat"/></svg> <span id="navName">Театр RAT</span></a>
+    <ul>
+      <li><a href="/#afisha">Афиша</a></li>
+      <li><a href="/#plays">Спектакли</a></li>
+      <li><a href="/#troupe">Команда</a></li>
+      <li><a href="/#contacts">Контакты</a></li>
+      <li><a href="/press">Прессе</a></li>
+      <li><a class="cta" href="/golos">Голосуй рублём</a></li>
+    </ul>
+  </div>
+</nav>
+<main class="wrap revpage">
+  <h1>Гово<em>рят</em></h1>
+  <p class="lead" id="lead">Всё, что зрители и критики написали о наших спектаклях: с Яндекс.Афиши, из Telegram и прямо на сайте.</p>
+  <div class="chips" id="chips"></div>
+  <div id="hallVoices"></div>
+  <div class="reviews" id="reviewsList"></div>
+</main>
+<div class="lightbox" id="lightbox"><img alt=""><div class="cap"></div></div>
+<footer>
+  <div class="wrap">
+    <div id="diag" style="color:#ff3b2f;font-size:11px;margin-bottom:10px;white-space:pre-wrap"></div>
+    <svg class="rat"><use href="/assets/logo.svg#rat"/></svg>
+    <div id="footName">Театр RAT</div>
+    <div style="margin-top:6px"><a href="/">На главную</a> · <a href="/golos">Голосуй рублём</a></div>
+    <div class="credit">Разработано: <a href="https://t.me/an_t96" target="_blank" rel="noopener" title="Написать в Telegram">T1</a></div>
+  </div>
+</footer>
+<script src="/assets/site.min.js?v=20260914v" defer></script>
+<script>
+window.addEventListener("DOMContentLoaded", function () {
+  var R = RAT, esc = R.esc;
+  R.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [], reviews: [] }).then(function (d) {
+    var th = d.theatre, map = R.byId(d), all = d.reviews.slice().reverse(); /* новые сверху */
+    document.title = "Отзывы — " + (th.name || "Театр RAT");
+    document.getElementById("navName").textContent = th.name || "Театр RAT"; document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
+    var want = (location.hash || "").replace("#", "") || "", chips = document.getElementById("chips"), list = document.getElementById("reviewsList");
+    var counts = {}; all.forEach(function (r) { counts[r.playId || ""] = (counts[r.playId || ""] || 0) + 1; });
+    var plays = d.plays.filter(function (p) { return counts[p.id]; });
+    chips.innerHTML = '<button data-play="" class="on">Все<small>' + all.length + "</small></button>" + plays.map(function (p) { return '<button data-play="' + esc(p.id) + '">' + esc(p.title) + "<small>" + counts[p.id] + "</small></button>"; }).join("");
+    var draw = function (pid) {
+      chips.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.play === pid); });
+      var rs = all.filter(function (r) { return !pid || r.playId === pid; });
+      var hv = document.getElementById("hallVoices"); hv.innerHTML = R.hallVoicesHtml(rs); if (hv.innerHTML) R.voicePlayers(hv);
+      list.innerHTML = rs.filter(function (r) { return !r.audio; }).map(function (r) { return R.reviewCard(r, pid ? null : map); }).join("") + R.reviewForm(pid || "");
+      if (!rs.length) list.innerHTML = '<p class="none">Отзывов пока нет — будьте первым.</p>' + R.reviewForm(pid || "");
+      R.reveal(); if (R.fx) R.fx();
+    };
+    chips.addEventListener("click", function (e) { var b = e.target.closest("button"); if (!b) return; history.replaceState(null, "", b.dataset.play ? "#" + b.dataset.play : location.pathname); draw(b.dataset.play); });
+    draw(map[want] ? want : "");
+    R.todayBar(d, "/golos"); R.jsonLd(d); R.marqRat(); R.pushInit(); R.mobileBar({ home: "/" }); R.toTop(); R.scrollProgress(); R.hit("reviews");
+  }).catch(function (e) { var g = document.getElementById("diag"); if (g) g.textContent = "Ошибка: " + e.message; });
+});
+</script>
+</body>
+</html>

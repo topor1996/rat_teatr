@@ -27,9 +27,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/oswald-400-700-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-cyrillic.woff2">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/rubik-spray-paint-400-latin.woff2">
-<link href="/fonts/fonts.css?v=20260914u" rel="stylesheet">
-<link href="/assets/intro.min.css?v=20260914u" rel="stylesheet">
-<link href="/assets/site.min.css?v=20260914u" rel="stylesheet">
+<link href="/fonts/fonts.css?v=20260914v" rel="stylesheet">
+<link href="/assets/intro.min.css?v=20260914v" rel="stylesheet">
+<link href="/assets/site.min.css?v=20260914v" rel="stylesheet">
 </head>
 <body>
 
@@ -117,6 +117,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
     <p class="sec-sub">Что пишут после спектаклей.</p>
     <div id="hallVoices"></div>
     <div class="reviews" id="reviewsList"></div>
+    <div class="row" id="reviewsMore" style="margin-top:22px"></div>
   </section>
 
   <section id="backstage">
@@ -163,7 +164,7 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
   </div>
 </footer>
 
-<script src="/assets/site.min.js?v=20260914u" defer></script>
+<script src="/assets/site.min.js?v=20260914v" defer></script>
 <script>
 window.addEventListener("DOMContentLoaded", function () {
 window.addEventListener("error", function (e) { var d = document.getElementById("diag"); if (d) d.textContent += "Ошибка: " + e.message + "\n"; });
@@ -242,7 +243,11 @@ function render(d) {
 
   /* отзывы, бэкстейдж */
   var hv = document.getElementById("hallVoices"); hv.innerHTML = R.hallVoicesHtml(d.reviews); if (hv.innerHTML) R.voicePlayers(hv);
-  document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = d.reviews.filter(function (r) { return !r.audio; }).map(function (r) { return R.reviewCard(r, map); }).join("") + R.reviewForm(""); if (!d.reviews.length) { var rs = document.querySelector("#reviews .sec-sub"); if (rs) rs.textContent = "Отзывов пока нет — будьте первым."; }
+  /* на главной — отзывы с галочкой «на главной» в админке (если ни одной — первые три), остальные на /reviews */
+  var textRevs = d.reviews.filter(function (r) { return !r.audio; }), homeRevs = textRevs.filter(function (r) { return r.home; }); if (!homeRevs.length) homeRevs = textRevs.slice(0, 3);
+  document.getElementById("reviews").hidden = false; document.getElementById("reviewsList").innerHTML = homeRevs.map(function (r) { return R.reviewCard(r, map); }).join("") + R.reviewForm("");
+  if (d.reviews.length > homeRevs.length) document.getElementById("reviewsMore").innerHTML = '<a class="btn" href="/reviews">Смотреть все отзывы · ' + d.reviews.length + "</a>";
+  if (!d.reviews.length) { var rs = document.querySelector("#reviews .sec-sub"); if (rs) rs.textContent = "Отзывов пока нет — будьте первым."; }
   var reelN = R.reel(d.plays, d.gallery); if (reelN) { document.getElementById("reel").hidden = false; document.getElementById("reelH").hidden = false; }
   var photos = d.gallery.filter(function (g) { return g.photo; });
   document.getElementById("backstage").hidden = !photos.length && !reelN;
