@@ -59,7 +59,7 @@
 window.addEventListener("DOMContentLoaded", function () {
   var R = RAT, esc = R.esc;
   R.loadData({ theatre: { name: "Театр RAT" }, plays: [], events: [], actors: [], reviews: [] }).then(function (d) {
-    var th = d.theatre, map = R.byId(d), all = d.reviews.slice().reverse(); /* новые сверху */
+    var th = d.theatre, map = R.byId(d), all = d.reviews.slice().sort(function (a, b) { return String(b.date || "").localeCompare(String(a.date || "")); }); /* новые сверху, без даты — в конец */
     document.title = "Отзывы — " + (th.name || "Театр RAT");
     document.getElementById("navName").textContent = th.name || "Театр RAT"; document.getElementById("footName").textContent = "© " + new Date().getFullYear() + " " + (th.name || "Театр RAT");
     var want = (location.hash || "").replace("#", "") || "", chips = document.getElementById("chips"), list = document.getElementById("reviewsList");
