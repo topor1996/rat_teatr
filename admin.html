@@ -356,6 +356,13 @@
         </div>
       </div>
       <div class="panel">
+        <h2>Какие логотипы отдавать</h2>
+        <p class="help">Каждый вариант — в SVG и PNG. Ничего не отмечено — отдаются все три.</p>
+        <label class="chk"><input type="checkbox" data-press-logo="acid"> Зелёный на прозрачном фоне (фирменный)</label>
+        <label class="chk"><input type="checkbox" data-press-logo="white"> Белый на прозрачном фоне (для тёмных макетов)</label>
+        <label class="chk"><input type="checkbox" data-press-logo="dark"> Значок на чёрном квадрате (для аватаров и соцсетей)</label>
+      </div>
+      <div class="panel">
         <h2>Какие фото отдавать прессе</h2>
         <p class="help">Все фото сайта (постеры, кадры спектаклей, бэкстейдж, заглавное) показываются журналистам в полном размере. Снимите галочку с тех, которые отдавать не надо. Скрытые в бэкстейдже фото сюда не попадают и так.</p>
         <div id="pressPhotos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px"></div>
@@ -734,13 +741,17 @@ function pressCandidates() {
   return out;
 }
 function renderPressPhotos() {
+  const sel = data && data.theatre && data.theatre.pressLogos || [];
+  document.querySelectorAll("[data-press-logo]").forEach(c => { c.checked = sel.includes(c.dataset.pressLogo); });
   const box = document.getElementById("pressPhotos"); if (!box || !data) return;
   const hide = new Set((data.theatre.pressHide || []).map(s => String(s).replace(/-s\.webp$/, "")));
   const list = pressCandidates();
   box.innerHTML = list.map(x => `<label style="display:block;cursor:pointer;background:var(--panel,#111);padding:6px;border:1px solid ${hide.has(x.src) ? "var(--red)" : "#333"};opacity:${hide.has(x.src) ? ".55" : "1"}"><img src="${esc(backend.photoUrl(x.src.replace(/\.[a-z0-9]+$/i, "") + "-s.webp"))}" onerror="this.onerror=null;this.src='${esc(backend.photoUrl(x.src))}'" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#000"><div style="display:flex;gap:6px;align-items:flex-start;margin-top:6px;font-size:11px;line-height:1.3"><input type="checkbox" data-press-photo="${esc(x.src)}" ${hide.has(x.src) ? "" : "checked"} style="margin:2px 0 0;flex:none;width:16px;height:16px;padding:0;min-height:0"><span style="min-width:0;overflow-wrap:anywhere">${esc(x.title)}</span></div></label>`).join("") || '<p class="help">Фото пока нет.</p>';
 }
 document.addEventListener("change", e => {
-  const t = e.target; if (t.dataset.pressPhoto === undefined) return;
+  const t = e.target;
+  if (t.dataset.pressLogo !== undefined) { data.theatre.pressLogos = [...document.querySelectorAll("[data-press-logo]")].filter(c => c.checked).map(c => c.dataset.pressLogo); markDirty(); return; }
+  if (t.dataset.pressPhoto === undefined) return;
   const set = new Set((data.theatre.pressHide || []).map(s => String(s).replace(/-s\.webp$/, "")));
   if (t.checked) set.delete(t.dataset.pressPhoto); else set.add(t.dataset.pressPhoto);
   data.theatre.pressHide = [...set]; markDirty(); renderPressPhotos();

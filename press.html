@@ -95,7 +95,11 @@ window.addEventListener("DOMContentLoaded", function () {
       var cast = (p.castList || []).map(function (c) { return c.name; }).filter(Boolean).join(", ");
       return '<div class="fact"><b>' + esc(p.genre || "спектакль") + "</b><strong>" + esc(p.title) + "</strong>" + (p.duration || p.age ? "<br><small>" + esc([p.duration, p.age].filter(Boolean).join(" · ")) + "</small>" : "") + (cast ? "<br><small>В ролях: " + esc(cast) + "</small>" : "") + '<br><a href="/play/' + encodeURIComponent(p.id) + '">страница спектакля →</a></div>';
     }).join("") || '<div class="fact">Репертуар обновляется.</div>';
-    document.getElementById("logos").innerHTML = card("assets/logo.svg", "Логотип, SVG", "вектор, прозрачный фон", "logo") + card("assets/logo-1024.png", "Логотип, PNG", "1024 px, прозрачный фон", "logo") + card("assets/icon-512.png", "Значок на чёрном", "512×512", "logo") + card("og.php", "Обложка 1200×630", "с ближайшим показом", "logo");
+    var want = (th.pressLogos && th.pressLogos.length) ? th.pressLogos : ["acid", "white", "dark"], L = "";
+    if (want.indexOf("acid") >= 0) L += card("assets/logo.svg", "Логотип зелёный, SVG", "вектор, прозрачный фон", "logo") + card("assets/logo-1024.png", "Логотип зелёный, PNG", "1024 px, прозрачный фон", "logo");
+    if (want.indexOf("white") >= 0) L += card("assets/logo-white.svg", "Логотип белый, SVG", "вектор, прозрачный фон", "logo") + card("assets/logo-white-1024.png", "Логотип белый, PNG", "1024 px, прозрачный фон", "logo");
+    if (want.indexOf("dark") >= 0) L += card("assets/icon-512.png", "Значок на чёрном", "512×512, PNG", "logo");
+    document.getElementById("logos").innerHTML = L + card("og.php", "Обложка 1200×630", "с ближайшим показом", "logo");
     var seen = {}, ph = [];
     plays.forEach(function (p) { if (p.poster) ph.push({ src: big(p.poster), title: "Постер «" + p.title + "»", sub: "" }); (p.media || []).forEach(function (m) { if (m.type !== "video" && m.src && !m.hidden) ph.push({ src: big(m.src), title: p.title, sub: m.caption || "" }); }); });
     (d.gallery || []).forEach(function (g) { if (g.photo && !g.hidden) ph.push({ src: big(g.photo), title: g.caption || "Бэкстейдж", sub: (g.actors || []).join(", ") }); });
