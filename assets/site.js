@@ -973,9 +973,12 @@ window.RAT = (function () {
     var readTarget = function () { var r = wrap.getBoundingClientRect(), total = r.height - window.innerHeight; return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0; };
     var apply = function (prog) {
       var cam = Math.min(prog / .78, 1); /* 0..0.78 — проезд, дальше занавес */
+      /* Камера едет ровно до последней фигуры (чуть за неё), сколько бы их ни было: раньше путь был фиксированным
+         и последний актёр к занавесу оставался мелким и далёким */
+      var travel = 700 + Math.max(0, cuts.length - 1) * 320 + 120; st.style.setProperty("--travel", travel + "px");
       st.style.setProperty("--p", cam.toFixed(4));
       poster.style.setProperty("--o", Math.max(0, 1 - cam * 2.2).toFixed(3)); poster.style.setProperty("--z", (-cam * 2400).toFixed(0) + "px"); /* постер уходит назад быстрее камеры и гаснет, а не пролетает сквозь неё */
-      cuts.forEach(function (c, i) { var z = -700 - i * 320, dist = z + cam * 1500; /* расстояние до камеры: <0 — впереди, >0 — позади */ var o = dist < -900 ? 0 : dist < -350 ? (dist + 900) / 550 : dist <= 150 ? 1 : dist < 400 ? (400 - dist) / 250 : 0; c.style.setProperty("--o", o.toFixed(3)); });
+      cuts.forEach(function (c, i) { var z = -700 - i * 320, dist = z + cam * travel; /* расстояние до камеры: <0 — впереди, >0 — позади */ var o = dist < -900 ? 0 : dist < -350 ? (dist + 900) / 550 : dist <= 150 ? 1 : dist < 400 ? (400 - dist) / 250 : 0; c.style.setProperty("--o", o.toFixed(3)); });
       var on = null; capsEl.forEach(function (c) { var at = +c.dataset.at, len = +c.dataset.len || .13; if (prog >= at && prog < at + len) on = c; });
       capsEl.forEach(function (c) { c.classList.toggle("on", c === on); });
       var cprog = Math.max(0, (prog - .78) / .16); st.style.setProperty("--c", Math.min(1, cprog).toFixed(3));

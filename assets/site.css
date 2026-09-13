@@ -610,7 +610,7 @@ body.has-mbar .nudge{bottom:calc(84px + env(safe-area-inset-bottom))}
 /* ================= сцена по скроллу на странице спектакля ================= */
 .stage-wrap{position:relative;height:440vh;margin:30px calc(50% - 50vw) 0;width:100vw}
 .stage{position:sticky;top:0;height:100vh;overflow:hidden;background:radial-gradient(ellipse at 50% 100%,#1a1710 0%,#0a0a0a 55%,#000 100%);perspective:900px;perspective-origin:50% 45%}
-.stage .cam{position:absolute;inset:0;transform-style:preserve-3d;transform:translateZ(calc(var(--p,0) * 1500px))}
+.stage .cam{position:absolute;inset:0;transform-style:preserve-3d;transform:translateZ(calc(var(--p,0) * var(--travel,1500px)))}
 .stage .sl{position:absolute;left:50%;top:50%;transform-style:preserve-3d;transform:translate(-50%,-50%) translateZ(var(--z,0px)) translateX(var(--x,0px)) translateY(var(--y,0px));opacity:var(--o,1);will-change:transform}
 .stage .floor{position:absolute;left:-60vw;right:-60vw;bottom:-6vh;height:60vh;background:radial-gradient(ellipse at 50% 0%,rgba(201,255,61,.10),transparent 60%),repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 2px,transparent 2px 120px);transform:rotateX(78deg) translateZ(-200px);transform-origin:50% 100%}
 .stage .lamp{position:absolute;top:0;width:34vw;height:110vh;left:50%;background:radial-gradient(ellipse at 50% 0%,rgba(255,240,200,.16),transparent 65%);transform-origin:50% 0;pointer-events:none;mix-blend-mode:screen}
