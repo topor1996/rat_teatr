@@ -203,6 +203,8 @@
   .btn-ghost:hover{background:#000;color:#fff}
   .missing{margin-top:8px;font-size:12px;color:var(--red);text-align:center}
   .pay{margin-top:10px;border:2.5px solid #000;background:var(--paper-2);padding:10px}
+  .pay-to{font-size:12px;color:var(--muted);margin:-4px 0 8px}
+  .pay-to b{color:#000}
   .pay-h{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#000;margin:0 0 8px}
   .bank{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;margin-top:6px;border:2px solid #000;background:#fff;color:#000;text-decoration:none;cursor:pointer;font:inherit;font-size:15px;font-weight:700;text-align:left}
   .bank:hover{background:#000;color:#fff}
@@ -500,10 +502,11 @@ grid.innerHTML = ACTORS.map((a, i) => {
     </div>` : "";
   const payBlock = tel ? `
     <div class="pay" id="pay-${i}" hidden>
-      <div class="pay-h">Откуда переводите?</div>
+      <div class="pay-h">Из какого банка переводите?</div>
+      <div class="pay-to">Получатель: ${esc(a.name.split(/\s+/)[0])}${a.bank ? `, <b>${esc(a.bank)}</b>` : ""}, по номеру телефона</div>
       <a class="bank sber" href="${esc(links.sber)}" target="_blank" rel="noopener"><span class="ic">С</span><span class="nm">Сбербанк</span><small>откроется приложение</small></a>
       <a class="bank tb" href="${esc(links.tbWeb)}" data-app="${esc(links.tbApp)}" target="_blank" rel="noopener"><span class="ic">Т</span><span class="nm">Т-Банк</span><small>откроется приложение</small></a>
-      <button class="bank other" type="button" data-phone="${i}"><span class="ic">₽</span><span class="nm">Другой банк</span><small>по номеру телефона</small></button>
+      <button class="bank other" type="button" data-phone="${i}"><span class="ic">₽</span><span class="nm">Другой банк</span><small>${a.bank && !/сбер|т-?банк|тиньк/i.test(a.bank) ? esc(a.bank) + " и все остальные" : "ВТБ, Альфа и все остальные"}</small></button>
       ${phoneBlock}
     </div>` : "";
   return `

@@ -533,7 +533,7 @@ const SECTIONS = {
         <div><label>Банк, к которому привязан номер</label><input data-f="bank" list="bankList" value="${esc(a.bank)}" placeholder="Т-Банк"></div>
       </div>
       <label>Описание сцены</label><textarea data-f="scene">${esc(a.scene)}</textarea>
-      <label>Телефон для перевода (СБП)</label><input data-f="phone" type="tel" value="${esc(a.phone)}" placeholder="+7 900 000-00-00"><div class="hint" data-hint="sbp"></div>
+      <label>Телефон для перевода (СБП)</label><input data-f="phone" type="tel" value="${esc(a.phone)}" placeholder="8 900 000-00-00 — можно без +7"><div class="hint" data-hint="sbp"></div>
       <label>Ссылка QR СБП (необязательно, только у самозанятых и ИП)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/...">
       <datalist id="bankList"><option>Сбербанк</option><option>Т-Банк</option><option>ВТБ</option><option>Альфа-Банк</option><option>Газпромбанк</option><option>Райффайзен</option><option>Почта Банк</option><option>Озон Банк</option><option>Яндекс Банк</option><option>МТС Банк</option><option>Совкомбанк</option><option>ПСБ</option></datalist>`,
   },
@@ -582,6 +582,19 @@ function markDirty() { dirty = true; setStatus("Изменения не сохр
 
 const previews = {};
 function photoHtml(path) { const src = previews[path] || (path && backend.photoUrl(path) + "?" + Date.now()); return path ? `<img src="${src}" alt="">` : "<span>Нет фото</span>"; }
+/* Маска телефона: «8911…», «911…», «7911…» → «+7 911 242-90-41» по мере ввода */
+function fmtPhone(v) {
+  let d = String(v || "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d[0] === "8" || d[0] === "7") d = d.slice(1); else if (d[0] !== "9" && d.length >= 10) d = d.slice(-10);
+  d = d.slice(0, 10);
+  let out = "+7";
+  if (d.length) out += " " + d.slice(0, 3);
+  if (d.length > 3) out += " " + d.slice(3, 6);
+  if (d.length > 6) out += "-" + d.slice(6, 8);
+  if (d.length > 8) out += "-" + d.slice(8, 10);
+  return out;
+}
 function checkSbp(el, v) {
   const h = el.querySelector("[data-hint=sbp]"); if (!h) return; v = (v || "").trim();
   const ph = (el.querySelector("[data-f=phone]") || {}).value || "", d = ph.replace(/\D/g, ""), okTel = d.length === 11 || d.length === 10;
@@ -1083,6 +1096,7 @@ document.addEventListener("input", e => {
   if (t.dataset.show !== undefined) { data.show[t.dataset.show] = t.value; markDirty(); return; }
   const el = t.closest(".entry"); if (!el || !t.dataset.f) return;
   const key = el.dataset.key, item = data[key][el.dataset.i];
+  if (t.dataset.f === "phone" && key === "actors" && !/^delete/.test(e.inputType || "")) { const f = fmtPhone(t.value); if (f !== t.value) { const atEnd = t.selectionEnd === t.value.length; t.value = f; if (atEnd) t.setSelectionRange(f.length, f.length); } }
   item[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
   el.querySelector(".title").textContent = SECTIONS[key].label(item);
   if (t.dataset.f === "sbp" || t.dataset.f === "phone" || t.dataset.f === "bank") checkSbp(el, (el.querySelector("[data-f=sbp]") || {}).value);
