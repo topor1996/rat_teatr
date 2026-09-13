@@ -202,6 +202,18 @@
   .btn-ghost{background:transparent;color:#000;font-size:14px;padding:9px 10px;border-width:2px}
   .btn-ghost:hover{background:#000;color:#fff}
   .missing{margin-top:8px;font-size:12px;color:var(--red);text-align:center}
+  .pay{margin-top:10px;border:2.5px solid #000;background:var(--paper-2);padding:10px}
+  .pay-h{font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#000;margin:0 0 8px}
+  .bank{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;margin-top:6px;border:2px solid #000;background:#fff;color:#000;text-decoration:none;cursor:pointer;font:inherit;font-size:15px;font-weight:700;text-align:left}
+  .bank:hover{background:#000;color:#fff}
+  .bank .ic{flex:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-family:"Oswald","Oswald Fallback",sans-serif;font-weight:700;font-size:14px;color:#fff}
+  .bank.sber .ic{background:#21a038}
+  .bank.tb .ic{background:#ffdd2d;color:#000}
+  .bank.other .ic{background:#000;color:var(--acid)}
+  .bank .nm{white-space:nowrap}
+  .bank small{margin-left:auto;font-weight:400;font-size:11px;line-height:1.2;color:var(--muted);text-align:right}
+  .bank:hover small{color:#ddd}
+  .pay .phone{margin-top:8px}
 
   .phone{
     margin-top:10px;padding:12px;border:2px dashed #000;font-size:12px;color:var(--muted);background:var(--paper-2)
@@ -337,12 +349,12 @@ var started=false,start=function(){if(started)return;started=true;el.classList.r
    актёры редактируются в админке (/admin), а этот блок используется
    только когда сервер недоступен (например, при открытии файла напрямую).
 
-   sbp   — ссылка из приложения банка актёра:
-           «Получить перевод по QR-коду» → СБП. Выглядит как https://qr.nspk.ru/....
-           Именно она открывает выбор банка у зрителя. (Сбер-ссылки вида
-           sberbank.com/... работают только у клиентов Сбера — их сюда не надо.)
-   phone — номер телефона для перевода по СБП вручную (запасной вариант).
-   bank  — банк, в который привязан этот номер в СБП.
+   phone — номер телефона, к которому привязан счёт в СБП. Основной способ:
+           сайт сам собирает ссылки «Сбербанк» и «Т-Банк» с этим номером, а для
+           остальных банков показывает номер и кнопку «Скопировать».
+   bank  — банк получателя (нужен зрителю при переводе из другого банка).
+   sbp   — необязательно: ссылка https://qr.nspk.ru/... (даёт банк только
+           самозанятым и ИП). Если есть — кнопка ведёт прямо на неё.
    photo — путь к фото (например "photos/ivan.jpg") или пустая строка.
    ===================================================================== */
 const SHOW = {
@@ -438,6 +450,25 @@ marqLive();
 const grid = document.getElementById("grid");
 let current = ACTORS;
 
+/* Перевод по номеру телефона: ссылки в приложения банков с подставленным номером (как делает t-qr.ru).
+   Сбер открывает перевод по номеру через универсальную ссылку sberbank.com/sms/pbpn,
+   Т-Банк — через схему tinkoffbank:// (на телефоне) или веб-версию; bankMemberId — код банка получателя в СБП. */
+const BANK_IDS = [[/сбер/i, "100000000111"], [/т-?банк|тиньк|tinkoff|tbank/i, "100000000004"], [/втб/i, "100000000005"], [/альф/i, "100000000008"],
+  [/газпром/i, "100000000001"], [/райф/i, "100000000007"], [/псб|промсвяз/i, "100000000010"], [/совком/i, "100000000013"], [/открыт/i, "100000000015"],
+  [/почт/i, "100000000016"], [/мтс/i, "100000000017"], [/росбанк/i, "100000000012"], [/россельхоз|рсхб/i, "100000000020"], [/озон|ozon/i, "100000000273"],
+  [/яндекс|yandex/i, "100000000150"], [/уралсиб/i, "100000000026"], [/ак ?барс/i, "100000000006"], [/убрир/i, "100000000031"], [/дом\.?рф/i, "100000000082"]];
+const telDigits = p => { const d = String(p || "").replace(/\D/g, ""); return d.length === 11 && (d[0] === "7" || d[0] === "8") ? "7" + d.slice(1) : d.length === 10 ? "7" + d : ""; };
+const payLinks = (tel, bank) => {
+  const hit = BANK_IDS.find(b => b[0].test(bank || "")), member = hit ? "&workflowType=SBPTransfer&bankMemberId=" + hit[1] : "";
+  return {
+    sber: "https://www.sberbank.com/sms/pbpn?requisiteNumber=" + tel,
+    tbApp: "tinkoffbank://Main/PayByMobileNumber?numberPhone=" + tel + member,
+    tbWeb: "https://www.tinkoff.ru/mybank/payments/persons/phone/?predefined=" + encodeURIComponent(JSON.stringify({ phone: "+" + tel }))
+  };
+};
+const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+const payUrl = a => a.sbp && /^https?:\/\//.test(a.sbp) ? a.sbp : location.origin + location.pathname.replace(/[^\/]*$/, "") + "golos?pay=" + slug(a.name);
+
 function render(SHOW, ACTORS) {
 current = ACTORS;
 document.getElementById("showLine").innerHTML = `Спектакль: <b>${esc(SHOW.title)}</b>`;
@@ -454,16 +485,26 @@ ACTORS = ACTORS.filter(a => a.golos !== false); // в админке у актё
 current = ACTORS;
 grid.innerHTML = ACTORS.map((a, i) => {
   const hasSbp = /^https?:\/\//.test(a.sbp || "");
+  const tel = telDigits(a.phone), links = payLinks(tel, a.bank);
+  const can = hasSbp || !!tel;
   const photo = a.photo
     ? `<img src="${esc(a.photo)}" alt="${esc(a.name)}" loading="lazy">`
     : `<div class="initials">${esc(initials(a.name))}</div>`;
   const phoneBlock = a.phone ? `
     <div class="phone" id="ph-${i}" hidden>
-      Перевод по номеру через СБП${a.bank ? `, банк получателя — <b>${esc(a.bank)}</b>` : ""}
+      В приложении вашего банка: Переводы → По номеру телефона (СБП)${a.bank ? `, банк получателя — <b>${esc(a.bank)}</b>` : ""}
       <div class="row">
         <span class="val">${esc(a.phone)}</span>
         <button class="copy" data-copy="${esc(a.phone)}">Скопировать</button>
       </div>
+    </div>` : "";
+  const payBlock = tel ? `
+    <div class="pay" id="pay-${i}" hidden>
+      <div class="pay-h">Откуда переводите?</div>
+      <a class="bank sber" href="${esc(links.sber)}" target="_blank" rel="noopener"><span class="ic">С</span><span class="nm">Сбербанк</span><small>откроется приложение</small></a>
+      <a class="bank tb" href="${esc(links.tbWeb)}" data-app="${esc(links.tbApp)}" target="_blank" rel="noopener"><span class="ic">Т</span><span class="nm">Т-Банк</span><small>откроется приложение</small></a>
+      <button class="bank other" type="button" data-phone="${i}"><span class="ic">₽</span><span class="nm">Другой банк</span><small>по номеру телефона</small></button>
+      ${phoneBlock}
     </div>` : "";
   return `
   <article class="card" id="a-${slug(a.name)}">
@@ -475,15 +516,15 @@ grid.innerHTML = ACTORS.map((a, i) => {
         <span class="role">${esc(a.role)}</span>
         ${a.photo && (a.bio || a.roles) ? `<a class="apage" href="actor.html?id=${slug(a.name)}">страница актёра →</a>` : ""}
         <p class="scene">${esc(a.scene)}</p>
-        <a class="btn ${hasSbp ? "" : "disabled"}" href="${hasSbp ? esc(a.sbp) : "#"}" target="_blank" rel="noopener">
-          <svg><use href="#sbp"/></svg> Перевести через СБП
-        </a>
-        ${hasSbp ? "" : `<div class="missing">ссылка СБП ещё не добавлена</div>`}
+        ${hasSbp ? `<a class="btn" href="${esc(a.sbp)}" target="_blank" rel="noopener"><svg><use href="#sbp"/></svg> Перевести через СБП</a>`
+          : tel ? `<button class="btn" type="button" data-pay="${i}"><svg><use href="#sbp"/></svg> Перевести</button>`
+          : `<a class="btn disabled" href="#"><svg><use href="#sbp"/></svg> Перевести</a>`}
+        ${can ? "" : `<div class="missing">реквизиты ещё не добавлены</div>`}
         <div class="alts">
-          ${hasSbp ? `<button class="btn btn-ghost" data-qr="${i}">Показать QR</button>` : ""}
-          ${a.phone ? `<button class="btn btn-ghost" data-phone="${i}">По номеру телефона</button>` : ""}
+          ${can ? `<button class="btn btn-ghost" data-qr="${i}">Показать QR</button>` : ""}
+          ${hasSbp && a.phone ? `<button class="btn btn-ghost" data-phone="${i}">По номеру телефона</button>` : ""}
         </div>
-        ${phoneBlock}
+        ${hasSbp ? phoneBlock : payBlock}
       </div>
     </div>
   </article>`;
@@ -503,6 +544,10 @@ grid.innerHTML = ACTORS.map((a, i) => {
     } catch {}
   }
   window.__golos = d; render(d.show || SHOW, d.actors);
+  try {
+    const want = new URLSearchParams(location.search).get("pay");
+    if (want) { const i = current.findIndex(a => slug(a.name) === want); const p = i >= 0 && document.getElementById("pay-" + i); if (p) { p.hidden = false; setTimeout(() => p.closest(".card").scrollIntoView({ block: "center" }), 60); } }
+  } catch {}
   try { var q = "p=golos"; if (!(navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&" + q))) fetch("api.php?a=hit&" + q, { keepalive: true }).catch(function () {}); } catch (x) {}
   try {
     var box = document.querySelector(".marq-outer");
@@ -522,8 +567,21 @@ grid.innerHTML = ACTORS.map((a, i) => {
 })();
 
 grid.addEventListener("click", async e => {
-  const t = e.target.closest("[data-phone],[data-copy],[data-qr]");
+  const t = e.target.closest("[data-phone],[data-copy],[data-qr],[data-pay],[data-app]");
   if (!t) return;
+  if (t.dataset.pay !== undefined) {
+    const p = document.getElementById("pay-" + t.dataset.pay);
+    p.hidden = !p.hidden;
+    try { navigator.sendBeacon && navigator.sendBeacon("api.php?a=hit&ev=golos"); } catch {}
+    return;
+  }
+  if (t.dataset.app !== undefined) {
+    if (!isMobile) return; // на компьютере — обычная ссылка в веб-версию Т-Банка
+    e.preventDefault();
+    const web = t.href; location.href = t.dataset.app;
+    setTimeout(() => { if (!document.hidden) { const w = window.open(web, "_blank"); if (!w) location.href = web; } }, 1400);
+    return;
+  }
   if (t.dataset.phone !== undefined) {
     const p = document.getElementById("ph-" + t.dataset.phone);
     p.hidden = !p.hidden;
@@ -567,7 +625,7 @@ grid.addEventListener("click", async e => {
     });
   };
   document.addEventListener("click", e => {
-    const pay = e.target.closest(".card a.btn[target=_blank]:not(.disabled), .card [data-copy]");
+    const pay = e.target.closest(".card a.btn[target=_blank]:not(.disabled), .card [data-copy], .card a.bank");
     if (pay) setTimeout(show, 1500);
   });
 })();
@@ -575,10 +633,13 @@ const modal = document.getElementById("modal"), qrBox = document.getElementById(
 function openQr(a) {
   document.getElementById("mName").textContent = a.name;
   qrBox.innerHTML = "";
+  const url = payUrl(a), direct = url === a.sbp;
+  document.querySelector("#modal .sheet p").textContent = direct ? "Отсканируй камерой телефона или в приложении банка" : "Отсканируй камерой телефона — откроется выбор банка";
+  document.querySelector("#modal .sbp-badge").lastChild.textContent = direct ? " Система быстрых платежей · любой банк" : " Перевод по номеру телефона · любой банк";
   if (window.QRCode) {
-    new QRCode(qrBox, { text: a.sbp, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+    new QRCode(qrBox, { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
   } else {
-    qrBox.innerHTML = `<a href="${esc(a.sbp)}">${esc(a.sbp)}</a>`;
+    qrBox.innerHTML = `<a href="${esc(url)}">${esc(url)}</a>`;
   }
   modal.classList.add("open");
 }

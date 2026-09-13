@@ -199,7 +199,7 @@
       <div id="list-actors"></div>
       <button class="btn ghost" data-add="actors">+ Добавить актёра</button>
       <div class="panel" style="margin-top:22px;font-size:12px;color:var(--muted)">
-        <b style="color:var(--text)">Где взять ссылку СБП.</b> Актёр в своём банковском приложении открывает «Получить перевод по QR-коду», выбирает вкладку СБП и нажимает «Поделиться» — копирует ссылку вида <code>https://qr.nspk.ru/...</code>. Сбер: профиль → «Получить перевод по QR» → СБП. Т-Банк: «Мой QR» → СБП. Ссылки вида <code>sberbank.com/...</code> работают только у клиентов Сбера.
+        <b style="color:var(--text)">Как зритель переводит деньги.</b> Достаточно телефона актёра и названия его банка: на странице голосования зритель выбирает «Сбербанк» или «Т-Банк» — откроется его приложение с уже подставленным номером, — или «Другой банк» и переводит по номеру через СБП. Ссылку <code>https://qr.nspk.ru/...</code> банки дают только самозанятым и ИП; если у актёра она есть, вставьте — кнопка поведёт прямо на неё.
       </div>
     </div>
 
@@ -530,11 +530,12 @@ const SECTIONS = {
       <label>Роли (на обороте карточки в команде)</label><input data-f="roles" value="${esc(a.roles || "")}" placeholder="Гамлет («Мёртвая волна»), Диджей («ПОХ»)">
       <div class="row">
         <div><label>Сцена / роль (для голосования)</label><input data-f="role" value="${esc(a.role)}" placeholder="Сцена 1 · Гамлет"></div>
-        <div><label>Банк, к которому привязан номер</label><input data-f="bank" value="${esc(a.bank)}" placeholder="Сбербанк"></div>
+        <div><label>Банк, к которому привязан номер</label><input data-f="bank" list="bankList" value="${esc(a.bank)}" placeholder="Т-Банк"></div>
       </div>
       <label>Описание сцены</label><textarea data-f="scene">${esc(a.scene)}</textarea>
-      <label>Ссылка СБП (qr.nspk.ru)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/..."><div class="hint" data-hint="sbp"></div>
-      <label>Телефон для СБП (запасной способ)</label><input data-f="phone" value="${esc(a.phone)}" placeholder="+7 900 000-00-00">`,
+      <label>Телефон для перевода (СБП)</label><input data-f="phone" type="tel" value="${esc(a.phone)}" placeholder="+7 900 000-00-00"><div class="hint" data-hint="sbp"></div>
+      <label>Ссылка QR СБП (необязательно, только у самозанятых и ИП)</label><input data-f="sbp" value="${esc(a.sbp)}" placeholder="https://qr.nspk.ru/...">
+      <datalist id="bankList"><option>Сбербанк</option><option>Т-Банк</option><option>ВТБ</option><option>Альфа-Банк</option><option>Газпромбанк</option><option>Райффайзен</option><option>Почта Банк</option><option>Озон Банк</option><option>Яндекс Банк</option><option>МТС Банк</option><option>Совкомбанк</option><option>ПСБ</option></datalist>`,
   },
   reviews: {
     img: null, label: r => (r.audio ? "🎙 " : "") + (r.author || "Зритель") + (r.text ? " · " + r.text.slice(0, 40) + (r.text.length > 40 ? "…" : "") : ""),
@@ -583,10 +584,15 @@ const previews = {};
 function photoHtml(path) { const src = previews[path] || (path && backend.photoUrl(path) + "?" + Date.now()); return path ? `<img src="${src}" alt="">` : "<span>Нет фото</span>"; }
 function checkSbp(el, v) {
   const h = el.querySelector("[data-hint=sbp]"); if (!h) return; v = (v || "").trim();
-  if (!v) { h.textContent = "Пусто — кнопка перевода будет неактивна"; h.className = "hint bad"; }
-  else if (/^https:\/\/qr\.nspk\.ru\//.test(v)) { h.textContent = "Ссылка СБП — ок"; h.className = "hint good"; }
-  else if (/^https?:\/\//.test(v)) { h.textContent = "Это не qr.nspk.ru — может не открываться из других банков"; h.className = "hint bad"; }
-  else { h.textContent = "Должна начинаться с https://"; h.className = "hint bad"; }
+  const ph = (el.querySelector("[data-f=phone]") || {}).value || "", d = ph.replace(/\D/g, ""), okTel = d.length === 11 || d.length === 10;
+  const bank = ((el.querySelector("[data-f=bank]") || {}).value || "").trim();
+  if (/^https:\/\/qr\.nspk\.ru\//.test(v)) { h.textContent = "Есть ссылка QR СБП — кнопка ведёт прямо на неё"; h.className = "hint good"; }
+  else if (v && /^https?:\/\//.test(v)) { h.textContent = "Это не qr.nspk.ru — ссылка не используется, зритель переведёт по номеру"; h.className = "hint bad"; }
+  else if (v) { h.textContent = "Ссылка должна начинаться с https:// — пока не используется"; h.className = "hint bad"; }
+  else if (!ph) { h.textContent = "Без телефона кнопка перевода будет неактивна"; h.className = "hint bad"; }
+  else if (!okTel) { h.textContent = "Номер должен быть из 11 цифр: +7 9XX XXX-XX-XX"; h.className = "hint bad"; }
+  else if (!bank) { h.textContent = "Номер есть. Укажите банк — зрителю из другого банка нужно его выбрать"; h.className = "hint bad"; }
+  else { h.textContent = "Ок: Сбер и Т-Банк откроют перевод сами, остальные — по номеру в " + bank; h.className = "hint good"; }
 }
 
 function renderList(key) {
@@ -746,7 +752,8 @@ function completeness() {
   const th = data.theatre, A = data.actors, P = data.plays.filter(p => !p.hidden), G = data.gallery, RV = data.reviews.filter(r => !r.hidden), today = new Date().toISOString().slice(0, 10);
   const rows = []; const row = (n, text, tab, weight) => rows.push({ n, text, tab, weight: weight || 1 });
   row(A.filter(a => !a.photo).length, "актёры без фото", "actors", 2);
-  row(A.filter(a => !a.sbp).length, "актёры без ссылки СБП (голосование только по номеру телефона)", "actors", 3);
+  row(A.filter(a => !a.sbp && !(a.phone || "").replace(/\D/g, "").length).length, "актёры без телефона для перевода (кнопка неактивна)", "actors", 3);
+  row(A.filter(a => !a.sbp && (a.phone || "").replace(/\D/g, "").length && !(a.bank || "").trim()).length, "актёры с телефоном, но без банка", "actors", 1);
   row(A.filter(a => !a.bio && !a.roles).length, "актёры без «О себе» и ролей (личная страница не включается)", "actors", 2);
   row(P.filter(p => !(p.castList || []).length && !p.cast).length, "спектакли без состава", "plays", 1);
   row(P.filter(p => !p.poster).length, "спектакли без постера", "plays", 3);
@@ -802,7 +809,7 @@ async function loadCheck() {
     if (p && p.hidden) add("warn", `${t}: спектакль скрыт, поэтому и показ не виден`, "events");
   });
   const gNoAlt = data.gallery.filter(g => !g.hidden && !g.alt).length; if (gNoAlt) add("warn", `Бэкстейдж: у ${gNoAlt} фото нет alt-текста`, "gallery");
-  data.actors.forEach(a => { if (!a.photo) add("warn", `Актёр ${a.name}: нет фото`, "actors"); if (!a.sbp) add("warn", `Актёр ${a.name}: нет ссылки СБП — кнопка перевода на голосовании неактивна`, "actors"); });
+  data.actors.forEach(a => { if (!a.photo) add("warn", `Актёр ${a.name}: нет фото`, "actors"); if (!a.sbp && !(a.phone || "").replace(/\D/g, "").length) add("warn", `Актёр ${a.name}: нет телефона для перевода — кнопка на голосовании неактивна`, "actors"); });
   data.reviews.forEach(r => { if (!r.hidden && !r.text) add("bad", "Отзыв без текста", "reviews"); });
   const bad = items.filter(i => i.level === "bad").length, warn = items.filter(i => i.level === "warn").length;
   box.innerHTML = (items.length ? `<p class="hint" style="margin:0 0 10px">Серьёзных: ${bad}, желательных: ${warn}.</p>` : "") +
@@ -919,7 +926,7 @@ $("#visitsRefresh").onclick = loadVisits;
 $("#historyRefresh").onclick = loadHistory;
 /* ---- «что изменилось»: сравнение двух версий данных по записям и полям ---- */
 const DIFF_KEYS = { plays: ["Спектакли", p => p.id || p.title, p => p.title], events: ["Показы", e => e.date + "_" + e.time + "_" + e.playId, e => (SECTIONS.events.label ? SECTIONS.events.label(e) : e.date)], actors: ["Актёры", a => a.name, a => a.name], reviews: ["Отзывы", r => r.id || r.text.slice(0, 60), r => (r.author || "Зритель") + ": " + r.text.slice(0, 40) + "…"], gallery: ["Фото бэкстейджа", g => g.photo, g => g.caption || g.photo] };
-const FIELD_RU = { title: "название", genre: "жанр", description: "описание", poster: "постер", duration: "длительность", age: "возраст", cast: "состав", ticketUrl: "ссылка на билеты", afishaShowId: "ID в Афише", voices: "голоса", media: "фото и видео", hidden: "черновик", date: "дата", time: "время", playId: "спектакль", venue: "площадка", price: "цена", afishaSessionId: "ID сеанса", note: "примечание", badges: "стикеры", name: "имя", golos: "в голосовании", role: "роль", scene: "сцена", bio: "био", roles: "роли", photo: "фото", sbp: "ссылка СБП", phone: "телефон", bank: "банк", text: "текст", author: "автор", source: "источник", url: "ссылка", caption: "подпись", alt: "alt", tagline: "слоган", about: "о театре", address: "адрес", instagram: "Instagram", telegram: "Telegram", vk: "VK", email: "почта", ticketsUrl: "ссылка на билеты", heroVideo: "видео шапки", heroPoster: "фото шапки", mapCoords: "координаты", marquee: "бегущая строка", afishaPartnerId: "ID партнёра Афиши", theatre: "название", dates: "даты", heading1: "заголовок 1", heading2: "заголовок 2", lead: "подводка", thanks: "спасибо", thanksNote: "подпись к спасибо" };
+const FIELD_RU = { title: "название", genre: "жанр", description: "описание", poster: "постер", duration: "длительность", age: "возраст", cast: "состав", ticketUrl: "ссылка на билеты", afishaShowId: "ID в Афише", voices: "голоса", media: "фото и видео", hidden: "черновик", date: "дата", time: "время", playId: "спектакль", venue: "площадка", price: "цена", afishaSessionId: "ID сеанса", note: "примечание", badges: "стикеры", name: "имя", golos: "в голосовании", role: "роль", scene: "сцена", bio: "био", roles: "роли", photo: "фото", sbp: "ссылка QR СБП", phone: "телефон", bank: "банк", text: "текст", author: "автор", source: "источник", url: "ссылка", caption: "подпись", alt: "alt", tagline: "слоган", about: "о театре", address: "адрес", instagram: "Instagram", telegram: "Telegram", vk: "VK", email: "почта", ticketsUrl: "ссылка на билеты", heroVideo: "видео шапки", heroPoster: "фото шапки", mapCoords: "координаты", marquee: "бегущая строка", afishaPartnerId: "ID партнёра Афиши", theatre: "название", dates: "даты", heading1: "заголовок 1", heading2: "заголовок 2", lead: "подводка", thanks: "спасибо", thanksNote: "подпись к спасибо" };
 const normV = v => (v === undefined || v === null || v === false || v === "" || (Array.isArray(v) && !v.length) || (typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length)) ? "" : JSON.stringify(v); // пустое, false и отсутствующее поле считаем одинаковыми
 const FIELD_DEFAULT = { golos: true };
 const same = (a, b, f) => normV(a ?? FIELD_DEFAULT[f]) === normV(b ?? FIELD_DEFAULT[f]);
@@ -1078,7 +1085,7 @@ document.addEventListener("input", e => {
   const key = el.dataset.key, item = data[key][el.dataset.i];
   item[t.dataset.f] = t.type === "checkbox" ? t.checked : t.value;
   el.querySelector(".title").textContent = SECTIONS[key].label(item);
-  if (t.dataset.f === "sbp") checkSbp(el, t.value);
+  if (t.dataset.f === "sbp" || t.dataset.f === "phone" || t.dataset.f === "bank") checkSbp(el, (el.querySelector("[data-f=sbp]") || {}).value);
   if (key === "plays" && (t.dataset.f === "title" || t.dataset.f === "id")) renderList("events");
   markDirty();
 });
